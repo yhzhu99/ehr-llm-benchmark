@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 from utils.binary_classification_metrics import get_binary_metrics, get_all_metrics, check_metric_is_better
 
