@@ -12,9 +12,6 @@ from tenacity import (
     wait_random_exponential,
 )
 from openai import OpenAI
-import google.generativeai as genai
-from langchain.callbacks.manager import CallbackManager
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.llms.ollama import Ollama
 import pandas as pd
 

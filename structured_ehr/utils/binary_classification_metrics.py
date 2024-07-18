@@ -1,11 +1,11 @@
 import torch
-from torchmetrics import AUROC, Accuracy, AveragePrecision, Precision, Recall
-from torchmetrics.classification import BinaryF1Score, ConfusionMatrix
+from torchmetrics import AUROC, Accuracy, AveragePrecision
+from torchmetrics.classification import BinaryF1Score
 import numpy as np
 from sklearn import metrics as sklearn_metrics
 
 def minpse(preds, labels):
-    precisions, recalls, thresholds = sklearn_metrics.precision_recall_curve(labels, preds)
+    precisions, recalls, _ = sklearn_metrics.precision_recall_curve(labels, preds)
     minpse_score = np.max([min(x, y) for (x, y) in zip(precisions, recalls)])
     return minpse_score
 
