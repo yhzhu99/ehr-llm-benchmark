@@ -1,5 +1,3 @@
-import os
-import jsonlines
 import numpy as np
 import pandas as pd
 import time
@@ -7,9 +5,6 @@ import argparse
 
 from sklearn.cluster import KMeans
 from sklearn.metrics import calinski_harabasz_score
-from scipy.spatial.distance import cdist
-from scipy.spatial.distance import pdist
-from multiprocessing.pool import ThreadPool as Pool
 
 from utils.build_tree import find_distance, build_tree_fun
 

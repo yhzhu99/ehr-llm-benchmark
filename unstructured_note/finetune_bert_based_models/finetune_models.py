@@ -1,23 +1,22 @@
+import pathlib
 import os
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
-import csv
-import json
 import random
 import argparse
+import copy
+
+import csv
 import jsonlines
 import pandas as pd
 import numpy as np
-import pathlib
-import copy
-
 from tqdm import tqdm
 
 from sklearn.utils import shuffle
-from sklearn.metrics import roc_curve, auc, roc_auc_score, accuracy_score, \
+from sklearn.metrics import roc_auc_score, accuracy_score, \
     precision_score, recall_score, f1_score, precision_recall_curve
 
-from transformers import AutoTokenizer, GPT2Tokenizer, GPT2Config
-from transformers import AutoModelForSequenceClassification, GPT2ForSequenceClassification
+from transformers import AutoTokenizer
+from transformers import AutoModelForSequenceClassification
 from transformers import get_scheduler, set_seed
 
 import torch
@@ -25,10 +24,6 @@ import torch.nn as nn
 from torch.optim import AdamW
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from torchmetrics import AveragePrecision
-from torch.cuda.amp import GradScaler, autocast
-# from optimum.bettertransformer import BetterTransformer
-# from optimum.int8 import load_int8_model, prepare_int8_model
-import bitsandbytes as bnb
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 

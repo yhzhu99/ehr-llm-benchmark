@@ -3,18 +3,15 @@ import os
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 import argparse
 import random
-from tqdm import tqdm
 
+from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import torch
 import jsonlines
-from torch.utils.data import DataLoader, TensorDataset, RandomSampler, SequentialSampler
-from sklearn.utils import shuffle
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel
-from accelerate import Accelerator
 import csv
-from transformers import get_scheduler, set_seed
+from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel, set_seed
+from accelerate import Accelerator
 
 from utils.config import BERTBasedModels, LLM, LLMPathList
 
