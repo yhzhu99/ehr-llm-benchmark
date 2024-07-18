@@ -3,9 +3,7 @@ import os
 
 import pandas as pd
 import torch
-import numpy as np
 
-from utils.bootstrap import run_bootstrap
 from utils.binary_classification_metrics import get_binary_metrics
 from utils.config import LLM
 

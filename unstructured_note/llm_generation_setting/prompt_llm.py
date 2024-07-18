@@ -1,21 +1,18 @@
-from langchain_huggingface import HuggingFacePipeline
-from transformers import AutoModelForCausalLM, AutoTokenizer,pipeline
 from pathlib import Path
+import re
+import argparse
 import os
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+
 import pandas as pd
-import numpy as np
 import torch
 import jsonlines
-import random
-import argparse
-from torch.utils.data import DataLoader, TensorDataset, RandomSampler, SequentialSampler
-from sklearn.utils import shuffle
-from accelerate import Accelerator
 import csv
 from tqdm import tqdm
-from transformers import get_scheduler, set_seed
-import re
+from accelerate import Accelerator
+from langchain_huggingface.llms import HuggingFacePipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+
 from utils.config import LLM, LLMPathList
 
 parser = argparse.ArgumentParser(description='Demo of argparse')
