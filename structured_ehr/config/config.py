@@ -1,6 +1,5 @@
 OPENAI_API_KEY = ''
 OPENAI_BASE_URL = ''
-GOOGLE_API_KEY = ''
 
 configs = [
     {
