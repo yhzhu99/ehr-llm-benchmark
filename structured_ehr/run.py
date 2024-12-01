@@ -16,9 +16,11 @@ from langchain.llms.ollama import Ollama
 import pandas as pd
 
 from config.config import *
-from utils.prompt_template import *
+from prompts.prompt_template import *
 
-logging.basicConfig(filename=f'logs/{dt.now().strftime("%Y%m%d")}.log', level=logging.INFO, format='%(asctime)s\n%(message)s')
+logging.basicConfig(filename=f'logs/{dt.now().strftime("%Y%m%d")}.log',
+                    level=logging.INFO, format='%(asctime)s\n%(message)s')
+
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
 def query_llm(
@@ -48,6 +50,7 @@ def query_llm(
             raise e
         return response, 0, 0
 
+
 def format_input(
     patient: List,
     dataset: str,
@@ -57,8 +60,10 @@ def format_input(
     mask: List[List[int]],
 ):
     feature_values = {}
-    numerical_features = ['Diastolic blood pressure', 'Fraction inspired oxygen', 'Glucose', 'Heart Rate', 'Height', 'Mean blood pressure', 'Oxygen saturation', 'Respiratory rate', 'Systolic blood pressure', 'Temperature', 'Weight', 'pH']
-    categorical_features = ['Capillary refill rate', 'Glascow coma scale eye opening', 'Glascow coma scale motor response', 'Glascow coma scale total', 'Glascow coma scale verbal response']
+    numerical_features = ['Diastolic blood pressure', 'Fraction inspired oxygen', 'Glucose', 'Heart Rate', 'Height',
+                          'Mean blood pressure', 'Oxygen saturation', 'Respiratory rate', 'Systolic blood pressure', 'Temperature', 'Weight', 'pH']
+    categorical_features = ['Capillary refill rate', 'Glascow coma scale eye opening',
+                            'Glascow coma scale motor response', 'Glascow coma scale total', 'Glascow coma scale verbal response']
     if dataset == 'mimic-iv':
         for i, feature in enumerate(features):
             if feature in numerical_features:
@@ -70,7 +75,8 @@ def format_input(
                     feature_values[feature].append(value)
                 # feature_values[feature] = [str(visit[i]) for visit in patient]
         for categorical_feature in categorical_features:
-            indexes = [i for i, f in enumerate(features) if f.startswith(categorical_feature)]
+            indexes = [i for i, f in enumerate(
+                features) if f.startswith(categorical_feature)]
             feature_values[categorical_feature] = []
             for visit in patient:
                 values = [visit[i] for i in indexes]
@@ -79,7 +85,8 @@ def format_input(
                 else:
                     for i in indexes:
                         if visit[i] == 1:
-                            feature_values[categorical_feature].append(features[i].split('->')[-1])
+                            feature_values[categorical_feature].append(
+                                features[i].split('->')[-1])
                             break
         features = categorical_features + numerical_features
     elif dataset == 'tjh':
@@ -102,27 +109,30 @@ def format_input(
         for i, visit in enumerate(patient):
             detail += f'Visit {i + 1}:\n'
             for feature in features:
-                value = feature_values[feature][i] if i < len(feature_values[feature]) else 'unknown'
+                value = feature_values[feature][i] if i < len(
+                    feature_values[feature]) else 'unknown'
                 detail += f'- {feature}: {value}\n'
             detail += '\n'
     return detail
 
+
 def run(
     config: Dict,
-    output_logits: bool=True,
-    output_prompts: bool=False,
-    logits_root: str='logits',
-    prompts_root: str='logs',
+    output_logits: bool = True,
+    output_prompts: bool = False,
+    logits_root: str = 'logits',
+    prompts_root: str = 'logs',
 ):
     logging.info(f'Running config: {config}\n\n')
-    
+
     prompt_tokens = 0
     completion_tokens = 0
-    
+
     dataset = config['dataset']
     assert dataset in ['tjh', 'mimic-iv'], f'Unknown dataset: {dataset}'
     task = config['task']
-    assert task in ['outcome', 'los', 'readmission', 'multitask'], f'Unknown task: {task}'
+    assert task in ['outcome', 'los', 'readmission',
+                    'multitask'], f'Unknown task: {task}'
     time = config['time']
     if time == 0:
         time_des = 'upon-discharge'
@@ -132,7 +142,7 @@ def run(
         time_des = '6months'
     else:
         raise ValueError(f'Unknown time: {time}')
-    
+
     if config['unit'] is True or config['reference_range'] is True:
         unit_range = ''
         unit_values = dict(json.load(open(UNIT[dataset])))
@@ -146,7 +156,7 @@ def run(
             unit_range += '\n'
     else:
         unit_range = ''
-        
+
     form = config['form']
     assert form in ['string', 'batches', 'list'], f'Unknown form: {form}'
     nshot = config['n_shot']
@@ -161,18 +171,18 @@ def run(
         for i in range(nshot):
             example += f'Example #{i + 1}:'
             example += EXAMPLE[dataset][task][i] + '\n'
-            
+
     if config.get('prompt_engineering') is True:
         example = COT[dataset]
         response_format = RESPONSE_FORMAT['cot']
     else:
         response_format = RESPONSE_FORMAT[task]
-        
+
     if task == 'outcome':
         task_description = TASK_DESCRIPTION_AND_RESPONSE_FORMAT[task][time_des]
     else:
         task_description = TASK_DESCRIPTION_AND_RESPONSE_FORMAT[task]
-    
+
     model = config['model']
     if model in ['gpt-4-1106-preview', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-1106']:
         llm = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
@@ -180,7 +190,7 @@ def run(
         llm = Ollama(model=model)
     else:
         raise ValueError(f'Unknown model: {model}')
-    
+
     dataset_path = f'datasets/{dataset}/processed/fold_llm'
     impute = config.get('impute', 1)
     if impute in [1, 2]:
@@ -189,12 +199,15 @@ def run(
         xs = pd.read_pickle(os.path.join(dataset_path, 'test_x_no_impute.pkl'))
     ys = pd.read_pickle(os.path.join(dataset_path, 'test_y.pkl'))
     pids = pd.read_pickle(os.path.join(dataset_path, 'test_pid.pkl'))
-    missing_masks = pd.read_pickle(os.path.join(dataset_path, 'test_x_missing_masks.pkl'))
-    features = pd.read_pickle(os.path.join(dataset_path, 'all_features.pkl'))[2:]
-    record_times = pd.read_pickle(os.path.join(dataset_path, 'test_x_record_times.pkl'))
+    missing_masks = pd.read_pickle(os.path.join(
+        dataset_path, 'test_x_missing_masks.pkl'))
+    features = pd.read_pickle(os.path.join(
+        dataset_path, 'all_features.pkl'))[2:]
+    record_times = pd.read_pickle(os.path.join(
+        dataset_path, 'test_x_record_times.pkl'))
     labels = []
     preds = []
-    
+
     if output_logits:
         logits_path = os.path.join(logits_root, dataset, task, model)
         Path(logits_path).mkdir(parents=True, exist_ok=True)
@@ -318,14 +331,17 @@ def run(
             labels.append(label)
             preds.append(pred)
     if output_logits:
-        logging.info(f'Prompts: {prompt_tokens}, Completions: {completion_tokens}, Total: {prompt_tokens + completion_tokens}\n\n')    
+        logging.info(
+            f'Prompts: {prompt_tokens}, Completions: {completion_tokens}, Total: {prompt_tokens + completion_tokens}\n\n')
         pd.to_pickle({
             'config': config,
             'preds': preds,
             'labels': labels,
         }, os.path.join(logits_path, sub_dst_name + '.pkl'))
 
+
 if __name__ == '__main__':
     for i, config in enumerate(configs):
-        print(f'Running config {i + 1}...Model: {config["model"]}, Dataset: {config["dataset"]}, Task: {config["task"]}')
+        print(
+            f'Running config {i + 1}...Model: {config["model"]}, Dataset: {config["dataset"]}, Task: {config["task"]}')
         run(config, output_logits=True, output_prompts=False)
