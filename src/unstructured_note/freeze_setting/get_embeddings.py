@@ -46,7 +46,7 @@ LLM = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == 
 
 parser = argparse.ArgumentParser(description='Demo of argparse')
 parser.add_argument('--model', type=str, default='bert', choices=BERTBasedModels + LLM)
-parser.add_argument('--dataset', type=str, default='discharge', choices=['discharge', 'noteevent'])
+parser.add_argument('--dataset', type=str, default='discharge', choices=['discharge', 'mortality'])
 parser.add_argument('--cuda', type=int, default=0, choices=[0,1,2,3,4,5,6,7])
 parser.add_argument('--batch_size', type=int, default=1)
 args = parser.parse_args()
@@ -97,10 +97,10 @@ if args.dataset == 'discharge':
                 Data[key]['text'].append(row[2])
                 assert int(float(row[3])) == 0 or int(float(row[3])) == 1
                 Data[key]['label'].append(int(float(row[3])))
-elif args.dataset == 'noteevent':
+elif args.dataset == 'mortality':
     file_names = ['train', 'valid', 'test']
-    file_dir = r'src/my_datasets/mimic-iii-note/noteevent'
-    save_dir = r'src/my_datasets/mimic-iii-note/noteevent'
+    file_dir = r'src/my_datasets/mimic-iii-note/mortality'
+    save_dir = r'src/my_datasets/mimic-iii-note/mortality'
     error_dict = {}
     for file_name in file_names:
         file_path = os.path.join(file_dir, '{}-text.json'.format(file_name))

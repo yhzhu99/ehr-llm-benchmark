@@ -29,7 +29,7 @@ LLM = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == 
 # Parse arguments
 parser = argparse.ArgumentParser(description='Fine-tune embeddings with MLP')
 parser.add_argument('--model', type=str, default='BERT', choices=BERTBasedModels + LLM + ['all'])
-parser.add_argument('--dataset', type=str, default='discharge', choices=['discharge', 'noteevent', 'all'])
+parser.add_argument('--dataset', type=str, default='discharge', choices=['discharge', 'mortality', 'all'])
 parser.add_argument('--cuda', type=int, default=0, choices=[0,1,2,3,4,5,6,7])
 parser.add_argument('--batch_size', type=int, default=256)
 parser.add_argument('--learning_rate', type=float, default=1e-4)
@@ -299,7 +299,7 @@ def run_experiment(model_name, dataset_name, batch_size, learning_rate, epochs, 
 
 # Main execution
 if __name__ == "__main__":
-    datasets_to_run = ["discharge", "noteevent"] if args.dataset == "all" else [args.dataset]
+    datasets_to_run = ["discharge", "mortality"] if args.dataset == "all" else [args.dataset]
     models_to_run = BERTBasedModels + LLM if args.model == "all" else [args.model]
     
     for model_name in models_to_run:

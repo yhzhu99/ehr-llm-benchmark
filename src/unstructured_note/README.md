@@ -5,22 +5,22 @@
 ### Finetune BERT-based models
 
 ```python
-python finetune_models.py --model='BERT' --dataset='noteevent' --cuda='1'
-python finetune_models.py --model='ClinicalBERT' --dataset='noteevent' --cuda='1'
-python finetune_models.py --model='BioBERT' --dataset='noteevent' --cuda='1'
-python finetune_models.py --model='GatorTron' --dataset='noteevent' --cuda='1'
-python finetune_models.py --model='Clinical-Longformer' --dataset='noteevent' --cuda='1'
+python finetune_models.py --model='BERT' --dataset='mortality' --cuda='1'
+python finetune_models.py --model='ClinicalBERT' --dataset='mortality' --cuda='1'
+python finetune_models.py --model='BioBERT' --dataset='mortality' --cuda='1'
+python finetune_models.py --model='GatorTron' --dataset='mortality' --cuda='1'
+python finetune_models.py --model='Clinical-Longformer' --dataset='mortality' --cuda='1'
 ```
 
 Or you can open a bash script and input the following commands, and then run the bash script:    
 ```bash
 #!/bin/bash
 
-python finetune_models.py --model='BERT' --dataset='noteevent' --cuda='1'
-python finetune_models.py --model='ClinicalBERT' --dataset='noteevent' --cuda='1'
-python finetune_models.py --model='BioBERT' --dataset='noteevent' --cuda='1'
-python finetune_models.py --model='GatorTron' --dataset='noteevent' --cuda='1'
-python finetune_models.py --model='Clinical-Longformer' --dataset='noteevent' --cuda='1'
+python finetune_models.py --model='BERT' --dataset='mortality' --cuda='1'
+python finetune_models.py --model='ClinicalBERT' --dataset='mortality' --cuda='1'
+python finetune_models.py --model='BioBERT' --dataset='mortality' --cuda='1'
+python finetune_models.py --model='GatorTron' --dataset='mortality' --cuda='1'
+python finetune_models.py --model='Clinical-Longformer' --dataset='mortality' --cuda='1'
 ```
 
 
@@ -28,14 +28,14 @@ python finetune_models.py --model='Clinical-Longformer' --dataset='noteevent' --
 ### Freeze setting
 
 ```python
-python src/unstructured_note/freeze_setting/get_embeddings.py --model='BERT' --dataset='noteevent'
+python src/unstructured_note/freeze_setting/get_embeddings.py --model='BERT' --dataset='mortality'
 # python tune_embeddings.py
 ```
 
 ### LLM generation setting
 
 ```python
-python prompt_llm.py --model='GPT-2' --dataset='noteevent'
+python prompt_llm.py --model='GPT-2' --dataset='mortality'
 python process_generation_results.py
 ```
 

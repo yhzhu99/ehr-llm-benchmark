@@ -8,7 +8,7 @@ from utils.binary_classification_metrics import get_binary_metrics
 from utils.config import LLM
 
 save_dir = 'logs/generation'
-datasets = ['noteevent', 'discharge']
+datasets = ['mortality', 'discharge']
 
 
 def extract_number(s):
