@@ -232,7 +232,7 @@ def run_experiment(model_name, dataset_name, batch_size, learning_rate, epochs, 
     )
     
     # Set up logging
-    log_dir = f"logs/mimic-iii-note/{dataset_name}/embeddings/{model_name}/tuned"
+    log_dir = f"logs/mimic-iii-note/{dataset_name}/{model_name}/embeddings/tuned"
     Path(log_dir).mkdir(parents=True, exist_ok=True)
     logger = CSVLogger(save_dir=log_dir, name="classification", version="0")
     
