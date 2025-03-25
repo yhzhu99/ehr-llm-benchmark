@@ -155,7 +155,7 @@ def save_embedding(mode='train'):
 
         all_embeddings_train.append(embedding_dict)
 
-    embedding_path = f"logs/mimic-iii-note/{args.dataset}/embeddings/{model_name}/embed_{mode}.pkl"
+    embedding_path = f"logs/mimic-iii-note/{args.dataset}/{model_name}/embeddings/embed_{mode}.pkl"
     # 确保目标文件夹存在
     embedding_folder = Path(embedding_path).parent
     if not embedding_folder.exists():

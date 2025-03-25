@@ -56,7 +56,7 @@ class EmbeddingDataModule(L.LightningDataModule):
     def __init__(self, batch_size, model_name, dataset_name):
         super().__init__()
         self.batch_size = batch_size
-        self.base_path = f"logs/mimic-iii-note/{dataset_name}/embeddings/{model_name}"
+        self.base_path = f"logs/mimic-iii-note/{dataset_name}/{model_name}/embeddings"
         
         # Ensure the paths exist
         Path(self.base_path).mkdir(parents=True, exist_ok=True)
