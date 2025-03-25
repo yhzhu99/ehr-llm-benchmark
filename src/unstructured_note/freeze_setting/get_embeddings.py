@@ -13,7 +13,7 @@ import csv
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel, set_seed
 from accelerate import Accelerator
 
-from utils.config import BERTBasedModels, LLM, LLMPathList
+from unstructured_note.utils.config import MODELS_CONFIG
 
 torch.cuda.empty_cache()
 
@@ -34,6 +34,10 @@ set_seed(42)
 
 MAX_LENGTH = 512
 
+# 创建BERT模型和LLM模型列表，用于参数选择
+BERTBasedModels = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "BERT"]
+LLM = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "GPT"]
+
 parser = argparse.ArgumentParser(description='Demo of argparse')
 parser.add_argument('--model', type=str, default='bert', choices=BERTBasedModels + LLM)
 parser.add_argument('--dataset', type=str, default='discharge', choices=['discharge', 'noteevent'])
@@ -42,24 +46,17 @@ parser.add_argument('--batch_size', type=int, default=1)
 args = parser.parse_args()
 model_name = args.model
 
-if model_name in LLM:
-    # Initialize accelerator
-    accelerator = Accelerator()
-    device = accelerator.device
+# 获取模型对应的huggingface ID
+model_path = next(model["hf_id"] for model in MODELS_CONFIG if model["model_name"] == model_name)
 
-    model_path = LLMPathList[model_name]
-    if model_name != 'BioGPT':
-        model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True, device_map="auto")
-        model = accelerator.prepare(model)
-    else:
-        model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True).to(device)
+if model_name in LLM:
+    device = torch.device(f'cuda:{args.cuda}') if torch.cuda.is_available() else torch.device("cpu")
+    model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True).to(device)
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
     model.config.pad_token_id = tokenizer.eos_token_id
 elif model_name in BERTBasedModels:
-    device = torch.device('cuda:1') if torch.cuda.is_available() else torch.device("cpu")
-
-    model_path = f'HF_models/{model_name}'
+    device = torch.device(f'cuda:{args.cuda}') if torch.cuda.is_available() else torch.device("cpu")
     model = AutoModel.from_pretrained(model_path, trust_remote_code=True).to(device)
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 else:
@@ -71,8 +68,8 @@ for key in Data.keys():
     Data[key] = {'ID': [], 'text': [], 'label': []}
 if args.dataset == 'discharge':
     file_names = ['train', 'val', 'test']
-    file_dir = r'./my_datasets/discharge'
-    save_dir = r'./my_datasets/discharge'
+    file_dir = r'src/my_datasets/mimic-iii-note/discharge'
+    save_dir = r'src/my_datasets/mimic-iii-note/discharge'
 
     for file_name in file_names:
         file_path = os.path.join(file_dir, '{}.csv'.format(file_name))
@@ -87,8 +84,8 @@ if args.dataset == 'discharge':
                 Data[key]['label'].append(int(float(row[3])))
 elif args.dataset == 'noteevent':
     file_names = ['train', 'valid', 'test']
-    file_dir = r'./datasets/noteevent'
-    save_dir = r'./datasets/noteevent'
+    file_dir = r'src/my_datasets/mimic-iii-note/noteevent'
+    save_dir = r'src/my_datasets/mimic-iii-note/noteevent'
     error_dict = {}
     for file_name in file_names:
         file_path = os.path.join(file_dir, '{}-text.json'.format(file_name))
@@ -120,10 +117,7 @@ def save_embedding(mode='train'):
     # Iterate over texts and labels together
     # cnt = 0
     for text, label in tqdm(zip(Data[mode]['text'], Data[mode]['label']), total=len(Data[mode]['text']), desc=f"Processing {mode} data"):
-        # cnt+=1
-        # if cnt == 10: break
         # Tokenize the input text
-        text = text[:1024]
         input_tokens = tokenizer(text,
                                  return_tensors="pt",
                                  return_attention_mask=False,
@@ -146,7 +140,7 @@ def save_embedding(mode='train'):
 
         all_embeddings_train.append(embedding_dict)
 
-    embedding_path = f"logs/embeddings/{model_name}/{args.dataset}/embed_{mode}.pkl"
+    embedding_path = f"logs/mimic-iii-note/{args.dataset}/embeddings/{model_name}/embed_{mode}.pkl"
     # 确保目标文件夹存在
     embedding_folder = Path(embedding_path).parent
     if not embedding_folder.exists():

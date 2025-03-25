@@ -1,15 +1,15 @@
-BERTBasedModels = ["BERT", "ClinicalBERT", "BioBERT", "Clinical-Longformer", "GatorTron"]
-LLM = ["GPT-2", "BioGPT", "MedAlpaca", "HuatuoGPT", "meditron", "OpenBioLLM", "Llama3"]
-
-# LLMPathList = {"GPT-2": "HF_models/GPT-2",
-#     "BioGPT": "HF_models/BioGPT",
-#     "MedAlpaca": "HF_models/MedAlpaca/models--medalpaca--medalpaca-7b/snapshots/fbb41b75d5a46ba405d496db1083a6f1d3df72a2",
-#     "HuatuoGPT": "HF_models/HuatuoGPT/models--FreedomIntelligence--HuatuoGPT2-7B/snapshots/be622086b8e60326c9b3c193de72194e006f46cc",
-#     "meditron": "HF_models/meditron/models--epfl-llm--meditron-7b/snapshots/d7d0a5ed929384a6b059ac74198cf1d71f44ba76",
-#     "OpenBioLLM": "HF_models/OpenBioLLM/models--aaditya--Llama3-OpenBioLLM-8B/snapshots/000c725dc3a680e35260b2c213163387581c974f",
-#     "Llama3": "HF_models/Meta-Llama-3-8B"}
-
-RepoIDs = ["bert-base-uncased", "medicalai/ClinicalBERT", "pritamdeka/BioBert-PubMed200kRCT", "UFNLP/gatortron-base", "yikuan8/Clinical-Longformer"] + \
-    ["openai-community/gpt2", "microsoft/biogpt", "medalpaca/medalpaca-7b", "FreedomIntelligence/HuatuoGPT2-7B", "epfl-llm/meditron-7b", "aaditya/Llama3-OpenBioLLM-8B", "meta-llama/Meta-Llama-3-8B-Instruct"]
-    
-TOKENForHF = ""
+MODELS_CONFIG = [
+    {"model_type": "BERT", "model_name": "BERT", "hf_id": "bert-base-uncased"},
+    {"model_type": "BERT", "model_name": "ClinicalBERT", "hf_id": "medicalai/ClinicalBERT"},
+    {"model_type": "BERT", "model_name": "BioBERT", "hf_id": "pritamdeka/BioBert-PubMed200kRCT"},
+    {"model_type": "BERT", "model_name": "GatorTron", "hf_id": "UFNLP/gatortron-base"},
+    {"model_type": "BERT", "model_name": "Clinical-Longformer", "hf_id": "yikuan8/Clinical-Longformer"},
+    {"model_type": "GPT", "model_name": "GPT-2", "hf_id": "openai-community/gpt2"},
+    {"model_type": "GPT", "model_name": "BioGPT", "hf_id": "microsoft/biogpt"},
+    {"model_type": "GPT", "model_name": "MedAlpaca", "hf_id": "medalpaca/medalpaca-7b"},
+    {"model_type": "GPT", "model_name": "HuatuoGPT", "hf_id": "FreedomIntelligence/HuatuoGPT2-7B"},
+    {"model_type": "GPT", "model_name": "meditron", "hf_id": "epfl-llm/meditron-7b"},
+    {"model_type": "GPT", "model_name": "OpenBioLLM", "hf_id": "aaditya/Llama3-OpenBioLLM-8B"},
+    {"model_type": "GPT", "model_name": "Llama3", "hf_id": "meta-llama/Meta-Llama-3-8B-Instruct"},
+    {"model_type": "GPT", "model_name": "BioMistral", "hf_id": "BioMistral/BioMistral-7B"},
+]
