@@ -59,8 +59,6 @@ We examine a diverse array of models including GPT-based LLMs, BERT-based models
 
 ## ⚙️ Requirements
 
-To get started with the repository, ensure your environment meets the following requirements:
+To get started with the repository, ensure your environment meets the following requirements. We use `uv` as our Python package manager with Python 3.12.
 
-- Python 3.11+
-- PyTorch 2.3.0 (use Lightning AI)
-- See `requirements.txt` for additional dependencies.
+- Run `uv pip install -e .`

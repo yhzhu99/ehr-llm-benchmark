@@ -1,6 +1,8 @@
 ############### self-defined
 logs/
-structured_ehr/datasets/
+my_datasets/
+.DS_Store
+
 ###############
 
 
