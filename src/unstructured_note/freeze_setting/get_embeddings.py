@@ -15,18 +15,24 @@ from accelerate import Accelerator
 
 from unstructured_note.utils.config import MODELS_CONFIG
 
-torch.cuda.empty_cache()
+# Check if MPS is available (for Mac GPU)
+mps_available = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+
+# Clear cache (modify for MPS if needed)
+if torch.cuda.is_available():
+    torch.cuda.empty_cache()
 
 def seed_torch(seed):
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.enabled = False
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.enabled = False
 
 
 seed_torch(42)
@@ -49,14 +55,23 @@ model_name = args.model
 # 获取模型对应的huggingface ID
 model_path = next(model["hf_id"] for model in MODELS_CONFIG if model["model_name"] == model_name)
 
+# Determine the appropriate device
+if mps_available:
+    device = torch.device("mps")
+    print("Using Mac GPU (MPS)")
+elif torch.cuda.is_available():
+    device = torch.device(f'cuda:{args.cuda}')
+    print(f"Using CUDA device {args.cuda}")
+else:
+    device = torch.device("cpu")
+    print("Using CPU")
+
 if model_name in LLM:
-    device = torch.device(f'cuda:{args.cuda}') if torch.cuda.is_available() else torch.device("cpu")
     model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True).to(device)
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
     model.config.pad_token_id = tokenizer.eos_token_id
 elif model_name in BERTBasedModels:
-    device = torch.device(f'cuda:{args.cuda}') if torch.cuda.is_available() else torch.device("cpu")
     model = AutoModel.from_pretrained(model_path, trust_remote_code=True).to(device)
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 else:
