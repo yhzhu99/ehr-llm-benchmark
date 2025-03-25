@@ -390,8 +390,8 @@ def main():
     
     parser.add_argument('--model', type=str, default='BERT', choices=bert_models)
     parser.add_argument('--dataset', type=str, default='discharge', choices=['discharge', 'mortality'])
-    parser.add_argument('--batch_size', type=int, default=16)
-    parser.add_argument('--learning_rate', type=float, default=2e-5)
+    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--learning_rate', type=float, default=1e-5)
     parser.add_argument('--max_epochs', type=int, default=50)
     parser.add_argument('--patience', type=int, default=5)
     args = parser.parse_args()
