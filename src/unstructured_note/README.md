@@ -1,13 +1,5 @@
 # Unstructured Clinical Note
 
-## Download model checkpoints
-
-List the repository ID and the path to save the model checkpoints in `utils/config.py` and run the following command:
-
-```python
-python download_models.py
-```
-
 ## Supervised tasks
 
 ### Finetune BERT-based models
@@ -36,8 +28,8 @@ python finetune_models.py --model='Clinical-Longformer' --dataset='noteevent' --
 ### Freeze setting
 
 ```python
-python get_embeddings.py --model='GPT-2' --dataset=noteevent --cuda='1'
-python tune_embeddings.py
+python src/unstructured_note/freeze_setting/get_embeddings.py --model='BERT' --dataset='noteevent'
+# python tune_embeddings.py
 ```
 
 ### LLM generation setting
