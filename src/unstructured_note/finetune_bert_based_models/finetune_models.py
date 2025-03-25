@@ -63,7 +63,7 @@ def minpse(preds, labels):
 
 parser = argparse.ArgumentParser(description='Demo of argparse')
 parser.add_argument('--model', type=str, default='BERT', choices=['BERT', 'ClinicalBERT', 'ClinicalBERT', 'BioBERT', 'GatorTron', 'Clinical-Longformer', 'GPT-2', 'BioGPT', 'MedAlpaca', 'HuatuoGPT', 'OpenBioLLM', 'meditron'])
-parser.add_argument('--dataset', type=str, default='discharge', choices=['discharge', 'noteevent'])
+parser.add_argument('--dataset', type=str, default='discharge', choices=['discharge', 'mortality'])
 parser.add_argument('--cuda', type=str, default='0', choices=['0', '1'])
 parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--freeze', type=bool, default=False)
@@ -174,10 +174,10 @@ if args.dataset == 'discharge':
                 Data[key]['text'].append(row[2])
                 assert int(float(row[3])) == 0 or int(float(row[3])) == 1
                 Data[key]['label'].append(int(float(row[3])))
-elif args.dataset == 'noteevent':
+elif args.dataset == 'mortality':
     file_names = ['train', 'valid', 'test']
-    file_dir = r'./datasets/noteevent'
-    save_dir = r'./datasets/noteevent'
+    file_dir = r'./datasets/mortality'
+    save_dir = r'./datasets/mortality'
     error_dict = {}
     for file_name in file_names:
         file_path = os.path.join(file_dir, '{}-text.json'.format(file_name))

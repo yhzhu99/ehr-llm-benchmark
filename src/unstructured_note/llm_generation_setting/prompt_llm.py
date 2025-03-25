@@ -16,7 +16,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from utils.config import LLM, LLMPathList
 
 parser = argparse.ArgumentParser(description='Demo of argparse')
-parser.add_argument('--dataset', type=str, default='discharge', choices=['discharge', 'noteevent'])
+parser.add_argument('--dataset', type=str, default='discharge', choices=['discharge', 'mortality'])
 parser.add_argument('--model', type=str, default='OpenBioLLM')
 # parser.add_argument('--cuda', type=int, default=0, choices=[0,1,2,3,4,5,6,7])
 args = parser.parse_args()
@@ -26,11 +26,11 @@ accelerator = Accelerator()
 device = accelerator.device
 
 discharge_prompt = "Based on the intensive care clinical notes, please predict the patient's readmission probability. 1 for readmission, 0 for no readmission. The closer to 1, the more likely the patient will be readmitted. Please output the probability from 0 to 1. Please directly output the probability number, do not explain anything else."
-noteevent_prompt = "Based on the intensive care clinical notes, please predict the patient's mortality outcome. 1 for dead, 0 for alive. The closer to 1, the more likely the patient will die. Please output the probability from 0 to 1. Please directly output the probability number, do not explain anything else."
+mortality_prompt = "Based on the intensive care clinical notes, please predict the patient's mortality outcome. 1 for dead, 0 for alive. The closer to 1, the more likely the patient will die. Please output the probability from 0 to 1. Please directly output the probability number, do not explain anything else."
 
 instruction_prompt = discharge_prompt
-if args.dataset=='noteevent':
-    instruction_prompt = noteevent_prompt
+if args.dataset=='mortality':
+    instruction_prompt = mortality_prompt
 
 if args.model in LLM:
     model_path = LLMPathList[args.model]
@@ -75,10 +75,10 @@ if args.dataset == 'discharge':
                 Data[key]['text'].append(row[2])
                 assert int(float(row[3])) == 0 or int(float(row[3])) == 1
                 Data[key]['label'].append(int(float(row[3])))
-elif args.dataset == 'noteevent':
+elif args.dataset == 'mortality':
     file_names = ['train', 'valid', 'test']
-    file_dir = r'./datasets/noteevent'
-    save_dir = r'./datasets/noteevent'
+    file_dir = r'./datasets/mortality'
+    save_dir = r'./datasets/mortality'
     error_dict = {}
     for file_name in file_names:
         file_path = os.path.join(file_dir, '{}-text.json'.format(file_name))
