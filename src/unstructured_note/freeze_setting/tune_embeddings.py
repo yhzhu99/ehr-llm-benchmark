@@ -1,4 +1,9 @@
-# tune_embeddings.py
+"""
+src/unstructured_note/freeze_setting/tune_embeddings.py
+Fine-tune embeddings with a simple MLP classifier for downstream tasks
+"""
+
+
 import os
 import argparse
 from pathlib import Path
@@ -232,9 +237,9 @@ def run_experiment(model_name, dataset_name, batch_size, learning_rate, epochs, 
     )
     
     # Set up logging
-    log_dir = f"logs/mimic-iii-note/{dataset_name}/{model_name}/embeddings/tuned"
+    log_dir = f"logs/mimic-iii-note/{dataset_name}/{model_name}/freeze_setting"
     Path(log_dir).mkdir(parents=True, exist_ok=True)
-    logger = CSVLogger(save_dir=log_dir, name="classification", version="0")
+    logger = CSVLogger(save_dir=log_dir, name="", version=None)
     
     # Set up callbacks
     early_stopping = EarlyStopping(
@@ -245,7 +250,7 @@ def run_experiment(model_name, dataset_name, batch_size, learning_rate, epochs, 
     )
     
     checkpoint_callback = ModelCheckpoint(
-        dirpath=log_dir,
+        dirpath=os.path.join(logger.log_dir, "checkpoints"),
         filename="best_model",
         monitor="val_auroc",
         mode="max",

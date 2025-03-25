@@ -5,31 +5,14 @@
 ### Finetune BERT-based models
 
 ```python
-python finetune_models.py --model='BERT' --dataset='mortality' --cuda='1'
-python finetune_models.py --model='ClinicalBERT' --dataset='mortality' --cuda='1'
-python finetune_models.py --model='BioBERT' --dataset='mortality' --cuda='1'
-python finetune_models.py --model='GatorTron' --dataset='mortality' --cuda='1'
-python finetune_models.py --model='Clinical-Longformer' --dataset='mortality' --cuda='1'
+python src/unstructured_note/finetune_bert_based_models/fine_models.py --model="BERT" --dataset="discharge"
 ```
-
-Or you can open a bash script and input the following commands, and then run the bash script:    
-```bash
-#!/bin/bash
-
-python finetune_models.py --model='BERT' --dataset='mortality' --cuda='1'
-python finetune_models.py --model='ClinicalBERT' --dataset='mortality' --cuda='1'
-python finetune_models.py --model='BioBERT' --dataset='mortality' --cuda='1'
-python finetune_models.py --model='GatorTron' --dataset='mortality' --cuda='1'
-python finetune_models.py --model='Clinical-Longformer' --dataset='mortality' --cuda='1'
-```
-
-
 
 ### Freeze setting
 
 ```python
-python src/unstructured_note/freeze_setting/get_embeddings.py --model='BERT' --dataset='mortality'
-# python tune_embeddings.py
+python src/unstructured_note/freeze_setting/get_embeddings.py --model="BERT" --dataset="discharge"
+python src/unstructured_note/freeze_setting/tune_embeddings.py --model="BERT" --dataset="discharge"
 ```
 
 ### LLM generation setting

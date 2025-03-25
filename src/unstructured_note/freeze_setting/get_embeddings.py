@@ -1,3 +1,8 @@
+"""
+src/unstructured_note/freeze_setting/get_embeddings.py
+This script is used to get embeddings from the model for the textual data in the MIMIC-III mortality/discharge dataset.
+"""
+
 from pathlib import Path
 import os
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
@@ -83,8 +88,8 @@ for key in Data.keys():
     Data[key] = {'ID': [], 'text': [], 'label': []}
 if args.dataset == 'discharge':
     file_names = ['train', 'val', 'test']
-    file_dir = r'src/my_datasets/mimic-iii-note/discharge'
-    save_dir = r'src/my_datasets/mimic-iii-note/discharge'
+    file_dir = r'my_datasets/mimic-iii-note/discharge'
+    save_dir = r'my_datasets/mimic-iii-note/discharge'
 
     for file_name in file_names:
         file_path = os.path.join(file_dir, '{}.csv'.format(file_name))
@@ -99,8 +104,8 @@ if args.dataset == 'discharge':
                 Data[key]['label'].append(int(float(row[3])))
 elif args.dataset == 'mortality':
     file_names = ['train', 'valid', 'test']
-    file_dir = r'src/my_datasets/mimic-iii-note/mortality'
-    save_dir = r'src/my_datasets/mimic-iii-note/mortality'
+    file_dir = r'my_datasets/mimic-iii-note/mortality'
+    save_dir = r'my_datasets/mimic-iii-note/mortality'
     error_dict = {}
     for file_name in file_names:
         file_path = os.path.join(file_dir, '{}-text.json'.format(file_name))

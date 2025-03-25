@@ -1,3 +1,8 @@
+"""
+src/unstructured_note/utils/config.py
+Configuration model file for the unstructured_note module
+"""
+
 MODELS_CONFIG = [
     {"model_type": "BERT", "model_name": "BERT", "hf_id": "bert-base-uncased"},
     {"model_type": "BERT", "model_name": "ClinicalBERT", "hf_id": "medicalai/ClinicalBERT"},
