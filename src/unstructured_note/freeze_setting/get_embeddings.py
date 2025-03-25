@@ -71,8 +71,8 @@ for key in Data.keys():
     Data[key] = {'ID': [], 'text': [], 'label': []}
 if args.dataset == 'discharge':
     file_names = ['train', 'val', 'test']
-    file_dir = r'./datasets/discharge'
-    save_dir = r'./datasets/discharge'
+    file_dir = r'./my_datasets/discharge'
+    save_dir = r'./my_datasets/discharge'
 
     for file_name in file_names:
         file_path = os.path.join(file_dir, '{}.csv'.format(file_name))
