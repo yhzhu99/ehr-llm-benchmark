@@ -93,8 +93,8 @@ def process_all_models():
     for model_name in model_names:
         model_results = process_model_results(model_name)
         if model_results:
-            pd.DataFrame(model_results).to(f"logs/biosses/{model_name}/results.csv", index=False)
-            print(f"Saved performance results to {output_path}")
+            pd.DataFrame(model_results).to_csv(f"logs/biosses/{model_name}/results.csv", index=False)
+            print(f"Saved performance results for {model_name}")
             performance_results.extend(model_results)
     
     if not performance_results:
