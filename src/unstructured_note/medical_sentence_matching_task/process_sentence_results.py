@@ -24,6 +24,11 @@ def cosine_similarity(vec1, vec2):
     similarity = dot_product / (norm_vec1 * norm_vec2)
     return similarity
 
+def pearson_distance(y_true, y_pred):
+    """Calculate Pearson Distance as sqrt(1 - r), where r is Pearson correlation"""
+    pearson_corr = np.corrcoef(y_true, y_pred)[0, 1]
+    return round(np.sqrt(1 - pearson_corr), 2)
+
 def process_model_results(model_name):
     """Process results for a single model"""
     embedding_path = f"logs/biosses/{model_name}/sentence_embeddings.pkl"
@@ -54,6 +59,11 @@ def process_model_results(model_name):
     l1_pred = np.array(l1_pred)
     l2_pred = np.array(l2_pred)
     
+    # For L1 and L2, convert distances to similarities by negating
+    # (smaller distance = higher similarity)
+    l1_similarity = -l1_pred
+    l2_similarity = -l2_pred
+    
     # Calculate correlations for different methods
     results = []
     
@@ -61,27 +71,30 @@ def process_model_results(model_name):
     results.append({
         'model': model_name,
         'method': 'cosine',
+        'pearson_dist': pearson_distance(y_true, cos_pred),
         'pearson_corr': round(np.corrcoef(y_true, cos_pred)[0, 1], 2),
         'spearman_corr': round(spearmanr(y_true, cos_pred)[0], 2),
         'kendall_corr': round(kendalltau(y_true, cos_pred)[0], 2)
     })
     
-    # L1 distance results (negated since smaller distance = higher similarity)
+    # L1 distance results (converted to similarity measure)
     results.append({
         'model': model_name,
         'method': 'l1',
-        'pearson_corr': round(np.corrcoef(y_true, -l1_pred)[0, 1], 2),
-        'spearman_corr': round(spearmanr(y_true, -l1_pred)[0], 2),
-        'kendall_corr': round(kendalltau(y_true, -l1_pred)[0], 2)
+        'pearson_dist': pearson_distance(y_true, l1_similarity),
+        'pearson_corr': round(np.corrcoef(y_true, l1_similarity)[0, 1], 2),
+        'spearman_corr': round(spearmanr(y_true, l1_similarity)[0], 2),
+        'kendall_corr': round(kendalltau(y_true, l1_similarity)[0], 2)
     })
     
-    # L2 distance results (negated since smaller distance = higher similarity)
+    # L2 distance results (converted to similarity measure)
     results.append({
         'model': model_name,
         'method': 'l2',
-        'pearson_corr': round(np.corrcoef(y_true, -l2_pred)[0, 1], 2),
-        'spearman_corr': round(spearmanr(y_true, -l2_pred)[0], 2),
-        'kendall_corr': round(kendalltau(y_true, -l2_pred)[0], 2)
+        'pearson_dist': pearson_distance(y_true, l2_similarity),
+        'pearson_corr': round(np.corrcoef(y_true, l2_similarity)[0, 1], 2),
+        'spearman_corr': round(spearmanr(y_true, l2_similarity)[0], 2),
+        'kendall_corr': round(kendalltau(y_true, l2_similarity)[0], 2)
     })
     
     return results
