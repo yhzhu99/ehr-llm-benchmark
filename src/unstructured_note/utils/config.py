@@ -12,12 +12,9 @@ MODELS_CONFIG = [
     
     ### medical LLM
     {"model_type": "GPT", "model_name": "BioGPT", "hf_id": "microsoft/biogpt"},
-    {"model_type": "GPT", "model_name": "MedAlpaca", "hf_id": "medalpaca/medalpaca-7b"},
-    {"model_type": "GPT", "model_name": "HuatuoGPT", "hf_id": "FreedomIntelligence/HuatuoGPT2-7B"},
     {"model_type": "GPT", "model_name": "meditron", "hf_id": "epfl-llm/meditron-7b"},
     {"model_type": "GPT", "model_name": "OpenBioLLM", "hf_id": "aaditya/Llama3-OpenBioLLM-8B"},
     {"model_type": "GPT", "model_name": "BioMistral", "hf_id": "BioMistral/BioMistral-7B"},
-    {"model_type": "GPT", "model_name": "Baichuan-M1", "hf_id": "baichuan-inc/Baichuan-M1-14B-Base"},
     
     ### general LLM
     {"model_type": "GPT", "model_name": "GPT-2", "hf_id": "openai-community/gpt2"},
