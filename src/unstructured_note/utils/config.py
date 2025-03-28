@@ -22,7 +22,7 @@ MODELS_CONFIG = [
     {"model_type": "GPT", "model_name": "gemma-3-4b-pt", "hf_id": "google/gemma-3-4b-pt"},
 
     ### reasoning LLM
-    {"model_type": "GPT", "model_name": "Llama-3.1-Nemotron-Nano-8B-v1", "hf_id": "nvidia/Llama-3.1-Nemotron-Nano-8B-v1"},
+    {"model_type": "GPT", "model_name": "HuatuoGPT-o1-7B", "hf_id": "FreedomIntelligence/HuatuoGPT-o1-7B"},
     {"model_type": "GPT", "model_name": "QwQ-32B", "hf_id": "qingcheng-ai/QWQ-32B-FP8"},
     {"model_type": "GPT", "model_name": "DeepSeek-R1-Distill-Qwen-7B", "hf_id": "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"},
 ]
