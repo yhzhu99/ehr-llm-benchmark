@@ -1,7 +1,8 @@
 ############### self-defined
 logs/
 my_datasets/
-.DS_Store
+*.DS_Store
+prompt_*.md
 
 ###############
 
