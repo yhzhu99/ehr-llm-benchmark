@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import argparse
 from typing import List, Tuple, Any
 from pathlib import Path
@@ -43,6 +44,7 @@ def query_llm(
                 {'role': 'system', 'content': system_prompt},
                 {'role': 'user', 'content': user_prompt},
             ],
+            max_completion_tokens=1024,
         )
     except Exception as e:
         raise e
@@ -117,7 +119,7 @@ def prepare_prompt(args: argparse.Namespace) -> Tuple[str, str, str, str]:
         Tuple of (system prompt, unit range context, example text)
     """
     # Get task description
-    task_description = TASK_DESCRIPTION_AND_RESPONSE_FORMAT[args.task]
+    task_description = TASK_DESCRIPTION[args.task]
     
     # Prepare unit and reference range information if needed
     if args.unit or args.reference_range:
@@ -147,14 +149,8 @@ def prepare_prompt(args: argparse.Namespace) -> Tuple[str, str, str, str]:
             example += f'Example #{i + 1}:'
             example += EXAMPLE[args.dataset][args.task][i] + '\n'
     
-    if args.prompt_engineering:
-        example = COT[args.dataset]
-    
-    # Prepare response format
-    if args.prompt_engineering:
-        response_format = RESPONSE_FORMAT['cot']
-    else:
-        response_format = RESPONSE_FORMAT[args.task]
+    # Get the response format
+    response_format = RESPONSE_FORMAT[args.task]
 
     return SYSTEMPROMPT[args.dataset], task_description, unit_range, example, response_format
 
@@ -237,15 +233,47 @@ def process_result(result: str, args: argparse.Namespace, y: Any) -> Tuple[Any, 
         raise ValueError(f'Unknown task: {args.task}')
     
     # Parse the result into the correct format
-    try:
-        if args.prompt_engineering:
-            pred = result
-        else:
-            pred = float(result)
-    except:
+    pattern_backticks = r'```json(.*?)```'
+    match = re.search(pattern_backticks, result, re.DOTALL)
+    result_dict = None
+    if match:
+        json_string = match.group(1).strip().replace("\n", "")
+        try:
+            result_dict = json.loads(json_string)
+        except json.JSONDecodeError:
+            print(json_string)
+            raise ValueError("Invalid JSON content found in match1.")
+
+    match = re.search(pattern_backticks, result.strip() + "\"]}```", re.DOTALL)
+    if match:
+        json_string = match.group(1).strip().replace("\n", "")
+        try:
+            result_dict = json.loads(json_string)
+        except json.JSONDecodeError:
+            print(json_string)
+            raise ValueError("Invalid JSON content found in match 2.")
+
+    pattern_json_object = r'\{.*?\}'
+    match = re.search(pattern_json_object, result, re.DOTALL)
+    if match:
+        json_string = match.group(0).strip().replace("\n", "")
+        try:
+            result_dict = json.loads(json_string)
+        except json.JSONDecodeError:
+            print(json_string)
+            raise ValueError("Invalid JSON content found in match 3.")
+
+    if result_dict:
+        reasoning = result_dict.get('reasoning', None)
+        answer = result_dict.get('answer', None)
+        try:
+            pred = float(answer)
+        except:
             pred = 0.501
+    else:
+        raise ValueError("No valid JSON content found.")
     
-    return pred, label
+    return pred, label, reasoning
 
 
 def run(args: argparse.Namespace):
@@ -261,6 +289,8 @@ def run(args: argparse.Namespace):
     # Validate arguments
     assert args.dataset in ['tjh', 'mimic-iv'], f'Unknown dataset: {args.dataset}'
     assert args.task in ['outcome', 'readmission'], f'Unknown task: {args.task}'
+    if args.task == 'readmission':
+        assert args.dataset == 'mimic-iv', 'Readmission task is only available for MIMIC-IV dataset'
 
     # Load the dataset
     xs, ys, pids, missing_masks, features, record_times = load_dataset(args)
@@ -338,7 +368,7 @@ def run(args: argparse.Namespace):
             completion_tokens += completion_token
             
             # Process the result
-            pred, label = process_result(result, args, y)
+            pred, label, _ = process_result(result, args, y)
             
             # Save the result
             pd.to_pickle({
