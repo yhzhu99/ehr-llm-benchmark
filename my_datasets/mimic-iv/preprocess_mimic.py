@@ -87,6 +87,7 @@ pd.to_pickle(test_raw_x, os.path.join(save_dir, "test_raw_x.pkl"))
 pd.to_pickle(test_y, os.path.join(save_dir, "test_y.pkl"))
 pd.to_pickle(test_pid, os.path.join(save_dir, "test_pid.pkl"))
 pd.to_pickle(los_info, os.path.join(save_dir, "los_info.pkl")) # LOS statistics (calculated from the train set)
+pd.to_pickle(labtest_features, os.path.join(save_dir, "labtest_features.pkl")) # All features
 
 # Stratified split dataset into `Training`, `Validation` and `Test` sets
 # Stratified dataset according to `Outcome` column
@@ -161,3 +162,4 @@ pd.to_pickle(test_x, os.path.join(save_dir, "test_x.pkl"))
 pd.to_pickle(test_y, os.path.join(save_dir, "test_y.pkl"))
 pd.to_pickle(test_pid, os.path.join(save_dir, "test_pid.pkl"))
 pd.to_pickle(los_info, os.path.join(save_dir, "los_info.pkl")) # LOS statistics (calculated from the train set)
+pd.to_pickle(labtest_features, os.path.join(save_dir, "labtest_features.pkl")) # All features
