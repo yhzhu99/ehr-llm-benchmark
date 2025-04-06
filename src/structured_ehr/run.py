@@ -367,12 +367,7 @@ def run(args: argparse.Namespace):
     labels = []
     preds = []
 
-    i = 0
     for x, y, pid, record_time, missing_mask in tqdm(zip(xs, ys, pids, record_times, missing_masks), total=len(xs)):
-        i += 1
-        if i >= 5:
-            break
-
         # Process patient ID
         if isinstance(pid, float):
             pid = str(round(pid))
