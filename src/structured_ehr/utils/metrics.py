@@ -14,9 +14,13 @@ def get_all_metrics(preds, labels, task, los_info):
         labels = torch.tensor(labels)
 
     if task in ["outcome", "readmission"]:
+        if len(labels.shape) > 1 and labels.shape[-1] > 1:
+            labels = labels[:, 0] if task == "outcome" else labels[:, 2]
         return get_binary_metrics(preds, labels)
     elif task == "los":
-        return get_regression_metrics(reverse_los(preds, los_info), reverse_los(labels[:, 1], los_info))
+        if len(labels.shape) > 1 and labels.shape[-1] > 1:
+            labels = labels[:, 1]
+        return get_regression_metrics(reverse_los(preds, los_info), reverse_los(labels, los_info))
     elif task == "multitask":
         return get_binary_metrics(preds[:, 0], labels[:, 0]) | get_regression_metrics(reverse_los(preds[:, 1], los_info), reverse_los(labels[:, 1], los_info))
     else:
@@ -80,3 +84,20 @@ def get_regression_metrics(preds, labels):
         "mae": mae.compute().item(),
         "r2": r2.compute().item(),
     }
+
+
+def check_metric_is_better(cur_best, main_metric, score, task):
+    if task=="los":
+        if cur_best=={}:
+            return True
+        if score < cur_best[main_metric]:
+            return True
+        return False
+    elif task in ["outcome", "multitask"]:
+        if cur_best=={}:
+            return True
+        if score > cur_best[main_metric]:
+            return True
+        return False
+    else:
+        raise ValueError("Task not supported")
