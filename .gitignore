@@ -1,5 +1,7 @@
 ############### self-defined
 logs/
+logits/
+performance/
 my_datasets/mimic-iv/*
 !my_datasets/mimic-iv/preprocess_mimic.py
 my_datasets/tjh/*
