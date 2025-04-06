@@ -14,8 +14,8 @@ def get_all_metrics(preds, labels, task, los_info):
         preds = torch.tensor(preds)
     if isinstance(labels, torch.Tensor) == False:
         labels = torch.tensor(labels)
-    
-    if task == "outcome":
+
+    if task in ["outcome", "readmission"]:
         return get_binary_metrics(preds, labels)
     elif task == "los":
         return get_regression_metrics(reverse_los(preds, los_info), reverse_los(labels[:, 1], los_info))
@@ -23,4 +23,3 @@ def get_all_metrics(preds, labels, task, los_info):
         return get_binary_metrics(preds[:, 0], labels[:, 0]) | get_regression_metrics(reverse_los(preds[:, 1], los_info), reverse_los(labels[:, 1], los_info))
     else:
         raise ValueError("Task not supported")
-    

@@ -22,13 +22,13 @@ def get_binary_metrics(preds, labels):
     auprc(preds, labels)
     f1(preds, labels)
 
-    minpse_score = minpse(preds, labels) 
+    minpse_score = minpse(preds, labels)
 
     # return a dictionary
     return {
-        "accuracy": accuracy.compute().item(),
         "auroc": auroc.compute().item(),
         "auprc": auprc.compute().item(),
-        "f1": f1.compute().item(),
         "minpse": minpse_score,
+        "f1": f1.compute().item(),
+        "accuracy": accuracy.compute().item(),
     }
