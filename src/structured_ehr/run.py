@@ -2,8 +2,7 @@ import json
 import os
 import re
 import argparse
-from typing import List, Tuple, Any
-from pathlib import Path
+from typing import List, Tuple, Dict, Any
 
 from tqdm import tqdm
 from tenacity import (
@@ -15,6 +14,7 @@ from openai import OpenAI
 import pandas as pd
 
 from structured_ehr.utils.llm_configs import LLM_MODELS_SETTINGS
+from structured_ehr.utils import get_all_metrics
 from structured_ehr.prompts.prompt_template import *
 
 
@@ -180,29 +180,30 @@ def setup_output_paths(args: argparse.Namespace) -> Tuple[str, str]:
         args: Command line arguments
 
     Returns:
-        Tuple of (logits path, prompts path)
+        Tuple of (logits path, prompts path, performance path)
     """
     save_filename = f'{str(args.n_shot)}shot'
     if args.unit:
         save_filename += '_unit'
     if args.reference_range:
         save_filename += '_range'
-    if args.prompt_engineering:
-        save_filename += '_cot'
 
     if args.output_logits:
         logits_path = os.path.join(args.logits_root, args.dataset, args.task, args.model, save_filename)
-        Path(logits_path).mkdir(parents=True, exist_ok=True)
+        perf_path = os.path.join(args.perf_root, args.dataset, args.task, args.model, save_filename)
+        os.makedirs(logits_path, exist_ok=True)
+        os.makedirs(perf_path, exist_ok=True)
     else:
         logits_path = ''
+        perf_path = ''
 
     if args.output_prompts:
         prompts_path = os.path.join(args.prompts_root, args.dataset, args.task, args.model, save_filename)
-        Path(prompts_path).mkdir(parents=True, exist_ok=True)
+        os.makedirs(prompts_path, exist_ok=True)
     else:
         prompts_path = ''
 
-    return logits_path, prompts_path, save_filename
+    return logits_path, prompts_path, perf_path, save_filename
 
 
 def load_dataset(args: argparse.Namespace) -> Tuple[List, List, List, List, List, List]:
@@ -290,6 +291,46 @@ def process_result(result: str, args: argparse.Namespace, y: Any) -> Tuple[Any, 
     return pred, label, reasoning
 
 
+def evaluate_binary_task(logits: Dict) -> pd.DataFrame:
+    """
+    Evaluate binary task performance.
+
+    Args:
+        logits: Dictionary containing labels and predictions
+
+    Returns:
+        DataFrame with performance metrics
+    """
+    _labels = logits['labels']
+    _preds = logits['preds']
+
+    # Calculate metrics for all samples
+    _metrics = get_all_metrics(_preds, _labels, 'outcome', None)
+
+    # Filter out unknown samples
+    labels = []
+    preds = []
+    for label, pred in zip(_labels, _preds):
+        if pred != 0.501:
+            labels.append(label)
+            preds.append(pred)
+
+    # Calculate metrics for filtered samples
+    metrics = get_all_metrics(preds, labels, 'outcome', None)
+
+    # Prepare data for DataFrame
+    data = {'count': [len(_labels), len(labels)]}
+    data = dict(data, **{
+        k: [f'{v1 * 100:.2f}', f'{v2 * 100:.2f}'] for k, v1, v2 in zip(
+            _metrics.keys(),
+            _metrics.values(),
+            metrics.values()
+        )
+    })
+
+    return pd.DataFrame(data=data, index=['all', 'w/o unknown'])
+
+
 def run(args: argparse.Namespace):
     """
     Main function to run the LLM evaluation.
@@ -320,13 +361,18 @@ def run(args: argparse.Namespace):
     llm = OpenAI(api_key=llm_config['api_key'], base_url=llm_config['base_url'])
 
     # Setup output paths
-    sub_logits_path, sub_prompts_path, save_filename = setup_output_paths(args)
+    logits_path, prompts_path, perf_path, save_filename = setup_output_paths(args)
 
     # Process each patient
     labels = []
     preds = []
 
+    i = 0
     for x, y, pid, record_time, missing_mask in tqdm(zip(xs, ys, pids, record_times, missing_masks), total=len(xs)):
+        i += 1
+        if i >= 5:
+            break
+
         # Process patient ID
         if isinstance(pid, float):
             pid = str(round(pid))
@@ -360,7 +406,7 @@ def run(args: argparse.Namespace):
 
         # Save prompts if required
         if args.output_prompts:
-            with open(os.path.join(sub_prompts_path, f'{pid}.txt'), 'w') as f:
+            with open(os.path.join(prompts_path, f'{pid}.txt'), 'w') as f:
                 f.write('System Prompt: ' + system_prompt + '\n\n')
                 f.write('User Prompt: ' + user_prompt + '\n')
 
@@ -368,7 +414,7 @@ def run(args: argparse.Namespace):
         if args.output_logits:
             try:
                 result, prompt_token, completion_token = query_llm(
-                    model=args.model,
+                    model_name=llm_config['model_name'],
                     llm=llm,
                     system_prompt=system_prompt,
                     user_prompt=user_prompt
@@ -381,25 +427,34 @@ def run(args: argparse.Namespace):
             completion_tokens += completion_token
 
             # Process the result
-            pred, label, _ = process_result(result, args, y)
+            pred, label, reasoning = process_result(result, args, y)
 
             # Save the result
             pd.to_pickle({
-                'prompt': user_prompt,
+                'system_prompt': system_prompt,
+                'user_prompt': user_prompt,
+                'reasoning': reasoning,
                 'pred': pred,
                 'label': label,
-            }, os.path.join(sub_logits_path, f'{pid}.pkl'))
+            }, os.path.join(logits_path, f'{pid}.pkl'))
 
             labels.append(label)
             preds.append(pred)
 
-    # Save the final results
     if args.output_logits:
+        # Save the final results
         pd.to_pickle({
             'config': vars(args),
             'preds': preds,
             'labels': labels,
-        }, os.path.join(sub_logits_path, save_filename + '.pkl'))
+        }, os.path.join(logits_path, f'0_{save_filename}.pkl'))
+
+        # Save performance metrics
+        performance_metrics = evaluate_binary_task({
+            'labels': labels,
+            'preds': preds,
+        })
+        performance_metrics.to_csv(os.path.join(perf_path, f'{save_filename}.csv'), index=False)
 
 
 def parse_args():
@@ -424,8 +479,6 @@ def parse_args():
                        help='Include unit information in the prompt')
     parser.add_argument('--reference_range', '-r', action='store_true',
                        help='Include reference range information in the prompt')
-    parser.add_argument('--prompt_engineering', action='store_true',
-                       help='Use chain-of-thought prompt engineering')
 
     # Output configuration
     parser.add_argument('--output_logits', action='store_true', default=False,
@@ -436,6 +489,8 @@ def parse_args():
                        help='Root directory for saving logits')
     parser.add_argument('--prompts_root', type=str, default='logs',
                        help='Root directory for saving prompts')
+    parser.add_argument('--perf_root', type=str, default='performance',
+                        help='Root directory for saving performance metrics')
 
     return parser.parse_args()
 
@@ -445,7 +500,7 @@ if __name__ == '__main__':
     args = parse_args()
 
     # Print configuration
-    print(f"Running with configuration: Model: {args.model}, Dataset: {args.dataset}, Task: {args.task}. Output {'logits' if args.output_logits else 'prompts' if args.output_prompts else 'none'}.")
+    print(f"Running with configuration: Model: {args.model}, Dataset: {args.dataset}, Task: {args.task}. Output {'logits and performance' if args.output_logits else 'prompts' if args.output_prompts else 'none'}.")
 
     # Run the evaluation
     run(args)
