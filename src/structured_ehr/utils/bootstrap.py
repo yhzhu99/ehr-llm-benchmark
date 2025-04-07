@@ -1,12 +1,20 @@
 import numpy as np
 
-from structured_ehr.utils.metrics import get_binary_metrics
+from structured_ehr.utils.metrics import get_all_metrics
 
 
 def bootstrap(preds, labels, K=100, N=1000, seed=42):
     assert len(preds) == len(labels), "Predictions and labels must have the same length"
     length = len(preds)
+
+    # Set the random seed for reproducibility
     np.random.seed(seed)
+
+    # Check if preds and labels are numpy arrays, if not convert them to numpy arrays
+    if not isinstance(preds, np.ndarray):
+        preds = np.array(preds)
+    if not isinstance(labels, np.ndarray):
+        labels = np.array(labels)
 
     # Initialize a list to store bootstrap samples
     bootstrapped_samples = []
@@ -26,12 +34,12 @@ def bootstrap(preds, labels, K=100, N=1000, seed=42):
     return bootstrapped_samples
 
 
-def export_metrics(bootstrapped_samples):
+def export_metrics(bootstrapped_samples, config):
     metrics = {}
 
     for sample in bootstrapped_samples:
         sample_preds, sample_labels = sample
-        res = get_binary_metrics(sample_preds, sample_labels)
+        res = get_all_metrics(sample_preds, sample_labels, config['task'], None)
 
         for k, v in res.items():
             if k not in metrics:
@@ -48,7 +56,7 @@ def export_metrics(bootstrapped_samples):
     return metrics
 
 
-def run_bootstrap(preds, labels, seed=42):
+def run_bootstrap(preds, labels, config, seed=42):
     bootstrap_samples = bootstrap(preds, labels, seed=seed)
-    metrics = export_metrics(bootstrap_samples)
+    metrics = export_metrics(bootstrap_samples, config)
     return metrics
