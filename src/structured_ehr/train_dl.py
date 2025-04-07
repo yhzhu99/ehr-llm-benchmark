@@ -326,7 +326,6 @@ if __name__ == "__main__":
         perf_df.to_csv(os.path.join(save_dir, "performance.csv"), index=False)
         pd.to_pickle(outs, os.path.join(save_dir, "outputs.pkl"))
         print(f"Performance and outputs saved to {save_dir}")
-        print("==========================\n")
 
         # Append performance to the all performance DataFrame
         perf_all_df = pd.concat([perf_all_df, perf_df], ignore_index=True)
