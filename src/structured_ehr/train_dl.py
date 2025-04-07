@@ -22,7 +22,7 @@ import structured_ehr.models as models
 from structured_ehr.utils.bootstrap import run_bootstrap
 from structured_ehr.utils.metrics import get_all_metrics, check_metric_is_better
 from structured_ehr.utils.loss import get_loss
-from structured_ehr.utils.utils import generate_mask
+from structured_ehr.utils.utils import generate_mask, unpad_y
 
 
 class EhrDataset(Dataset):
@@ -144,14 +144,12 @@ class DlPipeline(L.LightningModule):
     def _get_loss(self, x, y, lens):
         if self.model_name == "ConCare":
             y_hat, embedding, decov_loss = self(x, lens)
-            y = y[:, -1]
-            y_hat = y_hat[:, -1].squeeze()
+            y_hat, y = unpad_y(y_hat, y, lens)
             loss = get_loss(y_hat, y, self.task)
             loss += 10 * decov_loss
         else:
             y_hat, embedding = self(x, lens)
-            y = y[:, -1]
-            y_hat = y_hat[:, -1].squeeze()
+            y_hat, y = unpad_y(y_hat, y, lens)
             loss = get_loss(y_hat, y, self.task)
         return loss, y, y_hat, embedding
 
@@ -186,13 +184,13 @@ class DlPipeline(L.LightningModule):
     def test_step(self, batch, batch_idx):
         x, y, lens, pid = batch
         loss, y, y_hat, embedding = self._get_loss(x, y, lens)
-        outs = {'pid': pid, 'preds': y_hat, 'labels': y}
+        outs = {'pids': pid, 'preds': y_hat, 'labels': y}
         self.test_step_outputs.append(outs)
         return loss
 
     def on_test_epoch_end(self):
-        preds = torch.cat([x['preds'] for x in self.test_step_outputs]).detach().cpu()
-        labels = torch.cat([x['labels'] for x in self.test_step_outputs]).detach().cpu()
+        preds = torch.cat([x['preds'] for x in self.test_step_outputs]).detach().cpu().numpy().tolist()
+        labels = torch.cat([x['labels'] for x in self.test_step_outputs]).detach().cpu().numpy().tolist()
         pids = []
         pids.extend([x['pids'] for x in self.test_step_outputs])
         self.test_performance = get_all_metrics(preds, labels, self.task, self.los_info)
@@ -211,7 +209,7 @@ def run_experiment(config):
     dm = EhrDataModule(dataset_path, batch_size=config["batch_size"])
 
     # logger
-    logger = CSVLogger(save_dir="logs", name=f'{config["dataset"]}/{config["task"]}', version=f"{config['model']}")
+    logger = CSVLogger(save_dir="logs", name=f'{config["dataset"]}/{config["task"]}/dl_models', version=f"{config['model']}")
 
     # main metric
     main_metric = "auroc" if config["task"] in ["outcome", "readmission"] else "mse"
@@ -251,7 +249,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train and evaluate deep learning models for EHR data')
 
     # Basic configurations
-    parser.add_argument('--model', '-m', type=str, required=True, help='Model name')
+    parser.add_argument('--model', '-m', type=str, nargs='+', required=True, help='Model name')
     parser.add_argument('--dataset', '-d', type=str, required=True, help='Dataset name', choices=['tjh', 'mimic-iv'])
     parser.add_argument('--task', '-t', type=str, required=True, help='Task name', choices=['outcome', 'readmission'])
 
@@ -276,7 +274,6 @@ if __name__ == "__main__":
 
     # Set up the configuration dictionary
     config = {
-        'model': args.model,
         'dataset': args.dataset,
         'task': args.task,
         'hidden_dim': args.hidden_dim,
@@ -297,19 +294,44 @@ if __name__ == "__main__":
     else:
         raise ValueError("Unsupported dataset. Choose either 'tjh' or 'mimic-iv'.")
 
-    # Print the configuration
-    print("Configuration:")
-    for key, value in config.items():
-        print(f"{key}: {value}")
+    perf_all_df = pd.DataFrame()
+    for model in args.model:
+        # Add the model name to the configuration
+        config['model'] = model
 
-    # Run the experiment
-    perf, outs = run_experiment(config)
+        # Print the configuration
+        print("Configuration:")
+        for key, value in config.items():
+            print(f"{key}: {value}")
 
-    # Save the performance and outputs
-    save_dir = os.path.join(args.output_root, f"{args.dataset}/dl_models/{args.model}")
-    os.makedirs(save_dir, exist_ok=True)
-    perf_df = pd.DataFrame(perf, index=[0])
-    perf_df.to_csv(os.path.join(save_dir, "performance.csv"), index=False)
-    outs_df = pd.DataFrame(outs)
-    outs_df.to_csv(os.path.join(save_dir, "outputs.csv"), index=False)
-    print(f"Performance and outputs saved to {save_dir}")
+        # Run the experiment
+        perf, outs = run_experiment(config)
+
+        # Save the performance and outputs
+        save_dir = os.path.join(args.output_root, f"{args.dataset}/{args.task}/dl_models/{model}")
+        os.makedirs(save_dir, exist_ok=True)
+
+        # Run bootstrap
+        perf_boot = run_bootstrap(outs['preds'], outs['labels'], config)
+        for key, value in perf_boot.items():
+            perf_boot[key] = f'{value["mean"] * 100:.2f}±{value["std"] * 100:.2f}'
+
+        # Save performance and outputs
+        perf_boot = dict({
+            'model': model,
+            'dataset': args.dataset,
+            'task': args.task,
+        }, **perf_boot)
+        perf_df = pd.DataFrame(perf_boot, index=[0])
+        perf_df.to_csv(os.path.join(save_dir, "performance.csv"), index=False)
+        pd.to_pickle(outs, os.path.join(save_dir, "outputs.pkl"))
+        print(f"Performance and outputs saved to {save_dir}")
+        print("==========================\n")
+
+        # Append performance to the all performance DataFrame
+        perf_all_df = pd.concat([perf_all_df, perf_df], ignore_index=True)
+
+    # Save all performance
+    perf_all_df.to_csv(os.path.join(args.output_root, f"{args.dataset}/{args.task}/dl_models/all_performance.csv"), index=False)
+    print(f"All performances saved to {os.path.join(args.output_root, f'{args.dataset}/{args.task}/dl_models/all_performance.csv')}")
+    print("All experiments completed.")
