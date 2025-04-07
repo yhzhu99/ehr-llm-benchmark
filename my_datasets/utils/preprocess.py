@@ -175,6 +175,25 @@ def export_record_time(
     return record_time
 
 
+def export_note(
+    df: pd.DataFrame,
+    note_column: str = "Text",
+) -> List:
+    """
+    导出患者的临床笔记信息，按患者ID分组。
+
+    Args:
+        df: 包含患者数据的DataFrame
+
+    Returns:
+        临床笔记列表
+    """
+    grouped = df.groupby("PatientID")
+    notes = grouped.first()[note_column].tolist()
+
+    return notes
+
+
 def filter_outlier(element: float) -> float:
     """
     过滤异常值，将绝对值大于10000的值替换为0。
