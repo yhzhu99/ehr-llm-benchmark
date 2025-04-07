@@ -1,6 +1,11 @@
 ############### self-defined
 logs/
-my_datasets/
+logits/
+performance/
+my_datasets/mimic-iv/*
+!my_datasets/mimic-iv/preprocess_mimic.py
+my_datasets/tjh/*
+!my_datasets/tjh/preprocess_tjh.py
 *.DS_Store
 prompt_*.md
 
