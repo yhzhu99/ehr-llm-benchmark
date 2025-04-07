@@ -2,15 +2,17 @@ import torch
 from torch.nn.utils.rnn import unpad_sequence
 
 
-def unpad_y(y_pred, y_true, lens):
-    raw_device = y_pred.device
+def unpad_y(preds, labels, lens):
+    raw_device = preds.device
     device = torch.device("cpu")
-    y_pred, y_true, lens = y_pred.to(device), y_true.to(device), lens.to(device)
-    y_pred_unpad = unpad_sequence(y_pred, batch_first=True, lengths=lens)
-    y_pred_stack = torch.vstack(y_pred_unpad).squeeze(dim=-1)
-    y_true_unpad = unpad_sequence(y_true, batch_first=True, lengths=lens)
-    y_true_stack = torch.vstack(y_true_unpad).squeeze(dim=-1)
-    return y_pred_stack.to(raw_device), y_true_stack.to(raw_device)
+    preds, labels, lens = preds.to(device), labels.to(device), lens.to(device)
+    preds_unpad = unpad_sequence(preds, batch_first=True, lengths=lens)
+    preds_unpad = [p[-1] for p in preds_unpad]
+    preds_stack = torch.vstack(preds_unpad).squeeze(dim=-1)
+    labels_unpad = unpad_sequence(labels, batch_first=True, lengths=lens)
+    labels_unpad = [l[-1] for l in labels_unpad]
+    labels_stack = torch.vstack(labels_unpad).squeeze(dim=-1)
+    return preds_stack.to(raw_device), labels_stack.to(raw_device)
 
 
 def unpad_batch(x, y, lens):
