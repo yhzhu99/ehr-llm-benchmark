@@ -13,7 +13,6 @@ import os
 from sklearn.cluster import KMeans
 from sklearn.metrics import calinski_harabasz_score
 
-from unstructured_note.utils.build_tree import find_distance, build_tree_fun
 from unstructured_note.utils.config import MODELS_CONFIG
 
 # Create model lists
@@ -27,19 +26,34 @@ parser.add_argument('--ks', type=str, default='2,5,10,15,20,25,30,35,40,45,50',
                     help='Comma-separated list of cluster numbers')
 args = parser.parse_args()
 
-def cal_dist(code1, code2):
-    """Calculate distance between two ICD codes using the tree"""
-    dis = find_distance(tree, code1, code2)
-    return dis
+def calculate_icd_distance(code1, code2):
+    """
+    Calculate the distance between two ICD codes in the ICD tree hierarchy.
+
+    Distance is calculated as the sum of:
+    1. The distance from code1 to the lowest common ancestor (LCA)
+    2. The distance from code2 to the LCA
+    """
+    # Find the common prefix (LCA)
+    min_len = min(len(code1), len(code2))
+    lca_len = 0
+
+    for i in range(min_len):
+        if code1[i] == code2[i]:
+            lca_len += 1
+        else:
+            break
+
+    # Calculate distance from each code to the LCA
+    dist1 = len(code1) - lca_len
+    dist2 = len(code2) - lca_len
+
+    # Total distance
+    return dist1 + dist2
 
 def run_clustering(model_name, k_values):
     """Run clustering with specified k values for a given model"""
     print(f"Running clustering for model: {model_name}")
-
-    # Build ICD tree
-    tree_path = 'my_datasets/icd10/icd10cm_order_2023.txt'
-    global tree
-    tree = build_tree_fun(tree_path)
 
     # Load embeddings
     embedding_path = f'logs/icd/{model_name}/icd_embeddings.pkl'
@@ -53,11 +67,10 @@ def run_clustering(model_name, k_values):
     DATA = []
     CODE = []
     for disease_info in embeddings:
-        code = disease_info["code"][0] if isinstance(disease_info["code"], list) else disease_info["code"]
+        code = disease_info["code"][0]  # disease_info["code"] always has one item
         embedding = disease_info["embedding"]
-        if len(code) <= 4:
-            CODE.append(code)
-            DATA.append(embedding)
+        CODE.append(code)
+        DATA.append(embedding)
 
     # Ensure output directory exists
     output_dir = Path(f'logs/icd/{model_name}')
@@ -86,35 +99,22 @@ def run_clustering(model_name, k_values):
             code_cur_cluster = np.array(CODE)[kmeans.labels_ == i]
             distance_temp = []
 
-            # Skip empty clusters
+            # Skip empty clusters or clusters with only one element
             if len(code_cur_cluster) <= 1:
                 distances.append(0)
                 continue
 
-            for code_1 in range(len(code_cur_cluster) - 1):
-                for code_2 in range(code_1 + 1, len(code_cur_cluster)):
-                    # Simple distance calculation based on code structure
-                    if code_cur_cluster[code_1][0] == code_cur_cluster[code_2][0]:
-                        if len(code_cur_cluster[code_1]) == len(code_cur_cluster[code_2]) == 3:
-                            distance_temp.append(2)
-                        elif len(code_cur_cluster[code_1]) == len(code_cur_cluster[code_2]) == 4:
-                            if code_cur_cluster[code_1][:3] == code_cur_cluster[code_2][:3]:
-                                distance_temp.append(2)
-                            else:
-                                distance_temp.append(4)
-                        else:
-                            if code_cur_cluster[code_1][:3] == code_cur_cluster[code_2][:3]:
-                                distance_temp.append(1)
-                            else:
-                                distance_temp.append(3)
-                    else:
-                        if len(code_cur_cluster[code_1]) == len(code_cur_cluster[code_2]) == 3:
-                            distance_temp.append(4)
-                        elif len(code_cur_cluster[code_1]) == len(code_cur_cluster[code_2]) == 4:
-                            distance_temp.append(6)
-                        else:
-                            distance_temp.append(5)
+            # Calculate pairwise distances within the cluster
+            for code_1_idx in range(len(code_cur_cluster) - 1):
+                for code_2_idx in range(code_1_idx + 1, len(code_cur_cluster)):
+                    code1 = code_cur_cluster[code_1_idx]
+                    code2 = code_cur_cluster[code_2_idx]
 
+                    # Calculate the distance using our function
+                    distance = calculate_icd_distance(code1, code2)
+                    distance_temp.append(distance)
+
+            # Calculate the average distance for this cluster
             distances.append(np.mean(distance_temp) if distance_temp else 0)
 
         distance_time = time.time() - start_time
