@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from utils.preprocess import forward_fill_pipeline, normalize_dataframe, export_missing_mask, export_record_time
+from utils.preprocess import forward_fill_pipeline, normalize_dataframe, export_missing_mask, export_record_time, export_note
 
 data_dir = os.path.dirname(os.path.abspath(__file__))
 raw_data_dir = os.path.join(data_dir, 'raw')
@@ -59,6 +59,10 @@ for split, df_split in zip(['train', 'val', 'test'], [train_df, val_df, test_df]
     # Export the missing mask
     missing_mask = export_missing_mask(df_split, demographic_features, labtest_features)
     pd.to_pickle(missing_mask, os.path.join(save_dir, f"{split}_missing_mask.pkl"))
+
+    # Export the note
+    note = export_note(df_split)
+    pd.to_pickle(note, os.path.join(save_dir, f"{split}_note.pkl"))
 
 # Export the raw data
 _, train_raw_x, _, _ = forward_fill_pipeline(train_df, None, demographic_features, labtest_features, target_features, [])
