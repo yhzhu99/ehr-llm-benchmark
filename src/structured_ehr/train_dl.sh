@@ -12,7 +12,7 @@ DATASET_TASK_OPTIONS=(
 )
 
 # 计算总运行次数用于显示进度
-TOTAL_RUNS=$((${#MODEL_OPTIONS[@]} * ${#DATASET_TASK_OPTIONS[@]}))
+TOTAL_RUNS=$((${#DATASET_TASK_OPTIONS[@]}))
 CURRENT_RUN=0
 
 echo "Starting evaluation with ${TOTAL_RUNS} different configurations..."
@@ -21,28 +21,28 @@ echo "Starting evaluation with ${TOTAL_RUNS} different configurations..."
 for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
     # 解析数据集和任务
     IFS=":" read -r DATASET TASK <<< "$DATASET_TASK"
-    for MODEL in "${MODEL_OPTIONS[@]}"; do
-        # 增加计数器
-        CURRENT_RUN=$((CURRENT_RUN + 1))
+    # 增加计数器
+    CURRENT_RUN=$((CURRENT_RUN + 1))
 
-        # 构建命令
-        CMD="python train_dl.py -d ${DATASET} -t ${TASK} -m ${MODEL}"
+    # 构建命令
+    CMD="python train_dl.py -d ${DATASET} -t ${TASK} -m ${MODEL_OPTIONS[@]}"
 
-        # 打印进度和当前配置
-        echo "[$CURRENT_RUN/$TOTAL_RUNS] Running configuration..."
+    # 打印进度和当前配置
+    echo "[$CURRENT_RUN/$TOTAL_RUNS] Running configuration..."
+    echo "CMD: $CMD"
+    echo "----------------------------------------"
 
-        # 执行命令
-        eval "$CMD"
+    # 执行命令
+    eval "$CMD"
 
-        # 检查命令执行状态
-        if [ $? -eq 0 ]; then
-          echo "[$CURRENT_RUN/$TOTAL_RUNS] Successfully completed..."
-        else
-          echo "[$CURRENT_RUN/$TOTAL_RUNS] Failed..."
-        fi
+    # 检查命令执行状态
+    if [ $? -eq 0 ]; then
+      echo "[$CURRENT_RUN/$TOTAL_RUNS] Successfully completed..."
+    else
+      echo "[$CURRENT_RUN/$TOTAL_RUNS] Failed..."
+    fi
 
-        echo "----------------------------------------"
-    done
+    echo "----------------------------------------"
 done
 
 echo "All training completed!"
