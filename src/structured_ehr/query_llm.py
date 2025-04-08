@@ -56,6 +56,8 @@ def format_input(
     dataset: str,
     features: List[str],
     mask: List[List[int]],
+    unit: bool = False,
+    reference_range: bool = False,
 ) -> str:
     """
     Format patient data for LLM input.
@@ -114,9 +116,21 @@ def format_input(
                 value = str(visit[i]) if m[i] == 0 else 'NaN'
                 feature_values[feature].append(value)
 
+    # Prepare unit and reference range information if needed
+    unit_values = dict(json.load(open(UNIT[args.dataset])))
+    range_values = dict(json.load(open(REFERENCE_RANGE[args.dataset])))
+
     detail = ''
     for feature in features:
-        detail += f'- {feature}: [{", ".join(feature_values[feature])}]\n'
+        unit_range = ''
+        if unit or reference_range:
+            unit_range = ' ('
+            if unit:
+                unit_range += f'{unit_values[feature]} '
+            if reference_range:
+                unit_range += range_values[feature]
+            unit_range = unit_range.rstrip() + ')'
+        detail += f'- {feature}{unit_range}: [{", ".join(feature_values[feature])}]\n'
     return detail.strip()
 
 
@@ -136,22 +150,6 @@ def prepare_prompt(args: argparse.Namespace) -> Tuple[str, str, str, str]:
     # Get task description
     task_description = TASK_DESCRIPTION[args.task].strip()
 
-    # Prepare unit and reference range information if needed
-    if args.unit or args.reference_range:
-        unit_range = ''
-        unit_values = dict(json.load(open(UNIT[args.dataset])))
-        range_values = dict(json.load(open(REFERENCE_RANGE[args.dataset])))
-        for feature in unit_values.keys():
-            unit_range += f'- {feature}: '
-            if args.unit:
-                unit_range = unit_range + unit_values[feature] + ' '
-            if args.reference_range:
-                unit_range = unit_range + range_values[feature]
-            unit_range += '\n'
-        unit_range = unit_range.strip()
-    else:
-        unit_range = ''
-
     # Prepare few-shot examples
     if args.n_shot == 0:
         example = ''
@@ -169,7 +167,7 @@ def prepare_prompt(args: argparse.Namespace) -> Tuple[str, str, str, str]:
     # Get the response format
     response_format = RESPONSE_FORMAT[args.task].strip()
 
-    return system_prompt, task_description, unit_range, example, response_format
+    return system_prompt, task_description, example, response_format
 
 
 def setup_output_paths(args: argparse.Namespace) -> Tuple[str, str]:
@@ -219,7 +217,7 @@ def load_dataset(args: argparse.Namespace) -> Tuple[List, List, List, List, List
     dataset_path = os.path.join(os.path.dirname(__file__), '..', '..', f'my_datasets/{args.dataset}/processed/split')
     data = pd.read_pickle(os.path.join(dataset_path, 'test_data.pkl'))
     ids = [item['id'] for item in data]
-    xs = [item['x_ts'] for item in data]
+    xs = [item['x_llm_ts'] for item in data]
     ys = [item[f'y_{args.task}'] for item in data]
     missing_masks = [item['missing_mask'] for item in data]
     record_times = [item['record_time'] for item in data]
@@ -348,7 +346,7 @@ def run(args: argparse.Namespace):
     ids, xs, ys, missing_masks, record_times, features = load_dataset(args)
 
     # Prepare the system prompt, unit range context, and examples
-    system_prompt, task_description, unit_range, example, response_format = prepare_prompt(args)
+    system_prompt, task_description, example, response_format = prepare_prompt(args)
 
     # Initialize LLM
     if 'deepseek' in args.model.lower():
@@ -380,13 +378,14 @@ def run(args: argparse.Namespace):
             patient=x,
             dataset=args.dataset,
             features=features,
-            mask=missing_mask
+            mask=missing_mask,
+            unit=args.unit,
+            reference_range=args.reference_range,
         )
 
         # Create the user prompt
         user_prompt = USERPROMPT.format(
             TASK_DESCRIPTION_AND_RESPONSE_FORMAT=task_description,
-            UNIT_RANGE_CONTEXT=unit_range,
             EXAMPLE=example,
             SEX=sex,
             AGE=age,
