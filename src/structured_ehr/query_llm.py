@@ -14,8 +14,8 @@ from openai import OpenAI
 import pandas as pd
 
 from structured_ehr.utils.llm_configs import LLM_MODELS_SETTINGS
-from structured_ehr.utils import get_all_metrics
-from structured_ehr.prompts.prompt_template import *
+from structured_ehr.utils.metrics import get_all_metrics
+from structured_ehr.prompts.prompt_template import SYSTEMPROMPT, USERPROMPT, UNIT, REFERENCE_RANGE, TASK_DESCRIPTION, RESPONSE_FORMAT, EXAMPLE
 
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
