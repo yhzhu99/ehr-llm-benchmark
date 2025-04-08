@@ -10,13 +10,11 @@ from lightning.pytorch.loggers import CSVLogger
 
 # PyTorch
 import torch
-import torch.nn.functional as F
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 
 # Data Processing
 import pandas as pd
-import numpy as np
 
 import structured_ehr.models as models
 from structured_ehr.utils.bootstrap import run_bootstrap
@@ -173,11 +171,13 @@ class DlPipeline(L.LightningModule):
         loss = torch.stack([x['val_loss'] for x in self.validation_step_outputs]).mean().detach().cpu()
         self.log("val_loss_epoch", loss)
         metrics = get_all_metrics(preds, labels, self.task, self.los_info)
-        for k, v in metrics.items(): self.log(k, v)
+        for k, v in metrics.items():
+            self.log(k, v)
         main_score = metrics[self.main_metric]
         if check_metric_is_better(self.cur_best_performance, self.main_metric, main_score, self.task):
             self.cur_best_performance = metrics
-            for k, v in metrics.items(): self.log("best_"+k, v)
+            for k, v in metrics.items():
+                self.log("best_"+k, v)
         self.validation_step_outputs.clear()
         return main_score
 

@@ -156,7 +156,7 @@ def prepare_prompt(args: argparse.Namespace) -> Tuple[str, str, str, str]:
     if args.n_shot == 0:
         example = ''
     elif args.n_shot == 1:
-        example = f'Here is an example of input information:\n'
+        example = 'Here is an example of input information:\n'
         example += 'Example #1:'
         example += EXAMPLE[args.dataset][args.task][0] + '\n'
     else:
@@ -283,7 +283,8 @@ def process_result(result: str, args: argparse.Namespace, y: Any) -> Tuple[Any, 
         answer = result_dict.get('answer', None)
         try:
             pred = float(answer)
-        except:
+        except Exception as e:
+            print(f"Error converting answer to float: {answer}, Error: {e}")
             pred = 0.501
     else:
         raise ValueError("No valid JSON content found.")

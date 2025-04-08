@@ -16,7 +16,7 @@ import torch
 
 from unstructured_note.utils.config import LLM_API_CONFIG
 from unstructured_note.utils.classification_metrics import get_binary_metrics
-from unstructured_note.llm_generation_setting.prompt_template import *
+from unstructured_note.llm_generation_setting.prompt_template import SYSTEMPROMPT, INSTRUCTION_PROMPT
 
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
@@ -244,7 +244,8 @@ def process_result(result: str, args: argparse.Namespace, y: Any) -> Tuple[Any, 
         answer = result_dict.get('answer', None)
         try:
             pred = float(answer)
-        except:
+        except Exception as e:
+            print(f"Error converting answer to float: {answer}, Error: {e}")
             pred = 0.501
     else:
         raise ValueError("No valid JSON content found.")
