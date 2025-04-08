@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 设置要遍历的参数
+# Parameter options
 MODEL_OPTIONS=(
     "GRU"
     "AdaCare"
@@ -11,31 +11,32 @@ DATASET_TASK_OPTIONS=(
     "mimic-iv:readmission"
 )
 
-# 计算总运行次数用于显示进度
+# Compute total runs for progress display
 TOTAL_RUNS=$((${#DATASET_TASK_OPTIONS[@]}))
 CURRENT_RUN=0
 
 echo "Starting evaluation with ${TOTAL_RUNS} different configurations..."
 
-# 遍历所有组合
+# Iterate over dataset and task combinations
 for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
-    # 解析数据集和任务
+    # Dataset and task
     IFS=":" read -r DATASET TASK <<< "$DATASET_TASK"
-    # 增加计数器
+
+    # Add counter
     CURRENT_RUN=$((CURRENT_RUN + 1))
 
-    # 构建命令
-    CMD="python train_dl.py -d ${DATASET} -t ${TASK} -m ${MODEL_OPTIONS[@]}"
+    # Construct command
+    CMD="cd src/structured_ehr && python train_dl.py -d ${DATASET} -t ${TASK} -m ${MODEL_OPTIONS[@]}"
 
-    # 打印进度和当前配置
+    # Print the counter
     echo "[$CURRENT_RUN/$TOTAL_RUNS] Running configuration..."
     echo "CMD: $CMD"
     echo "----------------------------------------"
 
-    # 执行命令
+    # Execute command
     eval "$CMD"
 
-    # 检查命令执行状态
+    # Check if the command was successful
     if [ $? -eq 0 ]; then
       echo "[$CURRENT_RUN/$TOTAL_RUNS] Successfully completed..."
     else
