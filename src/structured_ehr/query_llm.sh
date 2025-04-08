@@ -8,8 +8,8 @@ OUTPUT_PROMPTS=true
 
 # Parameter options
 DATASET_TASK_OPTIONS=(
-    "tjh:outcome"
-    "mimic-iv:outcome"
+    "tjh:mortality"
+    "mimic-iv:mortality"
     "mimic-iv:readmission"
 )
 UNIT_RANGE_OPTIONS=(false true)
