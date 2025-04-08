@@ -8,14 +8,14 @@ from sklearn import metrics as sklearn_metrics
 
 def get_all_metrics(preds, labels, task, los_info):
     # convert preds and labels to tensor if they are ndarray type
-    if isinstance(preds, torch.Tensor) == False:
+    if not isinstance(preds, torch.Tensor):
         preds = torch.tensor(preds)
-    if isinstance(labels, torch.Tensor) == False:
+    if not isinstance(labels, torch.Tensor):
         labels = torch.tensor(labels)
 
-    if task in ["outcome", "readmission"]:
+    if task in ["mortality", "readmission"]:
         if len(labels.shape) > 1 and labels.shape[-1] > 1:
-            labels = labels[:, 0] if task == "outcome" else labels[:, 2]
+            labels = labels[:, 0] if task == "mortality" else labels[:, 2]
         return get_binary_metrics(preds, labels)
     elif task == "los":
         if len(labels.shape) > 1 and labels.shape[-1] > 1:
@@ -93,7 +93,7 @@ def check_metric_is_better(cur_best, main_metric, score, task):
         if score < cur_best[main_metric]:
             return True
         return False
-    elif task in ["outcome", "multitask"]:
+    elif task in ["mortality", "multitask"]:
         if cur_best=={}:
             return True
         if score > cur_best[main_metric]:

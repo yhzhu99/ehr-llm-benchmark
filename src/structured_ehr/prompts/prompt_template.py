@@ -36,18 +36,18 @@ REFERENCE_RANGE = {
 }
 
 TASK_DESCRIPTION = {
-    'outcome': 'Your task is to assess the provided medical data and analyze the health records from ICU visits to determine the likelihood of the patient not surviving their hospital stay.',
+    'mortality': 'Your task is to assess the provided medical data and analyze the health records from ICU visits to determine the likelihood of the patient not surviving their hospital stay.',
     'readmission': 'Your task is to analyze the medical data to predict the probability of readmission within 30 days post-discharge. Include cases where a patient passes away within 30 days from the discharge date.',
 }
 
 RESPONSE_FORMAT = {
-    'outcome': 'Please analyze the patient data step by step, and then provide a final assessment of the likelihood of not surviving their hospital stay. Your answer should be a floating-point number between 0 and 1, where a higher number suggests a greater likelihood of death. Finally, output your thinking process and answer in the JSON format: { "think": "your thinking process", "answer": 0.XX }.',
+    'mortality': 'Please analyze the patient data step by step, and then provide a final assessment of the likelihood of not surviving their hospital stay. Your answer should be a floating-point number between 0 and 1, where a higher number suggests a greater likelihood of death. Finally, output your thinking process and answer in the JSON format: { "think": "your thinking process", "answer": 0.XX }.',
     'readmission': 'Please analyze the patient data step by step, and then provide a final assessment of the likelihood of readmission within 30 days post-discharge. Your answer should be a floating-point number between 0 and 1, where a higher number suggests a greater likelihood of readmission. Finally, output your thinking process and answer in the JSON format: { "think": "your thinking process", "answer": 0.XX }.',
 }
 
 EXAMPLE = {
     'tjh': {
-        'outcome': [
+        'mortality': [
 '''
 Input information of a patient:
 The patient is a male, aged 52.0 years.
@@ -90,7 +90,7 @@ RESPONSE:
         ],
     },
     'mimic-iv': {
-        'outcome': [
+        'mortality': [
 '''
 Input information of a patient:
 The patient is a female, aged 52 years.
