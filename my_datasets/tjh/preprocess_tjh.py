@@ -92,28 +92,18 @@ val_df = df[df['PatientID'].isin(val_patients)]
 test_df = df[df['PatientID'].isin(test_patients)]
 
 # Create the directory to save the processed data
-dl_save_dir = os.path.join(processed_data_dir, 'fold_dl')
-llm_save_dir = os.path.join(processed_data_dir, 'fold_llm')
-os.makedirs(dl_save_dir, exist_ok=True)
-os.makedirs(llm_save_dir, exist_ok=True)
+save_dir = os.path.join(processed_data_dir, 'split')
+os.makedirs(save_dir, exist_ok=True)
 
 # For llm setting, export data on test set:
 # Export the missing mask
-missing_mask = export_missing_mask(test_df, demographic_features, labtest_features)
-pd.to_pickle(missing_mask, os.path.join(llm_save_dir, "test_missing_mask.pkl"))
+test_missing_mask = export_missing_mask(test_df, demographic_features, labtest_features)
 
 # Export the record time
-record_time = export_record_time(test_df)
-pd.to_pickle(record_time, os.path.join(llm_save_dir, "test_record_time.pkl"))
+test_record_time = export_record_time(test_df)
 
 # Export the raw data
 _, test_raw_x, test_y, test_pid = forward_fill_pipeline(test_df, None, demographic_features, labtest_features, target_features, [])
-pd.to_pickle(test_raw_x, os.path.join(llm_save_dir, "test_raw_x.pkl"))
-pd.to_pickle(test_y, os.path.join(llm_save_dir, "test_y.pkl"))
-pd.to_pickle(test_pid, os.path.join(llm_save_dir, "test_pid.pkl"))
-
-# Export the labtest feature names
-pd.to_pickle(labtest_features, os.path.join(llm_save_dir, "labtest_features.pkl")) # All features
 
 # For dl setting, export data on train/val/test set:
 # Normalize the train, val, test data
@@ -125,14 +115,41 @@ train_df, train_x, train_y, train_pid = forward_fill_pipeline(train_df, default_
 val_df, val_x, val_y, val_pid = forward_fill_pipeline(val_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features)
 test_df, test_x, test_y, test_pid = forward_fill_pipeline(test_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features)
 
-# Save the imputed dataset to pickle file
-pd.to_pickle(train_x, os.path.join(dl_save_dir, "train_x.pkl"))
-pd.to_pickle(train_y, os.path.join(dl_save_dir, "train_y.pkl"))
-pd.to_pickle(train_pid, os.path.join(dl_save_dir, "train_pid.pkl"))
-pd.to_pickle(val_x, os.path.join(dl_save_dir, "val_x.pkl"))
-pd.to_pickle(val_y, os.path.join(dl_save_dir, "val_y.pkl"))
-pd.to_pickle(val_pid, os.path.join(dl_save_dir, "val_pid.pkl"))
-pd.to_pickle(test_x, os.path.join(dl_save_dir, "test_x.pkl"))
-pd.to_pickle(test_y, os.path.join(dl_save_dir, "test_y.pkl"))
-pd.to_pickle(test_pid, os.path.join(dl_save_dir, "test_pid.pkl"))
-pd.to_pickle(los_info, os.path.join(dl_save_dir, "los_info.pkl")) # LOS statistics (calculated from the train set)
+# Convert the data to the required format
+train_data = [{
+    'id': id_item,
+    'x_ts': x_item,
+    'y_mortality': [y[0] for y in y_item],
+    'y_los': [y[1] for y in y_item],
+} for id_item, x_item, y_item in zip(train_pid, train_x, train_y)]
+val_data = [{
+    'id': id_item,
+    'x_ts': x_item,
+    'y_mortality': [y[0] for y in y_item],
+    'y_los': [y[1] for y in y_item],
+} for id_item, x_item, y_item in zip(val_pid, val_x, val_y)]
+test_data = [{
+    'id': id_item,
+    'x_ts': x_item,
+    'x_llm_ts': x_llm_item,
+    'record_time': record_time_item,
+    'missing_mask': missing_mask_item,
+    'y_mortality': [y[0] for y in y_item],
+    'y_los': [y[1] for y in y_item],
+} for id_item, x_item, x_llm_item, record_time_item, missing_mask_item, y_item in zip(test_pid, test_x, test_raw_x, test_record_time, test_missing_mask, test_y)]
+
+# Save the data to pickle files
+pd.to_pickle(train_data, os.path.join(save_dir, "train_data.pkl"))
+pd.to_pickle(val_data, os.path.join(save_dir, "val_data.pkl"))
+pd.to_pickle(test_data, os.path.join(save_dir, "test_data.pkl"))
+
+# Print the sizes of the datasets
+print("Train data size:", len(train_data))
+print("Validation data size:", len(val_data))
+print("Test data size:", len(test_data))
+
+# Export LOS statistics (calculated from the train set)
+pd.to_pickle(los_info, os.path.join(save_dir, "los_info.pkl"))
+
+# Export the labtest feature names
+pd.to_pickle(labtest_features, os.path.join(save_dir, "labtest_features.pkl"))
