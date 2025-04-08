@@ -155,4 +155,9 @@ print("Test data size:", len(test_data))
 pd.to_pickle(los_info, os.path.join(save_dir, "los_info.pkl"))
 
 # Export the labtest feature names
+def process_labtest_feature_name(name: str):
+    # Remove special characters and extra spaces
+    name = name.strip().replace('-', '')
+    return name
+labtest_features = [process_labtest_feature_name(name) for name in labtest_features]
 pd.to_pickle(labtest_features, os.path.join(save_dir, "labtest_features.pkl"))
