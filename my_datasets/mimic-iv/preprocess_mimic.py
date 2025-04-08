@@ -15,7 +15,7 @@ os.makedirs(processed_data_dir, exist_ok=True)
 SEED = 42
 
 # Record feature names
-basic_records = ['PatientID', 'RecordTime']
+basic_records = ['RecordID', 'PatientID', 'RecordTime']
 target_features = ['Outcome', 'LOS', 'Readmission']
 demographic_features = ['Sex', 'Age']
 labtest_features = ['Capillary refill rate', 'Glascow coma scale eye opening', 'Glascow coma scale motor response', 'Glascow coma scale total', 'Glascow coma scale verbal response', 'Diastolic blood pressure', 'Fraction inspired oxygen', 'Glucose', 'Heart Rate', 'Height', 'Mean blood pressure', 'Oxygen saturation', 'Respiratory rate', 'Systolic blood pressure', 'Temperature', 'Weight', 'pH']
@@ -30,7 +30,7 @@ normalize_features = ['Age'] + numerical_labtest_features + ['LOS']
 df = pd.read_parquet(os.path.join(processed_data_dir, 'mimic4_discharge_note_ehr.parquet'))
 
 # Group the dataframe by patient ID
-grouped = df.groupby('PatientID')
+grouped = df.groupby('RecordID')
 
 # Get the patient IDs
 patients = np.array(list(grouped.groups.keys()))
@@ -44,38 +44,38 @@ train_val_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].
 train_patients, val_patients = train_test_split(train_val_patients, test_size=10/80, random_state=SEED, stratify=train_val_patients_outcome)
 
 # Create train, val, test, dataframes for the current fold
-train_df = df[df['PatientID'].isin(train_patients)]
-val_df = df[df['PatientID'].isin(val_patients)]
-test_df = df[df['PatientID'].isin(test_patients)]
+train_df = df[df['RecordID'].isin(train_patients)]
+val_df = df[df['RecordID'].isin(val_patients)]
+test_df = df[df['RecordID'].isin(test_patients)]
 save_dir = os.path.join(processed_data_dir, 'fold_llm') # forward fill
 os.makedirs(save_dir, exist_ok=True)
 
 # Export the missing mask and record time
 for split, df_split in zip(['train', 'val', 'test'], [train_df, val_df, test_df]):
     # Export the record time
-    record_time = export_record_time(df_split)
+    record_time = export_record_time(df_split, id_column='RecordID')
     pd.to_pickle(record_time, os.path.join(save_dir, f"{split}_record_time.pkl"))
 
     # Export the missing mask
-    missing_mask = export_missing_mask(df_split, demographic_features, labtest_features)
+    missing_mask = export_missing_mask(df_split, demographic_features, labtest_features, id_column='RecordID')
     pd.to_pickle(missing_mask, os.path.join(save_dir, f"{split}_missing_mask.pkl"))
 
     # Export the note
-    note = export_note(df_split)
+    note = export_note(df_split, id_column='RecordID')
     pd.to_pickle(note, os.path.join(save_dir, f"{split}_note.pkl"))
 
 # Export the raw data
-_, train_raw_x, _, _ = forward_fill_pipeline(train_df, None, demographic_features, labtest_features, target_features, [])
-_, val_raw_x, _, _ = forward_fill_pipeline(val_df, None, demographic_features, labtest_features, target_features, [])
-_, test_raw_x, _, _ = forward_fill_pipeline(test_df, None, demographic_features, labtest_features, target_features, [])
+_, train_raw_x, _, _ = forward_fill_pipeline(train_df, None, demographic_features, labtest_features, target_features, [], id_column="RecordID")
+_, val_raw_x, _, _ = forward_fill_pipeline(val_df, None, demographic_features, labtest_features, target_features, [], id_column="RecordID")
+_, test_raw_x, _, _ = forward_fill_pipeline(test_df, None, demographic_features, labtest_features, target_features, [], id_column="RecordID")
 
-train_df, val_df, test_df, default_fill, los_info, train_mean, train_std = normalize_dataframe(train_df, val_df, test_df, normalize_features)
+train_df, val_df, test_df, default_fill, los_info, train_mean, train_std = normalize_dataframe(train_df, val_df, test_df, normalize_features, id_column="RecordID")
 
-# Forward Imputation after grouped by PatientID
+# Forward Imputation after grouped by RecordID
 # Notice: if a patient has never done certain lab test, the imputed value will be the median value calculated from train set
-train_df, train_x, train_y, train_pid = forward_fill_pipeline(train_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features)
-val_df, val_x, val_y, val_pid = forward_fill_pipeline(val_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features)
-test_df, test_x, test_y, test_pid = forward_fill_pipeline(test_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features)
+train_df, train_x, train_y, train_pid = forward_fill_pipeline(train_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features, id_column="RecordID")
+val_df, val_x, val_y, val_pid = forward_fill_pipeline(val_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features, id_column="RecordID")
+test_df, test_x, test_y, test_pid = forward_fill_pipeline(test_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features, id_column="RecordID")
 
 # Save the imputed dataset to pickle file
 pd.to_pickle(train_x, os.path.join(save_dir, "train_x.pkl"))
@@ -116,7 +116,7 @@ labtest_features = categorical_labtest_features + numerical_labtest_features
 require_impute_features = labtest_features
 
 # Group the dataframe by patient ID
-grouped = df.groupby('PatientID')
+grouped = df.groupby('RecordID')
 
 # Get the patient IDs and outcomes
 patients = np.array(list(grouped.groups.keys()))
@@ -130,9 +130,9 @@ train_val_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].
 train_patients, val_patients = train_test_split(train_val_patients, test_size=10/80, random_state=SEED, stratify=train_val_patients_outcome)
 
 # Create train, val, test, [traincal, calib] dataframes for the current fold
-train_df = df[df['PatientID'].isin(train_patients)]
-val_df = df[df['PatientID'].isin(val_patients)]
-test_df = df[df['PatientID'].isin(test_patients)]
+train_df = df[df['RecordID'].isin(train_patients)]
+val_df = df[df['RecordID'].isin(val_patients)]
+test_df = df[df['RecordID'].isin(test_patients)]
 save_dir = os.path.join(processed_data_dir, 'fold_dl') # forward fill
 os.makedirs(save_dir, exist_ok=True)
 
@@ -142,18 +142,18 @@ val_df.to_csv(os.path.join(save_dir, "val_raw.csv"), index=False)
 test_df.to_csv(os.path.join(save_dir, "test_raw.csv"), index=False)
 
 # Calculate the mean and std of the train set (include age, lab test features, and LOS) on the data in 5% to 95% quantile range
-train_df, val_df, test_df, default_fill, los_info, train_mean, train_std = normalize_dataframe(train_df, val_df, test_df, normalize_features)
+train_df, val_df, test_df, default_fill, los_info, train_mean, train_std = normalize_dataframe(train_df, val_df, test_df, normalize_features, id_column="RecordID")
 
 # Save the zscored dataframes to csv files
 train_df.to_csv(os.path.join(save_dir, "train_after_zscore.csv"), index=False)
 val_df.to_csv(os.path.join(save_dir, "val_after_zscore.csv"), index=False)
 test_df.to_csv(os.path.join(save_dir, "test_after_zscore.csv"), index=False)
 
-# Forward Imputation after grouped by PatientID
+# Forward Imputation after grouped by RecordID
 # Notice: if a patient has never done certain lab test, the imputed value will be the median value calculated from train set
-train_df, train_x, train_y, train_pid = forward_fill_pipeline(train_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features)
-val_df, val_x, val_y, val_pid = forward_fill_pipeline(val_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features)
-test_df, test_x, test_y, test_pid = forward_fill_pipeline(test_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features)
+train_df, train_x, train_y, train_pid = forward_fill_pipeline(train_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features, id_column="RecordID")
+val_df, val_x, val_y, val_pid = forward_fill_pipeline(val_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features, id_column="RecordID")
+test_df, test_x, test_y, test_pid = forward_fill_pipeline(test_df, default_fill, demographic_features, labtest_features, target_features, require_impute_features, id_column="RecordID")
 
 # Save the imputed dataset to pickle file
 pd.to_pickle(train_x, os.path.join(save_dir, "train_x.pkl"))

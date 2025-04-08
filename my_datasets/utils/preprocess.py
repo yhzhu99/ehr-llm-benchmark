@@ -63,6 +63,7 @@ def forward_fill_pipeline(
     labtest_features: List[str],
     target_features: List[str],
     require_impute_features: List[str],
+    id_column: str="PatientID"
 ) -> Tuple[pd.DataFrame, List, List, List]:
     """
     针对患者数据的前向填充管道。对每个患者的时间序列数据进行排序，填充缺失值，
@@ -85,7 +86,7 @@ def forward_fill_pipeline(
         )
     """
     df_copy = df.copy()
-    grouped = df_copy.groupby("PatientID")
+    grouped = df_copy.groupby(id_column)
     all_x, all_y, all_pid = [], [], []
 
     for patient_id, group in grouped:
@@ -122,6 +123,7 @@ def export_missing_mask(
     df: pd.DataFrame,
     demographic_features: List[str],
     labtest_features: List[str],
+    id_column: str = "PatientID",
 ) -> List:
     """
     导出缺失值掩码，标记每个特征的缺失值。
@@ -134,7 +136,7 @@ def export_missing_mask(
     Returns:
         缺失值掩码列表
     """
-    grouped = df.groupby("PatientID")
+    grouped = df.groupby(id_column)
     missing_mask = []
 
     for _, group in grouped:
@@ -155,6 +157,7 @@ def export_missing_mask(
 
 def export_record_time(
     df: pd.DataFrame,
+    id_column: str = "PatientID",
 ) -> List:
     """
     导出记录时间序列，按患者ID分组。
@@ -165,7 +168,7 @@ def export_record_time(
     Returns:
         记录时间序列列表
     """
-    grouped = df.groupby("PatientID")
+    grouped = df.groupby(id_column)
     record_time = []
 
     for _, group in grouped:
@@ -177,6 +180,7 @@ def export_record_time(
 
 def export_note(
     df: pd.DataFrame,
+    id_column: str = "RecordID",
     note_column: str = "Text",
 ) -> List:
     """
@@ -188,7 +192,7 @@ def export_note(
     Returns:
         临床笔记列表
     """
-    grouped = df.groupby("PatientID")
+    grouped = df.groupby(id_column)
     notes = grouped.first()[note_column].tolist()
 
     return notes
@@ -211,7 +215,8 @@ def normalize_dataframe(
     train_df: pd.DataFrame,
     val_df: pd.DataFrame,
     test_df: pd.DataFrame,
-    normalize_features: List[str]
+    normalize_features: List[str],
+    id_column: str = "PatientID",
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, Optional[Dict[str, float]], pd.Series, pd.Series]:
     """
     对训练集、验证集和测试集的特征进行标准化处理，并计算相关统计信息。
@@ -264,7 +269,7 @@ def normalize_dataframe(
         }
 
         # 计算大住院时长和阈值(为covid-19基准设计)
-        los_array = train_df.groupby('PatientID')['LOS'].max().values
+        los_array = train_df.groupby(id_column)['LOS'].max().values
         los_p95 = np.percentile(los_array, 95)
         los_p5 = np.percentile(los_array, 5)
         filtered_los = los_array[(los_array >= los_p5) & (los_array <= los_p95)]
