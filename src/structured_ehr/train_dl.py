@@ -20,7 +20,7 @@ import structured_ehr.models as models
 from structured_ehr.utils.bootstrap import run_bootstrap
 from structured_ehr.utils.metrics import get_all_metrics, check_metric_is_better
 from structured_ehr.utils.loss import get_loss
-from structured_ehr.utils.utils import generate_mask, unpad_y
+from structured_ehr.utils.sequence_handler import generate_mask, unpad_y
 
 
 class EhrDataset(Dataset):
