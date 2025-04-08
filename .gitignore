@@ -6,6 +6,9 @@ my_datasets/mimic-iv/*
 !my_datasets/mimic-iv/preprocess_mimic.py
 my_datasets/tjh/*
 !my_datasets/tjh/preprocess_tjh.py
+my_datasets/mimic-iii-note/
+my_datasets/biosses/
+my_datasets/icd10/
 *.DS_Store
 prompt_*.md
 
