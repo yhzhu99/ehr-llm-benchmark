@@ -41,8 +41,8 @@ TASK_DESCRIPTION = {
 }
 
 RESPONSE_FORMAT = {
-    'outcome': 'Please analyze the patient data step by step, and then provide a final assessment of the likelihood of not surviving their hospital stay. Your answer should be a floating-point number between 0 and 1, where a higher number suggests a greater likelihood of death. Finally, output your reasoning process and answer in the json format: { "reasoning": "your reasoning process", "answer": 0.XX }.',
-    'readmission': 'Please analyze the patient data step by step, and then provide a final assessment of the likelihood of readmission within 30 days post-discharge. Your answer should be a floating-point number between 0 and 1, where a higher number suggests a greater likelihood of readmission. Finally, output your reasoning process and answer in the json format: { "reasoning": "your reasoning process", "answer": 0.XX }.',
+    'outcome': 'Please analyze the patient data step by step, and then provide a final assessment of the likelihood of not surviving their hospital stay. Your answer should be a floating-point number between 0 and 1, where a higher number suggests a greater likelihood of death. Finally, output your reasoning process and answer in the JSON format: { "reasoning": "your reasoning process", "answer": 0.XX }.',
+    'readmission': 'Please analyze the patient data step by step, and then provide a final assessment of the likelihood of readmission within 30 days post-discharge. Your answer should be a floating-point number between 0 and 1, where a higher number suggests a greater likelihood of readmission. Finally, output your reasoning process and answer in the JSON format: { "reasoning": "your reasoning process", "answer": 0.XX }.',
 }
 
 EXAMPLE = {
