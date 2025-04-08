@@ -216,15 +216,16 @@ def load_dataset(args: argparse.Namespace) -> Tuple[List, List, List, List, List
     Returns:
         Tuple of dataset components
     """
-    dataset_path = os.path.join(os.path.dirname(__file__), '..', '..', f'my_datasets/{args.dataset}/processed/fold_llm')
-    xs = pd.read_pickle(os.path.join(dataset_path, 'test_raw_x.pkl'))
-    ys = pd.read_pickle(os.path.join(dataset_path, 'test_y.pkl'))
-    pids = pd.read_pickle(os.path.join(dataset_path, 'test_pid.pkl'))
+    dataset_path = os.path.join(os.path.dirname(__file__), '..', '..', f'my_datasets/{args.dataset}/processed/split')
+    data = pd.read_pickle(os.path.join(dataset_path, 'test_data.pkl'))
+    ids = [item['id'] for item in data]
+    xs = [item['x_ts'] for item in data]
+    ys = [item[f'y_{args.task}'] for item in data]
+    missing_masks = [item['missing_mask'] for item in data]
+    record_times = [item['record_time'] for item in data]
     labtest_features = pd.read_pickle(os.path.join(dataset_path, 'labtest_features.pkl'))
-    missing_masks = pd.read_pickle(os.path.join(dataset_path, 'test_missing_mask.pkl'))
-    record_times = pd.read_pickle(os.path.join(dataset_path, 'test_record_time.pkl'))
 
-    return xs, ys, pids, missing_masks, labtest_features, record_times
+    return ids, xs, ys, missing_masks, record_times, labtest_features
 
 
 def process_result(result: str, args: argparse.Namespace, y: Any) -> Tuple[Any, Any]:
@@ -239,13 +240,8 @@ def process_result(result: str, args: argparse.Namespace, y: Any) -> Tuple[Any, 
     Returns:
         Tuple of (processed prediction, ground truth label)
     """
-    # Determine the correct label based on the task
-    if args.task == 'outcome':
-        label = y[0][0]
-    elif args.task == 'readmission':
-        label = y[0][2]
-    else:
-        raise ValueError(f'Unknown task: {args.task}')
+    # Get the label from the ground truth
+    label = y[-1]
 
     # Parse the result into the correct format
     pattern_backticks = r'```json(.*?)```'
@@ -306,7 +302,7 @@ def evaluate_binary_task(logits: Dict) -> pd.DataFrame:
     _preds = logits['preds']
 
     # Calculate metrics for all samples
-    _metrics = get_all_metrics(_preds, _labels, 'outcome', None)
+    _metrics = get_all_metrics(_preds, _labels, 'mortality', None)
 
     # Filter out unknown samples
     labels = []
@@ -317,7 +313,7 @@ def evaluate_binary_task(logits: Dict) -> pd.DataFrame:
             preds.append(pred)
 
     # Calculate metrics for filtered samples
-    metrics = get_all_metrics(preds, labels, 'outcome', None)
+    metrics = get_all_metrics(preds, labels, 'mortality', None)
 
     # Prepare data for DataFrame
     data = {'count': [len(_labels), len(labels)]}
@@ -344,12 +340,12 @@ def run(args: argparse.Namespace):
 
     # Validate arguments
     assert args.dataset in ['tjh', 'mimic-iv'], f'Unknown dataset: {args.dataset}'
-    assert args.task in ['outcome', 'readmission'], f'Unknown task: {args.task}'
+    assert args.task in ['mortality', 'readmission'], f'Unknown task: {args.task}'
     if args.task == 'readmission':
         assert args.dataset == 'mimic-iv', 'Readmission task is only available for MIMIC-IV dataset'
 
     # Load the dataset
-    xs, ys, pids, missing_masks, features, record_times = load_dataset(args)
+    ids, xs, ys, missing_masks, record_times, features = load_dataset(args)
 
     # Prepare the system prompt, unit range context, and examples
     system_prompt, task_description, unit_range, example, response_format = prepare_prompt(args)
@@ -368,7 +364,7 @@ def run(args: argparse.Namespace):
     labels = []
     preds = []
 
-    for x, y, pid, record_time, missing_mask in tqdm(zip(xs, ys, pids, record_times, missing_masks), total=len(xs)):
+    for pid, x, y, missing_mask, record_time in tqdm(zip(ids, xs, ys, missing_masks, record_times), total=len(xs)):
         # Process patient ID
         if isinstance(pid, float):
             pid = str(round(pid))
@@ -464,7 +460,7 @@ def parse_args():
 
     # Dataset and task configuration
     parser.add_argument('--dataset', '-d', type=str, required=True, choices=['tjh', 'mimic-iv'], help='Dataset to use')
-    parser.add_argument('--task', '-t', type=str, required=True, choices=['outcome', 'readmission'], help='Task to perform')
+    parser.add_argument('--task', '-t', type=str, required=True, choices=['mortality', 'readmission'], help='Task to perform')
     parser.add_argument('--model', '-m', type=str, required=True, help='LLM model to use')
     parser.add_argument('--seed', '-s', type=int, default=42, help='Random seed for reproducibility')
 
