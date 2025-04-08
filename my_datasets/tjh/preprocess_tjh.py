@@ -66,7 +66,7 @@ df.to_parquet(os.path.join(processed_data_dir, 'tjh_dataset_formatted.parquet'),
 
 # Stratified split dataset into train, validation and test sets
 # For ml/dl models: include Imputation & Normalization & Outlier Filtering steps
-# For all settings, ramdomly select 200 patients for test set
+# For all settings, randomly select 200 patients for test set
 # The rest are used for training and validation (7/8 training, 1/8 validation)
 
 # Read the dataset
@@ -78,22 +78,21 @@ grouped = df.groupby('PatientID')
 # Get the patient IDs
 patients = np.array(list(grouped.groups.keys()))
 
-# Ramdomly select 200 patients for the test set
-test_patients = np.random.choice(patients, size=200, replace=False)
+# Get the patient IDs and outcomes
+patients = np.array(list(grouped.groups.keys()))
+patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in patients])
+
+# Randomly select 200 patients for the test set
+train_val_patients, test_patients = train_test_split(patients, test_size=200, random_state=SEED, stratify=None)
 
 # Get the remaining patients for the train/val set
-train_val_patients = np.setdiff1d(patients, test_patients)
 train_val_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in train_val_patients])
 train_patients, val_patients = train_test_split(train_val_patients, test_size=1/8, random_state=SEED, stratify=train_val_patients_outcome)
 
-# Create train, val, test, dataframes for the current fold
+# Create train, val, test, dataframes
 train_df = df[df['PatientID'].isin(train_patients)]
 val_df = df[df['PatientID'].isin(val_patients)]
 test_df = df[df['PatientID'].isin(test_patients)]
-
-# Create the directory to save the processed data
-save_dir = os.path.join(processed_data_dir, 'split')
-os.makedirs(save_dir, exist_ok=True)
 
 # For llm setting, export data on test set:
 # Export the missing mask
@@ -103,7 +102,7 @@ test_missing_mask = export_missing_mask(test_df, demographic_features, labtest_f
 test_record_time = export_record_time(test_df)
 
 # Export the raw data
-_, test_raw_x, test_y, test_pid = forward_fill_pipeline(test_df, None, demographic_features, labtest_features, target_features, [])
+_, test_raw_x, _, _ = forward_fill_pipeline(test_df, None, demographic_features, labtest_features, target_features, [])
 
 # For dl setting, export data on train/val/test set:
 # Normalize the train, val, test data
@@ -137,6 +136,10 @@ test_data = [{
     'y_mortality': [y[0] for y in y_item],
     'y_los': [y[1] for y in y_item],
 } for id_item, x_item, x_llm_item, record_time_item, missing_mask_item, y_item in zip(test_pid, test_x, test_raw_x, test_record_time, test_missing_mask, test_y)]
+
+# Create the directory to save the processed data
+save_dir = os.path.join(processed_data_dir, 'split')
+os.makedirs(save_dir, exist_ok=True)
 
 # Save the data to pickle files
 pd.to_pickle(train_data, os.path.join(save_dir, "train_data.pkl"))
