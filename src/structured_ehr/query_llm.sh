@@ -2,8 +2,8 @@
 
 # Basic configurations
 MODEL="DeepSeek"
-N_SHOT=0
-OUTPUT_LOGITS=false
+N_SHOT=1
+OUTPUT_LOGITS=true
 OUTPUT_PROMPTS=true
 
 # Parameter options
@@ -37,6 +37,9 @@ for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
         if [ "$USE_UNIT_RANGE" = true ]; then
           CMD="${CMD} -u -r"
         fi
+
+        # Add nshot options
+        CMD="${CMD} --n_shot ${N_SHOT}"
 
         # Add output options
         if [ "$OUTPUT_LOGITS" = true ]; then
