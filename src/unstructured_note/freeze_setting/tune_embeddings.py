@@ -12,11 +12,9 @@ from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from lightning.pytorch.loggers import CSVLogger
 
 import torch
-import torch.nn.functional as F
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
-import numpy as np
 from transformers import set_seed
 
 from unstructured_note.utils.config import MODELS_CONFIG
@@ -50,7 +48,7 @@ class EmbeddingDataset(Dataset):
     def __getitem__(self, idx):
         item = self.data[idx]
         embedding = item['embedding'].float()
-        label = torch.tensor(item['label']).float()
+        label = torch.tensor(item[f'y_{args.task}']).float()
         return embedding, label.unsqueeze(0)
 
 # Lightning data module
