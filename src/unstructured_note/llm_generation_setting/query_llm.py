@@ -52,75 +52,6 @@ def query_llm(
     return result.choices[0].message.content, result.usage.prompt_tokens, result.usage.completion_tokens
 
 
-def format_input(
-    patient: List,
-    dataset: str,
-    features: List[str],
-    mask: List[List[int]],
-) -> str:
-    """
-    Format patient data for LLM input.
-
-    Args:
-        patient: List of patient visits
-        dataset: Dataset name ('mimic-iv' or 'tjh')
-        features: List of feature names
-        mask: Missing value masks
-
-    Returns:
-        Formatted string with patient details
-    """
-    feature_values = {}
-
-    # Define some categorical features with their possible values
-    categorical_features_dict = {
-        "Glascow coma scale eye opening": {
-            1: "No Response",
-            2: "To Pain",
-            3: "To Speech",
-            4: "Spontaneously",
-        },
-        "Glascow coma scale motor response": {
-            1: "No Response",
-            2: "Abnormal Extension",
-            3: "Abnormal Flexion",
-            4: "Flex-withdraws",
-            5: "Localizes Pain",
-            6: "Obeys Commands",
-        },
-        "Glascow coma scale verbal response": {
-            1: "No Response",
-            2: "Incomprehensible sounds",
-            3: "Inappropriate Words",
-            4: "Confused",
-            5: "Oriented",
-        },
-    }
-
-    if dataset == 'mimic-iv':
-        for i, feature in enumerate(features):
-            feature_values[feature] = []
-            for visit, m in zip(patient, mask):
-                if m[i] == 1:
-                    value = 'NaN'
-                elif feature in categorical_features_dict.keys():
-                    value = categorical_features_dict[feature].get(visit[i], 'NaN')
-                else:
-                    value = str(visit[i])
-                feature_values[feature].append(value)
-    elif dataset == 'tjh':
-        for i, feature in enumerate(features):
-            feature_values[feature] = []
-            for visit, m in zip(patient, mask):
-                value = str(visit[i]) if m[i] == 0 else 'NaN'
-                feature_values[feature].append(value)
-
-    detail = ''
-    for feature in features:
-        detail += f'- {feature}: [{", ".join(feature_values[feature])}]\n'
-    return detail.strip()
-
-
 def prepare_prompt(args: argparse.Namespace) -> Tuple[str, str]:
     """
     Prepare the prompt for the LLM based on configuration.
@@ -180,33 +111,28 @@ def load_dataset(args: argparse.Namespace) -> Tuple[List, List, List]:
     Returns:
         Tuple of dataset components
     """
-    dataset_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', f'my_datasets/{args.dataset}/processed/fold_llm')
-    notes = pd.read_pickle(os.path.join(dataset_path, 'test_note.pkl'))
-    ys = pd.read_pickle(os.path.join(dataset_path, 'test_y.pkl'))
-    pids = pd.read_pickle(os.path.join(dataset_path, 'test_pid.pkl'))
+    dataset_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', f'my_datasets/{args.dataset}/processed/split')
+    data = pd.read_pickle(os.path.join(dataset_path, 'test_data.pkl'))
+    ids = [item['id'] for item in data]
+    notes = [item['x_note'] for item in data]
+    ys = [item[f'y_{args.task}'] for item in data]
 
-    return notes, ys, pids
+    return ids, notes, ys
 
 
-def process_result(result: str, args: argparse.Namespace, y: Any) -> Tuple[Any, Any]:
+def process_result(result: str, y: Any) -> Tuple[Any, Any]:
     """
     Process the LLM result into prediction and get the corresponding label.
 
     Args:
         result: LLM result string
-        args: Command line arguments
         y: Ground truth labels
 
     Returns:
         Tuple of (processed prediction, ground truth label)
     """
-    # Determine the correct label based on the task
-    if args.task == 'outcome':
-        label = y[0][0]
-    elif args.task == 'readmission':
-        label = y[0][2]
-    else:
-        raise ValueError(f'Unknown task: {args.task}')
+    # Get the label from the ground truth
+    label = y[-1]
 
     # Parse the result into the correct format
     pattern_backticks = r'```json(.*?)```'
@@ -240,7 +166,7 @@ def process_result(result: str, args: argparse.Namespace, y: Any) -> Tuple[Any, 
             raise ValueError("Invalid JSON content found in match 3.")
 
     if result_dict:
-        reasoning = result_dict.get('reasoning', None)
+        think = result_dict.get('think', None)
         answer = result_dict.get('answer', None)
         try:
             pred = float(answer)
@@ -250,7 +176,7 @@ def process_result(result: str, args: argparse.Namespace, y: Any) -> Tuple[Any, 
     else:
         raise ValueError("No valid JSON content found.")
 
-    return pred, label, reasoning
+    return pred, label, think
 
 
 def evaluate_binary_task(logits: Dict) -> pd.DataFrame:
@@ -305,10 +231,10 @@ def run(args: argparse.Namespace):
 
     # Validate arguments
     assert args.dataset in ['mimic-iv'], f'Unknown dataset: {args.dataset}'
-    assert args.task in ['outcome', 'readmission'], f'Unknown task: {args.task}'
+    assert args.task in ['mortality', 'readmission'], f'Unknown task: {args.task}'
 
     # Load the dataset
-    notes, ys, pids = load_dataset(args)
+    ids, notes, ys = load_dataset(args)
 
     # Prepare the system prompt, instruction_prompt
     system_prompt, instruction_prompt = prepare_prompt(args)
@@ -328,7 +254,11 @@ def run(args: argparse.Namespace):
     labels = []
     preds = []
 
-    for note, y, pid in tqdm(zip(notes[:5], ys[:5], pids[:5]), total=len(notes[:5])):
+    ids = ids[:5]
+    notes = notes[:5]
+    ys = ys[:5]
+
+    for pid, note, y in tqdm(zip(ids, notes, ys), total=len(notes)):
         # Process patient ID
         if isinstance(pid, float):
             pid = str(round(pid))
@@ -359,13 +289,13 @@ def run(args: argparse.Namespace):
             completion_tokens += completion_token
 
             # Process the result
-            pred, label, reasoning = process_result(result, args, y)
+            pred, label, think = process_result(result, y)
 
             # Save the result
             pd.to_pickle({
                 'system_prompt': system_prompt,
                 'user_prompt': user_prompt,
-                'reasoning': reasoning,
+                'think': think,
                 'pred': pred,
                 'label': label,
             }, os.path.join(logits_path, f'{pid}.pkl'))
@@ -400,7 +330,7 @@ def parse_args():
 
     # Dataset and task configuration
     parser.add_argument('--dataset', '-d', type=str, required=True, choices=['mimic-iv'], help='Dataset to use')
-    parser.add_argument('--task', '-t', type=str, required=True, choices=['outcome', 'readmission'], help='Task to perform')
+    parser.add_argument('--task', '-t', type=str, required=True, choices=['mortality', 'readmission'], help='Task to perform')
     parser.add_argument('--model', '-m', type=str, required=True, help='LLM model to use')
     parser.add_argument('--seed', '-s', type=int, default=42, help='Random seed for reproducibility')
 
