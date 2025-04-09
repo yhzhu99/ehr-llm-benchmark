@@ -24,28 +24,29 @@ from structured_ehr.utils.sequence_handler import generate_mask, unpad_y
 
 
 class EhrDataset(Dataset):
-    def __init__(self, data_path, mode='train'):
+    def __init__(self, data_path, task, mode='train'):
         super().__init__()
-        self.data = pd.read_pickle(os.path.join(data_path,f'{mode}_x.pkl'))
-        self.label = pd.read_pickle(os.path.join(data_path,f'{mode}_y.pkl'))
-        self.pid = pd.read_pickle(os.path.join(data_path,f'{mode}_pid.pkl'))
+        self.dataset = pd.read_pickle(os.path.join(data_path, f'{mode}_data.pkl'))
+        self.id = [item['id'] for item in self.dataset]
+        self.data = [item['x_ts'] for item in self.dataset]
+        self.label = [item[f'y_{task}'] for item in self.dataset]
 
     def __len__(self):
-        return len(self.label) # number of patients
+        return len(self.label)
 
     def __getitem__(self, index):
-        return self.data[index], self.label[index], self.pid[index]
+        return self.data[index], self.label[index], self.id[index]
 
 
 class EhrDataModule(L.LightningDataModule):
-    def __init__(self, data_path, batch_size=32):
+    def __init__(self, data_path, task, batch_size=32):
         super().__init__()
         self.data_path = data_path
         self.batch_size = batch_size
 
-        self.train_dataset = EhrDataset(self.data_path, mode="train")
-        self.val_dataset = EhrDataset(self.data_path, mode='val')
-        self.test_dataset = EhrDataset(self.data_path, mode='test')
+        self.train_dataset = EhrDataset(self.data_path, task, mode="train")
+        self.val_dataset = EhrDataset(self.data_path, task, mode='val')
+        self.test_dataset = EhrDataset(self.data_path, task, mode='test')
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True , collate_fn=self.pad_collate, num_workers=8)
@@ -95,7 +96,7 @@ class DlPipeline(L.LightningModule):
         model_class = getattr(models, self.model_name)
         self.ehr_encoder = model_class(**config)
 
-        if self.task in ["outcome", "readmission"]:
+        if self.task in ["mortality", "readmission"]:
             self.head = nn.Sequential(nn.Linear(self.hidden_dim, self.output_dim), nn.Dropout(0.0), nn.Sigmoid())
         elif self.task == "los":
             self.head = nn.Sequential(nn.Linear(self.hidden_dim, self.output_dim), nn.Dropout(0.0))
@@ -205,15 +206,15 @@ class DlPipeline(L.LightningModule):
 
 def run_experiment(config):
     # data
-    dataset_path = os.path.join(os.path.dirname(__file__), '..', '..', f'my_datasets/{config["dataset"]}/processed/fold_dl')
-    dm = EhrDataModule(dataset_path, batch_size=config["batch_size"])
+    dataset_path = os.path.join(os.path.dirname(__file__), '..', '..', f'my_datasets/{config["dataset"]}/processed/split')
+    dm = EhrDataModule(dataset_path, task=config["task"], batch_size=config["batch_size"])
 
     # logger
     logger = CSVLogger(save_dir="logs", name=f'{config["dataset"]}/{config["task"]}/dl_models', version=f"{config['model']}")
 
     # main metric
-    main_metric = "auroc" if config["task"] in ["outcome", "readmission"] else "mse"
-    mode = "max" if config["task"] in ["outcome", "readmission"] else "min"
+    main_metric = "auroc" if config["task"] in ["mortality", "readmission"] else "mse"
+    mode = "max" if config["task"] in ["mortality", "readmission"] else "min"
     config["main_metric"] = main_metric
 
     # EarlyStop and checkpoint callback
@@ -227,7 +228,7 @@ def run_experiment(config):
     pipeline = DlPipeline(config)
     if torch.cuda.is_available():
         accelerator = "gpu"
-        devices = [0]
+        devices = [1]
     else:
         accelerator = "cpu"
         devices = 1
@@ -251,7 +252,7 @@ def parse_args():
     # Basic configurations
     parser.add_argument('--model', '-m', type=str, nargs='+', required=True, help='Model name')
     parser.add_argument('--dataset', '-d', type=str, required=True, help='Dataset name', choices=['tjh', 'mimic-iv'])
-    parser.add_argument('--task', '-t', type=str, required=True, help='Task name', choices=['outcome', 'readmission'])
+    parser.add_argument('--task', '-t', type=str, required=True, help='Task name', choices=['mortality', 'readmission'])
 
     # Model and training hyperparameters
     parser.add_argument('--hidden_dim', '-hd', type=int, default=128, help='Hidden dimension')
