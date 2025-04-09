@@ -273,7 +273,7 @@ def process_result(result: str, args: argparse.Namespace, y: Any) -> Tuple[Any, 
             raise ValueError("Invalid JSON content found in match 3.")
 
     if result_dict:
-        reasoning = result_dict.get('reasoning', None)
+        think = result_dict.get('think', None)
         answer = result_dict.get('answer', None)
         try:
             pred = float(answer)
@@ -283,7 +283,7 @@ def process_result(result: str, args: argparse.Namespace, y: Any) -> Tuple[Any, 
     else:
         raise ValueError("No valid JSON content found.")
 
-    return pred, label, reasoning
+    return pred, label, think
 
 
 def evaluate_binary_task(logits: Dict) -> pd.DataFrame:
@@ -362,6 +362,13 @@ def run(args: argparse.Namespace):
     labels = []
     preds = []
 
+    ids = ids[:10]
+    xs = xs[:10]
+    ys = ys[:10]
+    missing_masks = missing_masks[:10]
+    record_times = record_times[:10]
+    features = features[:10]
+
     for pid, x, y, missing_mask, record_time in tqdm(zip(ids, xs, ys, missing_masks, record_times), total=len(xs)):
         # Process patient ID
         if isinstance(pid, float):
@@ -419,13 +426,13 @@ def run(args: argparse.Namespace):
             completion_tokens += completion_token
 
             # Process the result
-            pred, label, reasoning = process_result(result, args, y)
+            pred, label, think = process_result(result, args, y)
 
             # Save the result
             pd.to_pickle({
                 'system_prompt': system_prompt,
                 'user_prompt': user_prompt,
-                'reasoning': reasoning,
+                'think': think,
                 'pred': pred,
                 'label': label,
             }, os.path.join(logits_path, f'{pid}.pkl'))
