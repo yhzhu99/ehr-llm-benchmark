@@ -17,6 +17,7 @@ SEED = 42
 # Record feature names
 basic_records = ['RecordID', 'PatientID', 'RecordTime']
 target_features = ['Outcome', 'LOS', 'Readmission']
+note_features = ['Text']
 demographic_features = ['Sex', 'Age']
 labtest_features = ['Capillary refill rate', 'Glascow coma scale eye opening', 'Glascow coma scale motor response', 'Glascow coma scale total', 'Glascow coma scale verbal response', 'Diastolic blood pressure', 'Fraction inspired oxygen', 'Glucose', 'Heart Rate', 'Height', 'Mean blood pressure', 'Oxygen saturation', 'Respiratory rate', 'Systolic blood pressure', 'Temperature', 'Weight', 'pH']
 categorical_labtest_features = ['Capillary refill rate', 'Glascow coma scale eye opening', 'Glascow coma scale motor response', 'Glascow coma scale total', 'Glascow coma scale verbal response']
@@ -30,7 +31,7 @@ normalize_features = ['Age'] + numerical_labtest_features + ['LOS']
 
 # Read the dataset
 df = pd.read_parquet(os.path.join(processed_data_dir, 'mimic-iv-timeseries-note.parquet'))
-df = df[basic_records + target_features + ['Text'] + demographic_features + labtest_features]
+df = df[basic_records + target_features + note_features + demographic_features + labtest_features]
 
 # Group the dataframe by `RecordID`
 grouped = df.groupby('RecordID')
@@ -40,7 +41,7 @@ patients = np.array(list(grouped.groups.keys()))
 patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in patients])
 
 # Randomly select 200 patients for the test set
-train_val_patients, test_patients = train_test_split(patients, test_size=200, random_state=SEED, stratify=None)
+train_val_patients, test_patients = train_test_split(patients, test_size=200, random_state=SEED, stratify=patients_outcome)
 test_df = df[df['RecordID'].isin(test_patients)]
 
 # For llm setting, export data on test set:
@@ -68,11 +69,11 @@ require_impute_features = ehr_labtest_features
 # Group the dataframe by patient ID
 grouped = df.groupby('RecordID')
 
-# Get the patient IDs and outcomes
-patients = np.array(list(grouped.groups.keys()))
-patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in patients])
-
 # Randomly select 10000 patients for the train/val set
+train_val_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in train_val_patients])
+train_val_patients = train_test_split(train_val_patients, test_size=10000, random_state=SEED, stratify=train_val_patients_outcome)[1]
+
+# Split the train/val set into train and val sets, 7/8 for train and 1/8 for val
 train_val_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in train_val_patients])
 train_patients, val_patients = train_test_split(train_val_patients, test_size=1/8, random_state=SEED, stratify=train_val_patients_outcome)
 
