@@ -9,8 +9,6 @@ USERPROMPT = '''I will provide you with medical information of a patient, each c
 
 In situations where the data does not allow for a reasonable conclusion, respond with the phrase `I do not know` without any additional explanation.
 
-{UNIT_RANGE_CONTEXT}
-
 {EXAMPLE}
 
 Now please predict the patient below:
@@ -41,8 +39,8 @@ TASK_DESCRIPTION = {
 }
 
 RESPONSE_FORMAT = {
-    'mortality': 'Please analyze the patient data step by step, and then provide a final assessment of the likelihood of not surviving their hospital stay. Your answer should be a floating-point number between 0 and 1, where a higher number suggests a greater likelihood of death. Finally, output your thinking process and answer in the JSON format: { "think": "your thinking process", "answer": 0.XX }.',
-    'readmission': 'Please analyze the patient data step by step, and then provide a final assessment of the likelihood of readmission within 30 days post-discharge. Your answer should be a floating-point number between 0 and 1, where a higher number suggests a greater likelihood of readmission. Finally, output your thinking process and answer in the JSON format: { "think": "your thinking process", "answer": 0.XX }.',
+    'mortality': 'Please analyze the patient data step by step, and then provide a final assessment of the likelihood of not surviving their hospital stay. Your answer should be a floating-point number between 0 and 1, where a higher number suggests a greater likelihood of death. Finally, output your thinking process and answer in the JSON format: { "think": "your thinking process", "answer": 0.XX }. Your output should be less than 500 words.',
+    'readmission': 'Please analyze the patient data step by step, and then provide a final assessment of the likelihood of readmission within 30 days post-discharge. Your answer should be a floating-point number between 0 and 1, where a higher number suggests a greater likelihood of readmission. Finally, output your thinking process and answer in the JSON format: { "think": "your thinking process", "answer": 0.XX }. Your output should be less than 500 words.',
 }
 
 EXAMPLE = {
@@ -53,9 +51,9 @@ Input information of a patient:
 The patient is a male, aged 52.0 years.
 The patient had 5 visits that occurred at 2020-02-09, 2020-02-10, 2020-02-13, 2020-02-14, 2020-02-17.
 Details of the features for each visit are as follows:
-- Hypersensitive cardiac troponinI (unit: mol/l, reference range: xxx): [1.9, 1.9, 1.9, 1.9, 1.9]
-- hemoglobin: "139.0, 139.0, 142.0, 142.0, 142.0"
-- Serum chloride: "103.7, 103.7, 104.2, 104.2, 104.2"
+- Hypersensitive cardiac troponinI (Unit: ng/L. Reference range: less than 14.): [1.9, 1.9, 1.9, 1.9, 1.9]
+- hemoglobin (Unit: g/L. Reference range: 140 - 180 for men, 120 - 160 for women.): [139.0, 139.0, 142.0, 142.0, 142.0]
+- Serum chloride (Unit: mmol/L. Reference range: 96 - 106.): [103.7, 103.7, 104.2, 104.2, 104.2]
 ......
 
 RESPONSE:
@@ -66,9 +64,9 @@ Input information of a patient:
 The patient is a female, aged 71.0 years.
 The patient had 5 visits that occurred at 2020-02-01, 2020-02-02, 2020-02-09, 2020-02-10, 2020-02-11.
 Details of the features for each visit are as follows:
-- Hypersensitive cardiac troponinI: "5691.05, 11970.22, 9029.88, 6371.5, 3638.55"
-- hemoglobin: "105.68, 132.84, 54.19, 136.33, 123.69"
-- Serum chloride: "89.18, 101.54, 90.35, 103.99, 102.06"
+- Hypersensitive cardiac troponinI (Unit: ng/L. Reference range: less than 14.): [5691.05, 11970.22, 9029.88, 6371.5, 3638.55]
+- hemoglobin (Unit: g/L. Reference range: 140 - 180 for men, 120 - 160 for women.): [105.68, 132.84, 54.19, 136.33, 123.69]
+- Serum chloride (Unit: mmol/L. Reference range: 96 - 106.): [89.18, 101.54, 90.35, 103.99, 102.06]
 ......
 
 RESPONSE:
@@ -79,9 +77,9 @@ Input information of a patient:
 The patient is a female, aged 53.0 years.
 The patient had 5 visits that occurred at 2020-01-20, 2020-01-22, 2020-01-27, 2020-01-28, 2020-01-29.
 Details of the features for each visit are as follows:
-- Hypersensitive cardiac troponinI: "14.98, 51.49, 49.99, 23.52, 67.93"
-- hemoglobin: "140.19, 122.73, 116.95, 114.34, 161.72"
-- Serum chloride: "101.94, 98.23, 92.9, 94.47, 99.78"
+- Hypersensitive cardiac troponinI (Unit: ng/L. Reference range: less than 14.): [14.98, 51.49, 49.99, 23.52, 67.93]
+- hemoglobin (Unit: g/L. Reference range: 140 - 180 for men, 120 - 160 for women.): [140.19, 122.73, 116.95, 114.34, 161.72]
+- Serum chloride (Unit: mmol/L. Reference range: 96 - 106.): [101.94, 98.23, 92.9, 94.47, 99.78]
 ......
 
 RESPONSE:
