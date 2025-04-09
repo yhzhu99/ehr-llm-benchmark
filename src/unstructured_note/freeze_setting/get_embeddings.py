@@ -31,7 +31,6 @@ LLM_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_typ
 
 parser = argparse.ArgumentParser(description='Generate embeddings from models')
 parser.add_argument('--model', type=str, required=True, choices=BERT_MODELS + LLM_MODELS)
-parser.add_argument('--task', type=str, required=True, choices=['mortality', 'readmission'])
 parser.add_argument('--batch_size', type=int, default=1)
 parser.add_argument('--max_length', type=int, default=512)
 args = parser.parse_args()
@@ -64,7 +63,6 @@ else:  # BERT models
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
 
 # Load data
-print(f"Loading MIMIC-IV dataset for task: {args.task}")
 data_splits = {}
 for split in ['train', 'val', 'test']:
     split_name = f'{split}_data.pkl'
@@ -79,7 +77,8 @@ def extract_embeddings(data_split, split_name):
 
     for item in tqdm(data_split, desc=f"Processing {split_name}"):
         text = item['x_note']
-        label = item[f'y_{args.task}']
+        label_mortality = item['y_mortality']
+        label_readmission = item['y_readmission']
 
         # Tokenize
         inputs = tokenizer(
@@ -105,7 +104,8 @@ def extract_embeddings(data_split, split_name):
         # Store embedding with label
         embedding_dict = {
             'embedding': embedding,
-            'label': label[0]
+            'y_mortality': label_mortality,
+            'y_readmission': label_readmission,
         }
 
         embeddings.append(embedding_dict)
