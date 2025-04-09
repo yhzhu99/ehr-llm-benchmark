@@ -372,6 +372,7 @@ def run(args: argparse.Namespace):
         sex = 'male' if x[0][0] == 1 else 'female'
         age = x[0][1]
         x = [visit[2:] for visit in x]
+        missing_mask = [mask[2:] for mask in missing_mask]
 
         # Format patient detail
         detail = format_input(
