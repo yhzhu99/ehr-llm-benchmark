@@ -20,6 +20,8 @@ CURRENT_RUN=0
 
 echo "Starting evaluation with ${TOTAL_RUNS} different configurations..."
 
+eval "cd src/structured_ehr"
+
 # Iterate over dataset and task combinations
 for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
     # Dataset and task
@@ -29,7 +31,7 @@ for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
         CURRENT_RUN=$((CURRENT_RUN + 1))
 
         # Construct command
-        CMD="cd src/structured_ehr && python query_llm.py -d ${DATASET} -t ${TASK} -m ${MODEL}"
+        CMD="python query_llm.py -d ${DATASET} -t ${TASK} -m ${MODEL}"
 
         # Add parameters
         if [ "$USE_UNIT_RANGE" = true ]; then
