@@ -9,18 +9,14 @@ TASKS=("mortality" "readmission")
 
 # Generate embeddings for BERT models
 for MODEL in "${BERT_MODELS[@]}"; do
-    for TASK in "${TASKS[@]}"; do
-        echo "Generating embeddings for $MODEL on $TASK task"
-        python src/unstructured_note/freeze_setting/get_embeddings.py --model "$MODEL" --task "$TASK"
-    done
+    echo "Generating embeddings for $MODEL"
+    python src/unstructured_note/freeze_setting/get_embeddings.py --model "$MODEL""
 done
 
 # Generate embeddings for LLM models
 for MODEL in "${LLM_MODELS[@]}"; do
-    for TASK in "${TASKS[@]}"; do
-        echo "Generating embeddings for $MODEL on $TASK task"
-        python src/unstructured_note/freeze_setting/get_embeddings.py --model "$MODEL" --task "$TASK"
-    done
+    echo "Generating embeddings for $MODEL"
+    python src/unstructured_note/freeze_setting/get_embeddings.py --model "$MODEL""
 done
 
 echo "All embeddings generated successfully!"
