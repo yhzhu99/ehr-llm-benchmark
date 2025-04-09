@@ -83,7 +83,7 @@ patients = np.array(list(grouped.groups.keys()))
 patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in patients])
 
 # Randomly select 200 patients for the test set
-train_val_patients, test_patients = train_test_split(patients, test_size=200, random_state=SEED, stratify=None)
+train_val_patients, test_patients = train_test_split(patients, test_size=200, random_state=SEED, stratify=patients_outcome)
 
 # Get the remaining patients for the train/val set
 train_val_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in train_val_patients])
