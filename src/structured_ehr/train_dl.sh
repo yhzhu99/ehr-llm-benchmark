@@ -6,8 +6,8 @@ MODEL_OPTIONS=(
     "AdaCare"
 )
 DATASET_TASK_OPTIONS=(
-    "tjh:outcome"
-    "mimic-iv:outcome"
+    "tjh:mortality"
+    "mimic-iv:mortality"
     "mimic-iv:readmission"
 )
 
