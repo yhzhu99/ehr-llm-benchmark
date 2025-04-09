@@ -226,13 +226,12 @@ def load_dataset(args: argparse.Namespace) -> Tuple[List, List, List, List, List
     return ids, xs, ys, missing_masks, record_times, labtest_features
 
 
-def process_result(result: str, args: argparse.Namespace, y: Any) -> Tuple[Any, Any]:
+def process_result(result: str, y: Any) -> Tuple[Any, Any]:
     """
     Process the LLM result into prediction and get the corresponding label.
 
     Args:
         result: LLM result string
-        args: Command line arguments
         y: Ground truth labels
 
     Returns:
@@ -426,7 +425,7 @@ def run(args: argparse.Namespace):
             completion_tokens += completion_token
 
             # Process the result
-            pred, label, think = process_result(result, args, y)
+            pred, label, think = process_result(result, y)
 
             # Save the result
             pd.to_pickle({
