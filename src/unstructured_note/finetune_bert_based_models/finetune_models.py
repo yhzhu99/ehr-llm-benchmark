@@ -12,8 +12,6 @@ import argparse
 import torch
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
-import numpy as np
-from tqdm import tqdm
 
 import lightning as L
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
@@ -42,17 +40,20 @@ args = parser.parse_args()
 
 # Dataset class
 class MimicDataset(Dataset):
-    def __init__(self, texts, labels, tokenizer, max_length=512):
-        self.texts = texts
-        self.labels = labels
+    def __init__(self, data_path, tokenizer, task, max_length=512):
+        super().__init__()
+        self.data = pd.read_pickle(data_path)
         self.tokenizer = tokenizer
+        self.task = task
         self.max_length = max_length
 
     def __len__(self):
-        return len(self.texts)
+        return len(self.data)
 
     def __getitem__(self, idx):
-        text = self.texts[idx]
+        item = self.data[idx]
+        text = item['x_note']
+
         inputs = self.tokenizer(
             text,
             truncation=True,
@@ -63,7 +64,8 @@ class MimicDataset(Dataset):
 
         # Remove batch dimension from tokenizer output
         inputs = {k: v.squeeze(0) for k, v in inputs.items()}
-        inputs['labels'] = torch.tensor(self.labels[idx], dtype=torch.long)
+        label = item[f'y_{self.task}'][0]
+        inputs['labels'] = torch.tensor(label, dtype=torch.long)
 
         return inputs
 
@@ -80,58 +82,60 @@ class MimicDataModule(L.LightningDataModule):
         model_config = next(model for model in MODELS_CONFIG if model["model_name"] == model_name)
         self.model_path = model_config["hf_id"]
 
-        # Initialize tokenizer and datasets
+        # Initialize tokenizer
         self.tokenizer = None
-        self.datasets = {}
 
     def prepare_data(self):
         # Load tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
 
     def setup(self, stage=None):
-        # Load data for all splits
-        data_splits = {}
-        for split in ['train', 'val', 'test']:
-            split_name = 'val_data.pkl' if split == 'val' else f'{split}_data.pkl'
-            file_path = f"my_datasets/mimic-iv/processed/split/{split_name}"
-            data_splits[split] = pd.read_pickle(file_path)
-
-        # Process data for each split
-        for split, data in data_splits.items():
-            split_key = 'valid' if split == 'val' else split
-
-            texts = [item['x_note'] for item in data]
-            labels = [item[f'y_{self.task}'] for item in data]
-
-            self.datasets[split_key] = MimicDataset(
-                texts=texts,
-                labels=labels,
-                tokenizer=self.tokenizer,
-                max_length=self.max_length
-            )
+        # No additional setup needed, datasets are loaded in dataloaders
+        pass
 
     def train_dataloader(self):
+        train_dataset = MimicDataset(
+            data_path="my_datasets/mimic-iv/processed/split/train_data.pkl",
+            tokenizer=self.tokenizer,
+            task=self.task,
+            max_length=self.max_length
+        )
         return DataLoader(
-            self.datasets['train'],
+            train_dataset,
             batch_size=self.batch_size,
             shuffle=True,
-            num_workers=4
+            num_workers=4,
+            persistent_workers=True
         )
 
     def val_dataloader(self):
+        val_dataset = MimicDataset(
+            data_path="my_datasets/mimic-iv/processed/split/val_data.pkl",
+            tokenizer=self.tokenizer,
+            task=self.task,
+            max_length=self.max_length
+        )
         return DataLoader(
-            self.datasets['valid'],
+            val_dataset,
             batch_size=self.batch_size,
             shuffle=False,
-            num_workers=4
+            num_workers=4,
+            persistent_workers=True
         )
 
     def test_dataloader(self):
+        test_dataset = MimicDataset(
+            data_path="my_datasets/mimic-iv/processed/split/test_data.pkl",
+            tokenizer=self.tokenizer,
+            task=self.task,
+            max_length=self.max_length,
+        )
         return DataLoader(
-            self.datasets['test'],
+            test_dataset,
             batch_size=self.batch_size,
             shuffle=False,
-            num_workers=4
+            num_workers=4,
+            persistent_workers=True
         )
 
 # Model for fine-tuning
@@ -276,7 +280,7 @@ def run_finetuning():
         monitor="val_auroc",
         mode="max",
         patience=args.patience,
-        verbose=True
+        verbose=False
     )
 
     checkpoint_callback = ModelCheckpoint(
@@ -285,7 +289,7 @@ def run_finetuning():
         monitor="val_auroc",
         mode="max",
         save_top_k=1,
-        verbose=True
+        verbose=False
     )
 
     # Create trainer
@@ -311,7 +315,7 @@ def run_finetuning():
     results_path = os.path.join(log_dir, "test_results.pkl")
     pd.to_pickle(best_model.test_results, results_path)
 
-    print(f"Fine-tuning complete. Results saved to {results_path}")
+    print(f"Finetuning complete. Results saved to {results_path}")
 
     return best_model.test_results
 
