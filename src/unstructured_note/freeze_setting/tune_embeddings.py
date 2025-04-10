@@ -186,8 +186,12 @@ def get_embedding_dim(model_name):
         return 768
     elif model_name in ["GatorTron", "BioGPT"]:
         return 1024
-    elif model_name in ["HuatuoGPT-o1-7B", "DeepSeek-R1-Distill-Qwen-7B", "Qwen2.5-7B", "gemma-3-4b-pt", "meditron", "OpenBioLLM", "BioMistral"]:
+    elif model_name in ["meditron", "OpenBioLLM", "BioMistral"]:
         return 4096
+    elif model_name in ["Qwen2.5-7B", "HuatuoGPT-o1-7B", "DeepSeek-R1-Distill-Qwen-7B"]:
+        return 3584
+    elif model_name in ["gemma-3-4b-pt"]:
+        return 2560
     else:
         # Default for unknown models
         return 768
