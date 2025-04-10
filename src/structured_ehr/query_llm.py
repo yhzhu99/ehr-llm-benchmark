@@ -14,7 +14,7 @@ from openai import OpenAI
 import pandas as pd
 import torch
 
-from structured_ehr.utils.llm_configs import LLM_MODELS_SETTINGS
+from structured_ehr.utils.llm_configs import LLM_API_CONFIG, MODELS_CONFIG
 from structured_ehr.utils.metrics import get_all_metrics, get_regression_metrics, reverse_los
 from structured_ehr.prompts.prompt_template import SYSTEMPROMPT, USERPROMPT, UNIT, REFERENCE_RANGE, TASK_DESCRIPTION, RESPONSE_FORMAT, EXAMPLE
 
@@ -395,8 +395,11 @@ def run(args: argparse.Namespace):
     system_prompt, task_description, example, response_format = prepare_prompt(args)
 
     # Initialize LLM
-    if 'deepseek' in args.model.lower():
-        llm_config = LLM_MODELS_SETTINGS['deepseek-v3-ark']
+    if args.model.lower() == 'deepseek-v3':
+        llm_config = LLM_API_CONFIG['deepseek-v3-ark']
+    elif args.model in MODELS_CONFIG.keys():
+        llm_config = LLM_API_CONFIG['llm-studio']
+        llm_config['model_name'] = MODELS_CONFIG[args.model]['lmstudio_id']
     else:
         raise ValueError(f'Unknown model: {args.model}')
     llm = OpenAI(api_key=llm_config['api_key'], base_url=llm_config['base_url'])
@@ -408,12 +411,12 @@ def run(args: argparse.Namespace):
     labels = []
     preds = []
 
-    ids = ids[:10]
-    xs = xs[:10]
-    ys = ys[:10]
-    missing_masks = missing_masks[:10]
-    record_times = record_times[:10]
-    features = features[:10]
+    # ids = ids[:3]
+    # xs = xs[:3]
+    # ys = ys[:3]
+    # missing_masks = missing_masks[:3]
+    # record_times = record_times[:3]
+    # features = features[:3]
 
     for pid, x, y, missing_mask, record_time in tqdm(zip(ids, xs, ys, missing_masks, record_times), total=len(xs)):
         # Process patient ID
@@ -472,22 +475,34 @@ def run(args: argparse.Namespace):
             completion_tokens += completion_token
 
             # Process the result
-            pred, label, think = process_result(result, y)
+            try:
+                pred, label, think = process_result(result, y)
 
-            if pred < 0:
-                pred = 0.501 if args.task in ['mortality', 'readmission'] else 0.0
+                if pred < 0:
+                    pred = 0.501 if args.task in ['mortality', 'readmission'] else 0.0
 
-            # Save the result
-            pd.to_pickle({
-                'system_prompt': system_prompt,
-                'user_prompt': user_prompt,
-                'think': think,
-                'pred': pred,
-                'label': label,
-            }, os.path.join(logits_path, f'{pid}.pkl'))
+                # Save the result
+                pd.to_pickle({
+                    'system_prompt': system_prompt,
+                    'user_prompt': user_prompt,
+                    'think': think,
+                    'pred': pred,
+                    'label': label,
+                }, os.path.join(logits_path, f'{pid}.pkl'))
 
-            labels.append(label)
-            preds.append(pred)
+                labels.append(label)
+                preds.append(pred)
+
+            except Exception as e:
+                print(f'Error processing result for patient {pid}: {e}')
+
+                # Save original result for debugging
+                pd.to_pickle({
+                    'system_prompt': system_prompt,
+                    'user_prompt': user_prompt,
+                    'response': result,
+                }, os.path.join(logits_path, f'{pid}.pkl'))
+                continue
 
     if args.output_logits:
         # Save the final results
