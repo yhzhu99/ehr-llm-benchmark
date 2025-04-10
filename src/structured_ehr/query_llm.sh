@@ -2,13 +2,13 @@
 
 # Basic configurations
 MODEL="DeepSeek"
-N_SHOT=1
-OUTPUT_LOGITS=true
+OUTPUT_LOGITS=false
 OUTPUT_PROMPTS=true
 
 # Parameter options
 DATASET_TASK_OPTIONS=(
     "tjh:mortality"
+    "tjh:los"
     "mimic-iv:mortality"
     "mimic-iv:readmission"
 )
@@ -35,11 +35,8 @@ for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
 
         # Add parameters
         if [ "$USE_UNIT_RANGE" = true ]; then
-          CMD="${CMD} -u -r"
+          CMD="${CMD} -u -r -n 1"
         fi
-
-        # Add nshot options
-        CMD="${CMD} --n_shot ${N_SHOT}"
 
         # Add output options
         if [ "$OUTPUT_LOGITS" = true ]; then
@@ -52,6 +49,9 @@ for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
 
         # Print the counter
         echo "[$CURRENT_RUN/$TOTAL_RUNS] Running configuration..."
+
+        # Print the command
+        echo "Command: $CMD"
 
         # Execute command
         eval "$CMD"
