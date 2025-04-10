@@ -33,6 +33,9 @@ normalize_features = ['Age'] + numerical_labtest_features + ['LOS']
 df = pd.read_parquet(os.path.join(processed_data_dir, 'mimic-iv-timeseries-note.parquet'))
 df = df[basic_records + target_features + note_features + demographic_features + labtest_features]
 
+# Ensure the data is sorted by RecordID
+df = df.sort_values(by='RecordID').reset_index(drop=True)
+
 # Group the dataframe by `RecordID`
 grouped = df.groupby('RecordID')
 

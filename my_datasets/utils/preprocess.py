@@ -136,13 +136,17 @@ def export_missing_mask(
     Returns:
         缺失值掩码列表
     """
+    df_copy = df.copy()
+    # Ensure the data is sorted by patient ID
+    df_copy = df_copy.sort_values(by=id_column).reset_index(drop=True)
+
     grouped = df.groupby(id_column)
     missing_mask = []
 
     for _, group in grouped:
         sorted_group = group.sort_values(by=["RecordTime"], ascending=True)
 
-        # 创建所有特征的缺失值掩码
+        # Generate the mask for each patient
         features = demographic_features + labtest_features
         patient_mask = []
 
@@ -168,7 +172,13 @@ def export_record_time(
     Returns:
         记录时间序列列表
     """
-    grouped = df.groupby(id_column)
+    df_copy = df.copy()
+    # Ensure the data is sorted by patient ID
+    df_copy = df_copy.sort_values(by=id_column).reset_index(drop=True)
+    # Convert RecordTime to datetime and format it
+    df_copy["RecordTime"] = pd.to_datetime(df_copy["RecordTime"]).dt.strftime("%Y-%m-%d")
+
+    grouped = df_copy.groupby(id_column)
     record_time = []
 
     for _, group in grouped:
@@ -192,6 +202,10 @@ def export_note(
     Returns:
         临床笔记列表
     """
+    df_copy = df.copy()
+    # Ensure the data is sorted by patient ID
+    df_copy = df_copy.sort_values(by=id_column).reset_index(drop=True)
+
     grouped = df.groupby(id_column)
     notes = grouped.first()[note_column].tolist()
 
