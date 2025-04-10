@@ -10,7 +10,7 @@ TASKS=("mortality" "readmission")
 for MODEL in "${BERT_MODELS[@]}"; do
     for TASK in "${TASKS[@]}"; do
         echo "Fine-tuning $MODEL for $TASK task"
-        python src/unstructured_note/finetune_bert_based_models/finetune_models.py --model "$MODEL" --task "$TASK" --batch_size 8 --learning_rate 2e-5 --epochs 30 --patience 5
+        python src/unstructured_note/finetune_bert_based_models/finetune_models.py --model "$MODEL" --task "$TASK" --batch_size 16 --learning_rate 1e-5 --epochs 10 --patience 3
     done
 done
 
