@@ -72,6 +72,9 @@ df.to_parquet(os.path.join(processed_data_dir, 'tjh_dataset_formatted.parquet'),
 # Read the dataset
 df = pd.read_parquet(os.path.join(processed_data_dir, 'tjh_dataset_formatted.parquet'))
 
+# Ensure the data is sorted by PatientID and RecordTime
+df = df.sort_values(by=['PatientID', 'RecordTime']).reset_index(drop=True)
+
 # Group the dataframe by `PatientID`
 grouped = df.groupby('PatientID')
 
