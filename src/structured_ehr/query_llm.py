@@ -155,13 +155,10 @@ def prepare_prompt(args: argparse.Namespace) -> Tuple[str, str, str, str]:
         example = ''
     elif args.n_shot == 1:
         example = 'Here is an example of input information:\n'
-        example += 'Example #1:'
-        example += EXAMPLE[args.dataset][args.task][0] + '\n'
+        example += 'Example:\n'
+        example += EXAMPLE[args.dataset][args.task]
     else:
-        example = f'Here are {args.n_shot} examples of input information:\n'
-        for i in range(args.n_shot):
-            example += f'Example #{i + 1}:'
-            example += EXAMPLE[args.dataset][args.task][i] + '\n'
+        raise ValueError(f'Invalid n_shot value: {args.n_shot}')
     example = example.strip()
 
     # Get the response format
@@ -204,7 +201,7 @@ def setup_output_paths(args: argparse.Namespace) -> Tuple[str, str]:
     return logits_path, prompts_path, perf_path, save_filename
 
 
-def load_dataset(args: argparse.Namespace) -> Tuple[List, List, List, List, List, List]:
+def load_dataset(args: argparse.Namespace) -> Tuple[List, List, List, List, List, List, Any]:
     """
     Load dataset based on configuration.
 
@@ -222,8 +219,15 @@ def load_dataset(args: argparse.Namespace) -> Tuple[List, List, List, List, List
     missing_masks = [item['missing_mask'] for item in data]
     record_times = [item['record_time'] for item in data]
     labtest_features = pd.read_pickle(os.path.join(dataset_path, 'labtest_features.pkl'))
+    if args.task == 'los':
+        try:
+            los_info = pd.read_pickle(os.path.join(dataset_path, 'los_info.pkl'))
+        except FileNotFoundError:
+            raise FileNotFoundError(f"LOS info file not found in {dataset_path}.")
+    else:
+        los_info = None
 
-    return ids, xs, ys, missing_masks, record_times, labtest_features
+    return ids, xs, ys, missing_masks, record_times, labtest_features, los_info
 
 
 def process_result(result: str, y: Any) -> Tuple[Any, Any]:
@@ -278,7 +282,7 @@ def process_result(result: str, y: Any) -> Tuple[Any, Any]:
             pred = float(answer)
         except Exception as e:
             print(f"Error converting answer to float: {answer}, Error: {e}")
-            pred = 0.501
+            pred = -1.0
     else:
         raise ValueError("No valid JSON content found.")
 
@@ -325,6 +329,46 @@ def evaluate_binary_task(logits: Dict) -> pd.DataFrame:
     return pd.DataFrame(data=data, index=['all', 'w/o unknown'])
 
 
+def evaluate_regression_task(logits: Dict, los_info: Dict) -> pd.DataFrame:
+    """
+    Evaluate regression task performance.
+
+    Args:
+        logits: Dictionary containing labels and predictions
+
+    Returns:
+        DataFrame with performance metrics
+    """
+    _labels = logits['labels']
+    _preds = logits['preds']
+
+    # Calculate metrics for all samples
+    _metrics = get_all_metrics(_preds, _labels, 'los', los_info)
+
+    # Filter out unknown samples
+    labels = []
+    preds = []
+    for label, pred in zip(_labels, _preds):
+        if pred != 0.501:
+            labels.append(label)
+            preds.append(pred)
+
+    # Calculate metrics for filtered samples
+    metrics = get_all_metrics(preds, labels, 'los', los_info)
+
+    # Prepare data for DataFrame
+    data = {'count': [len(_labels), len(labels)]}
+    data = dict(data, **{
+        k: [f'{v1:.2f}', f'{v2:.2f}'] for k, v1, v2 in zip(
+            _metrics.keys(),
+            _metrics.values(),
+            metrics.values()
+        )
+    })
+
+    return pd.DataFrame(data=data, index=['all', 'w/o unknown'])
+
+
 def run(args: argparse.Namespace):
     """
     Main function to run the LLM evaluation.
@@ -337,12 +381,14 @@ def run(args: argparse.Namespace):
 
     # Validate arguments
     assert args.dataset in ['tjh', 'mimic-iv'], f'Unknown dataset: {args.dataset}'
-    assert args.task in ['mortality', 'readmission'], f'Unknown task: {args.task}'
+    assert args.task in ['mortality', 'los', 'readmission'], f'Unknown task: {args.task}'
     if args.task == 'readmission':
         assert args.dataset == 'mimic-iv', 'Readmission task is only available for MIMIC-IV dataset'
+    elif args.task == 'los':
+        assert args.dataset == 'tjh', 'LOS task is only available for TJH dataset'
 
     # Load the dataset
-    ids, xs, ys, missing_masks, record_times, features = load_dataset(args)
+    ids, xs, ys, missing_masks, record_times, features, los_info = load_dataset(args)
 
     # Prepare the system prompt, unit range context, and examples
     system_prompt, task_description, example, response_format = prepare_prompt(args)
@@ -427,6 +473,9 @@ def run(args: argparse.Namespace):
             # Process the result
             pred, label, think = process_result(result, y)
 
+            if pred < 0:
+                pred = 0.501 if args.task in ['mortality', 'readmission'] else 0.0
+
             # Save the result
             pd.to_pickle({
                 'system_prompt': system_prompt,
@@ -448,11 +497,21 @@ def run(args: argparse.Namespace):
         }, os.path.join(logits_path, f'0_{save_filename}.pkl'))
 
         # Save performance metrics
-        performance_metrics = evaluate_binary_task({
-            'labels': labels,
-            'preds': preds,
-        })
-        performance_metrics.to_csv(os.path.join(perf_path, f'{save_filename}.csv'), index=False)
+        try:
+            if args.task in ['mortality', 'readmission']:
+                performance_metrics = evaluate_binary_task({
+                    'labels': labels,
+                    'preds': preds,
+                })
+            else:
+                performance_metrics = evaluate_regression_task({
+                    'labels': labels,
+                    'preds': preds,
+                }, los_info)
+
+            performance_metrics.to_csv(os.path.join(perf_path, f'{save_filename}.csv'), index=False)
+        except Exception as e:
+            print(f'Error evaluating performance metrics: {e}')
 
 
 def parse_args():
@@ -466,12 +525,12 @@ def parse_args():
 
     # Dataset and task configuration
     parser.add_argument('--dataset', '-d', type=str, required=True, choices=['tjh', 'mimic-iv'], help='Dataset to use')
-    parser.add_argument('--task', '-t', type=str, required=True, choices=['mortality', 'readmission'], help='Task to perform')
+    parser.add_argument('--task', '-t', type=str, required=True, choices=['mortality', 'readmission', 'los'], help='Task to perform')
     parser.add_argument('--model', '-m', type=str, required=True, help='LLM model to use')
     parser.add_argument('--seed', '-s', type=int, default=42, help='Random seed for reproducibility')
 
     # Prompt configuration
-    parser.add_argument('--n_shot', '-n', type=int, default=0,
+    parser.add_argument('--n_shot', '-n', type=int, default=0, choices=[0, 1],
                        help='Number of examples to include in the prompt')
     parser.add_argument('--unit', '-u', action='store_true',
                        help='Include unit information in the prompt')
