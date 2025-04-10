@@ -2,8 +2,8 @@
 
 # Basic configurations
 MODEL="DeepSeek"
-OUTPUT_LOGITS=false
-OUTPUT_PROMPTS=true
+OUTPUT_LOGITS=true
+OUTPUT_PROMPTS=false
 
 # Parameter options
 DATASET_TASK_OPTIONS=(

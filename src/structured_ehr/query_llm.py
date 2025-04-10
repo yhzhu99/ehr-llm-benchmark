@@ -12,9 +12,10 @@ from tenacity import (
 )
 from openai import OpenAI
 import pandas as pd
+import torch
 
 from structured_ehr.utils.llm_configs import LLM_MODELS_SETTINGS
-from structured_ehr.utils.metrics import get_all_metrics
+from structured_ehr.utils.metrics import get_all_metrics, get_regression_metrics, reverse_los
 from structured_ehr.prompts.prompt_template import SYSTEMPROMPT, USERPROMPT, UNIT, REFERENCE_RANGE, TASK_DESCRIPTION, RESPONSE_FORMAT, EXAMPLE
 
 
@@ -343,7 +344,7 @@ def evaluate_regression_task(logits: Dict, los_info: Dict) -> pd.DataFrame:
     _preds = logits['preds']
 
     # Calculate metrics for all samples
-    _metrics = get_all_metrics(_preds, _labels, 'los', los_info)
+    _metrics = get_regression_metrics(torch.Tensor(_preds), reverse_los(torch.Tensor(_labels), los_info))
 
     # Filter out unknown samples
     labels = []
@@ -354,7 +355,7 @@ def evaluate_regression_task(logits: Dict, los_info: Dict) -> pd.DataFrame:
             preds.append(pred)
 
     # Calculate metrics for filtered samples
-    metrics = get_all_metrics(preds, labels, 'los', los_info)
+    metrics = get_regression_metrics(torch.Tensor(preds), reverse_los(torch.Tensor(labels), los_info))
 
     # Prepare data for DataFrame
     data = {'count': [len(_labels), len(labels)]}
