@@ -137,8 +137,8 @@ def export_missing_mask(
         List of missing value masks
     """
     df_copy = df.copy()
-    # Ensure the data is sorted by patient ID
-    df_copy = df_copy.sort_values(by=id_column).reset_index(drop=True)
+    # Ensure the data is sorted by ID and RecordTime
+    df_copy = df_copy.sort_values(by=[id_column, "RecordTime"]).reset_index(drop=True)
 
     grouped = df.groupby(id_column)
     missing_mask = []
@@ -173,8 +173,8 @@ def export_record_time(
         List of record time sequences
     """
     df_copy = df.copy()
-    # Ensure the data is sorted by patient ID
-    df_copy = df_copy.sort_values(by=id_column).reset_index(drop=True)
+    # Ensure the data is sorted by ID and RecordTime
+    df_copy = df_copy.sort_values(by=[id_column, "RecordTime"]).reset_index(drop=True)
     # Convert and format RecordTime
     df_copy["RecordTime"] = pd.to_datetime(df_copy["RecordTime"]).dt.strftime("%Y-%m-%d")
 
@@ -203,8 +203,8 @@ def export_note(
         List of clinical notes
     """
     df_copy = df.copy()
-    # Ensure the data is sorted by patient ID
-    df_copy = df_copy.sort_values(by=id_column).reset_index(drop=True)
+    # Ensure the data is sorted by ID and RecordTime
+    df_copy = df_copy.sort_values(by=[id_column, "RecordTime"]).reset_index(drop=True)
 
     grouped = df.groupby(id_column)
     notes = grouped.first()[note_column].tolist()
