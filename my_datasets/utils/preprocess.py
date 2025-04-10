@@ -6,49 +6,50 @@ import pandas as pd
 
 def calculate_data_existing_length(data: np.ndarray) -> int:
     """
-    计算数据中非缺失值(非NaN)的数量。
+    Calculate the number of non-missing (non-NaN) values in the data.
 
     Args:
-        data: 输入数据数组
+        data: Input data array
 
     Returns:
-        非NaN值的数量
+        Count of non-NaN values
     """
     return sum(1 for item in data if not pd.isna(item))
 
 
 def fill_missing_value(data: np.ndarray, to_fill_value: float = 0) -> np.ndarray:
     """
-    填充时间序列数据中的缺失值。数据按时间升序排列。
-    对于序列开始的缺失值使用指定的填充值，之后的缺失值使用前向填充策略。
+    Fill missing values in time series data sorted in ascending order by time.
+    Uses specified fill value for leading missing values at the beginning of the sequence,
+    and forward fill strategy for subsequent missing values.
 
     Args:
-        data: 按时间升序排列的数据数组
-        to_fill_value: 用于填充序列开始部分缺失值的默认值
+        data: Data array sorted in ascending order by time
+        to_fill_value: Default value for filling leading missing values
 
     Returns:
-        填充后的数据数组
+        Filled data array
     """
     data_len = len(data)
     data_exist_len = calculate_data_existing_length(data)
 
-    # 如果没有缺失值，直接返回原数据
+    # Return original data if no missing values
     if data_len == data_exist_len:
         return data
 
-    # 如果全是缺失值，全部填充为指定值
+    # Fill all with specified value if all values are missing
     if data_exist_len == 0:
         data[:] = to_fill_value
         return data
 
-    # 处理序列开始部分的缺失值
+    # Handle leading missing values at sequence start
     if pd.isna(data[0]):
-        # 查找第一个非NaN值的位置
+        # Find position of first non-NaN value
         not_na_pos = next((i for i, val in enumerate(data) if not pd.isna(val)), 0)
-        # 填充第一个非NaN值之前的元素
+        # Fill elements before first non-NaN value
         data[:not_na_pos] = to_fill_value
 
-    # 使用前向填充策略处理剩余的缺失值
+    # Apply forward fill for remaining missing values
     for i in range(1, data_len):
         if pd.isna(data[i]):
             data[i] = data[i - 1]
@@ -66,24 +67,23 @@ def forward_fill_pipeline(
     id_column: str="PatientID"
 ) -> Tuple[pd.DataFrame, List, List, List]:
     """
-    针对患者数据的前向填充管道。对每个患者的时间序列数据进行排序，填充缺失值，
-    并提取特征和目标变量。
+    Forward filling pipeline for patient time series data. Sorts each patient's time series,
+    fills missing values, and extracts features/target variables.
 
     Args:
-        df: 包含患者数据的DataFrame
-        default_fill: 默认填充值的DataFrame
-        demographic_features: 人口统计学特征列表
-        labtest_features: 实验室检测特征列表
-        target_features: 目标变量特征列表
-        require_impute_features: 需要进行缺失值填充的特征列表
+        df: DataFrame containing patient data
+        default_fill: DataFrame with default fill values
+        demographic_features: List of demographic features
+        labtest_features: List of lab test features
+        target_features: List of target variable features
+        require_impute_features: Features requiring missing value imputation
 
     Returns:
-        元组，包含(
-            填充后的DataFrame,
-            所有患者的特征列表,
-            所有患者的目标变量列表,
-            所有患者ID列表
-        )
+        Tuple containing:
+            - Filled DataFrame
+            - List of features for all patients
+            - List of target variables for all patients
+            - List of all patient IDs
     """
     df_copy = df.copy()
     grouped = df_copy.groupby(id_column)
@@ -92,23 +92,23 @@ def forward_fill_pipeline(
     for patient_id, group in grouped:
         sorted_group = group.sort_values(by=["RecordTime"], ascending=True)
 
-        # 对需要填充的特征进行缺失值处理
+        # Handle missing values for features requiring imputation
         for feature in require_impute_features:
-            # 确定填充值，分类特征默认为-1
+            # Determine fill value, default -1 for categorical features
             to_fill_value = default_fill.get(feature, -1)
-            # 使用患者中位数作为缺失值的填充值
+            # Use patient median for missing value imputation
             fill_missing_value(sorted_group[feature].values, to_fill_value)
 
-        # 提取特征和目标变量
+        # Extract features and target variables
         patient_x = []
         patient_y = []
 
         for _, row in sorted_group.iterrows():
-            # 提取目标变量
+            # Extract target variables
             target_values = [row[f] for f in target_features]
             patient_y.append(target_values)
 
-            # 提取特征
+            # Extract features
             features = [row[f] for f in demographic_features + labtest_features]
             patient_x.append(features)
 
@@ -126,15 +126,15 @@ def export_missing_mask(
     id_column: str = "PatientID",
 ) -> List:
     """
-    导出缺失值掩码，标记每个特征的缺失值。
+    Export missing value mask indicating missing values for each feature.
 
     Args:
-        df: 包含患者数据的DataFrame
-        demographic_features: 人口统计学特征列表
-        labtest_features: 实验室检测特征列表
+        df: DataFrame containing patient data
+        demographic_features: List of demographic features
+        labtest_features: List of lab test features
 
     Returns:
-        缺失值掩码列表
+        List of missing value masks
     """
     df_copy = df.copy()
     # Ensure the data is sorted by patient ID
@@ -146,7 +146,7 @@ def export_missing_mask(
     for _, group in grouped:
         sorted_group = group.sort_values(by=["RecordTime"], ascending=True)
 
-        # Generate the mask for each patient
+        # Generate mask for each patient
         features = demographic_features + labtest_features
         patient_mask = []
 
@@ -164,18 +164,18 @@ def export_record_time(
     id_column: str = "PatientID",
 ) -> List:
     """
-    导出记录时间序列，按患者ID分组。
+    Export record time sequences grouped by patient ID.
 
     Args:
-        df: 包含患者数据的DataFrame
+        df: DataFrame containing patient data
 
     Returns:
-        记录时间序列列表
+        List of record time sequences
     """
     df_copy = df.copy()
     # Ensure the data is sorted by patient ID
     df_copy = df_copy.sort_values(by=id_column).reset_index(drop=True)
-    # Convert RecordTime to datetime and format it
+    # Convert and format RecordTime
     df_copy["RecordTime"] = pd.to_datetime(df_copy["RecordTime"]).dt.strftime("%Y-%m-%d")
 
     grouped = df_copy.groupby(id_column)
@@ -194,13 +194,13 @@ def export_note(
     note_column: str = "Text",
 ) -> List:
     """
-    导出患者的临床笔记信息，按患者ID分组。
+    Export clinical notes grouped by patient ID.
 
     Args:
-        df: 包含患者数据的DataFrame
+        df: DataFrame containing patient data
 
     Returns:
-        临床笔记列表
+        List of clinical notes
     """
     df_copy = df.copy()
     # Ensure the data is sorted by patient ID
@@ -214,13 +214,13 @@ def export_note(
 
 def filter_outlier(element: float) -> float:
     """
-    过滤异常值，将绝对值大于10000的值替换为0。
+    Filter outliers by replacing values with absolute value >10000 with 0.
 
     Args:
-        element: 输入值
+        element: Input value
 
     Returns:
-        过滤后的值
+        Filtered value
     """
     return 0 if abs(float(element)) > 1e4 else element
 
@@ -233,26 +233,25 @@ def normalize_dataframe(
     id_column: str = "PatientID",
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, Optional[Dict[str, float]], pd.Series, pd.Series]:
     """
-    对训练集、验证集和测试集的特征进行标准化处理，并计算相关统计信息。
+    Normalize features across train/val/test sets and compute related statistics.
 
     Args:
-        train_df: 训练集DataFrame
-        val_df: 验证集DataFrame
-        test_df: 测试集DataFrame
-        normalize_features: 需要标准化的特征列表
+        train_df: Training set DataFrame
+        val_df: Validation set DataFrame
+        test_df: Test set DataFrame
+        normalize_features: List of features to normalize
 
     Returns:
-        元组，包含(
-            标准化后的训练集,
-            标准化后的验证集,
-            标准化后的测试集,
-            默认填充值DataFrame,
-            住院时长(LOS)相关信息字典(如果存在),
-            训练集均值,
-            训练集标准差
-        )
+        Tuple containing:
+            - Normalized training set
+            - Normalized validation set
+            - Normalized test set
+            - Default fill values DataFrame
+            - LOS-related info dict (if exists)
+            - Training set mean
+            - Training set std
     """
-    # 计算分位数，过滤掉异常值
+    # Calculate quantiles to filter outliers
     q_low = train_df[normalize_features].quantile(0.05)
     q_high = train_df[normalize_features].quantile(0.95)
     filtered_df = train_df[
@@ -260,20 +259,20 @@ def normalize_dataframe(
         (train_df[normalize_features] < q_high)
     ]
 
-    # 计算过滤后数据的统计量
+    # Compute statistics from filtered data
     train_mean = filtered_df[normalize_features].mean()
     train_std = filtered_df[normalize_features].std()
     train_median = filtered_df[normalize_features].median()
 
-    # 将NaN值替换为0
+    # Replace NaNs with 0
     train_mean = train_mean.fillna(0.0)
     train_std = train_std.fillna(0.0)
     train_median = train_median.fillna(0.0)
 
-    # 计算默认填充值
+    # Compute default fill values
     default_fill = (train_median - train_mean) / (train_std + 1e-12)
 
-    # 处理住院时长(LOS)信息
+    # Handle Length of Stay (LOS) information
     los_info = None
     if "LOS" in train_df.columns:
         los_info = {
@@ -282,7 +281,7 @@ def normalize_dataframe(
             "los_median": train_median["LOS"].item()
         }
 
-        # 计算大住院时长和阈值(为covid-19基准设计)
+        # Calculate large LOS and threshold (for covid-19 benchmark design)
         los_array = train_df.groupby(id_column)['LOS'].max().values
         los_p95 = np.percentile(los_array, 95)
         los_p5 = np.percentile(los_array, 5)
@@ -292,18 +291,18 @@ def normalize_dataframe(
             "threshold": filtered_los.mean().item() * 0.5
         })
 
-    # 创建副本
+    # Create copies
     train_df = train_df.copy()
     val_df = val_df.copy()
     test_df = test_df.copy()
 
-    # 对数据集进行Z-score标准化
+    # Apply Z-score normalization
     for df in [train_df, val_df, test_df]:
-        # 将数据类型转换为float
+        # Convert data types
         df[normalize_features] = df[normalize_features].astype(float)
-        # 标准化处理
+        # Normalization
         df.loc[:, normalize_features] = (df[normalize_features] - train_mean) / (train_std + 1e-12)
-        # 过滤异常值
+        # Filter outliers
         df.loc[:, normalize_features] = df[normalize_features].map(filter_outlier)
 
     return train_df, val_df, test_df, default_fill, los_info, train_mean, train_std
