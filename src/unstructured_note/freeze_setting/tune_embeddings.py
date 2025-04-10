@@ -48,8 +48,8 @@ class EmbeddingDataset(Dataset):
     def __getitem__(self, idx):
         item = self.data[idx]
         embedding = item['embedding'].float()
-        label = torch.tensor(item[f'y_{args.task}']).float()
-        return embedding, label.unsqueeze(0)
+        label = torch.tensor(item[f'y_{args.task}'])[0].float()
+        return embedding, label.unsqueeze(dim=0)
 
 # Lightning data module
 class EmbeddingDataModule(L.LightningDataModule):
