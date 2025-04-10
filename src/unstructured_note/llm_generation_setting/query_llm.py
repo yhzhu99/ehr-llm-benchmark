@@ -14,7 +14,7 @@ from openai import OpenAI
 import pandas as pd
 import torch
 
-from unstructured_note.utils.config import LLM_API_CONFIG
+from unstructured_note.utils.config import LLM_API_CONFIG, MODELS_CONFIG
 from unstructured_note.utils.classification_metrics import get_binary_metrics
 from unstructured_note.llm_generation_setting.prompt_template import SYSTEMPROMPT, INSTRUCTION_PROMPT
 
@@ -241,8 +241,11 @@ def run(args: argparse.Namespace):
 
     # Initialize LLM
     if args.output_logits:
-        if 'deepseek' in args.model.lower():
+        if args.model.lower() == 'deepseek-v3':
             llm_config = LLM_API_CONFIG['deepseek-v3-ark']
+        elif args.model in MODELS_CONFIG.keys():
+            llm_config = LLM_API_CONFIG['llm-studio']
+            llm_config['model_name'] = MODELS_CONFIG[args.model]['lmstudio_id']
         else:
             raise ValueError(f'Unknown model: {args.model}')
         llm = OpenAI(api_key=llm_config['api_key'], base_url=llm_config['base_url'])
@@ -264,13 +267,13 @@ def run(args: argparse.Namespace):
             pid = str(round(pid))
 
         # Create the user prompt
-        user_prompt = f"{instruction_prompt}\n\nNote:\n{note}\n\nRESPONSE:\n"
+        user_prompt = f"{instruction_prompt}\n\nNote:\n{note}"
 
         # Save prompts if required
         if args.output_prompts:
             with open(os.path.join(prompts_path, f'{pid}.txt'), 'w') as f:
                 f.write('System Prompt: ' + system_prompt + '\n\n')
-                f.write('User Prompt: ' + user_prompt + '\n')
+                f.write('User Prompt: ' + user_prompt)
 
         # Query LLM and save results if required
         if args.output_logits:
@@ -289,19 +292,31 @@ def run(args: argparse.Namespace):
             completion_tokens += completion_token
 
             # Process the result
-            pred, label, think = process_result(result, y)
+            try:
+                pred, label, think = process_result(result, y)
 
-            # Save the result
-            pd.to_pickle({
-                'system_prompt': system_prompt,
-                'user_prompt': user_prompt,
-                'think': think,
-                'pred': pred,
-                'label': label,
-            }, os.path.join(logits_path, f'{pid}.pkl'))
+                # Save the result
+                pd.to_pickle({
+                    'system_prompt': system_prompt,
+                    'user_prompt': user_prompt,
+                    'think': think,
+                    'pred': pred,
+                    'label': label,
+                }, os.path.join(logits_path, f'{pid}.pkl'))
 
-            labels.append(label)
-            preds.append(pred)
+                labels.append(label)
+                preds.append(pred)
+
+            except Exception as e:
+                print(f'Error processing result for patient {pid}: {e}')
+
+                # Save original result for debugging
+                pd.to_pickle({
+                    'system_prompt': system_prompt,
+                    'user_prompt': user_prompt,
+                    'response': result,
+                }, os.path.join(logits_path, f'{pid}.pkl'))
+                continue
 
     if args.output_logits:
         # Save the final results
@@ -312,11 +327,14 @@ def run(args: argparse.Namespace):
         }, os.path.join(logits_path, f'0_{save_filename}.pkl'))
 
         # Save performance metrics
-        performance_metrics = evaluate_binary_task({
-            'labels': labels,
-            'preds': preds,
-        })
-        performance_metrics.to_csv(os.path.join(perf_path, f'{save_filename}.csv'), index=False)
+        try:
+            performance_metrics = evaluate_binary_task({
+                'labels': labels,
+                'preds': preds,
+            })
+            performance_metrics.to_csv(os.path.join(perf_path, f'{save_filename}.csv'), index=False)
+        except Exception as e:
+            print(f'Error evaluating performance: {e}')
 
 
 def parse_args():
