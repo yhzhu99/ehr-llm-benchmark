@@ -392,7 +392,7 @@ def run(args: argparse.Namespace):
 
         # Create the user prompt
         user_prompt = USERPROMPT.format(
-            TASK_DESCRIPTION_AND_RESPONSE_FORMAT=task_description,
+            TASK_DESCRIPTION=task_description,
             EXAMPLE=example,
             SEX=sex,
             AGE=age,
@@ -406,7 +406,7 @@ def run(args: argparse.Namespace):
         if args.output_prompts:
             with open(os.path.join(prompts_path, f'{pid}.txt'), 'w') as f:
                 f.write('System Prompt: ' + system_prompt + '\n\n')
-                f.write('User Prompt: ' + user_prompt + '\n')
+                f.write('User Prompt: ' + user_prompt)
 
         # Query LLM and save results if required
         if args.output_logits:
