@@ -74,4 +74,8 @@ LLM_API_CONFIG = {
         "comment": "DeepSeek R1 Reasoning Model Ark",
         "reasoning": True,
     },
+    "llm-studio": {
+        "api_key": os.getenv("LLMSTUDIO_API_KEY"),
+        "base_url": "https://llmapi.yhzhu.uk/v1"
+    }
 }
