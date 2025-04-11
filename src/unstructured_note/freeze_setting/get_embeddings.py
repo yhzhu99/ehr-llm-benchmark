@@ -100,7 +100,7 @@ def extract_embeddings(data_split, split_name):
             if args.model == "BGE-M3":
                 # BGE-M3 model
                 outputs = model.encode(text, max_length=args.max_length)['dense_vecs']
-                embedding = torch.tensor(outputs[0]).detach().cpu()
+                embedding = torch.tensor(outputs).detach().cpu()
             else:
                 # SentenceTransformer models
                 embedding = torch.tensor(model.encode(text, max_length=args.max_length)).detach().cpu()
