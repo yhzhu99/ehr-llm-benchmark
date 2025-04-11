@@ -296,6 +296,7 @@ dependencies = [
     { name = "dotenv" },
     { name = "einops" },
     { name = "filelock" },
+    { name = "flagembedding" },
     { name = "frozenlist" },
     { name = "fsspec" },
     { name = "h11" },
@@ -326,6 +327,7 @@ dependencies = [
     { name = "orjson" },
     { name = "packaging" },
     { name = "pandas" },
+    { name = "peft" },
     { name = "pillow" },
     { name = "propcache" },
     { name = "protobuf" },
@@ -381,6 +383,7 @@ requires-dist = [
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "einops", specifier = ">=0.8.1" },
     { name = "filelock", specifier = "==3.18.0" },
+    { name = "flagembedding", specifier = ">=1.2.11" },
     { name = "frozenlist", specifier = "==1.5.0" },
     { name = "fsspec", specifier = "==2025.3.0" },
     { name = "h11", specifier = "==0.14.0" },
@@ -411,6 +414,7 @@ requires-dist = [
     { name = "orjson", specifier = "==3.10.16" },
     { name = "packaging", specifier = "==24.2" },
     { name = "pandas", specifier = "==2.2.3" },
+    { name = "peft", specifier = ">=0.15.1" },
     { name = "pillow", specifier = "==11.1.0" },
     { name = "propcache", specifier = "==0.3.0" },
     { name = "protobuf", specifier = "==6.30.1" },
@@ -476,6 +480,19 @@ sdist = { url = "https://files.pythonhosted.org/packages/0a/10/c23352565a6544bdc
 wheels = [
     { url = "https://files.pythonhosted.org/packages/4d/36/2a115987e2d8c300a974597416d9de88f2444426de9571f4b59b2cca3acc/filelock-3.18.0-py3-none-any.whl", hash = "sha256:c401f4f8377c4464e6db25fff06205fd89bdd83b65eb0488ed1b160f780e21de", size = 16215 },
 ]
+
+[[package]]
+name = "flagembedding"
+version = "1.2.11"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "accelerate" },
+    { name = "datasets" },
+    { name = "sentence-transformers" },
+    { name = "torch" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c9/6b/819ce6f901e2094464750ae73da495f4a7e2338eeecdb2d836c66b594803/FlagEmbedding-1.2.11.tar.gz", hash = "sha256:12c55eb535e9325c3efa539af4aa39c6f4e4e1b6441db7778d42ad0612906501", size = 147114 }
 
 [[package]]
 name = "frozenlist"
@@ -1222,6 +1239,27 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/25/b0/98d6ae2e1abac4f35230aa756005e8654649d305df9a28b16b9ae4353bff/pandas-2.2.3-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1db71525a1538b30142094edb9adc10be3f3e176748cd7acc2240c2f2e5aa3a4", size = 11871013 },
     { url = "https://files.pythonhosted.org/packages/cc/57/0f72a10f9db6a4628744c8e8f0df4e6e21de01212c7c981d31e50ffc8328/pandas-2.2.3-cp313-cp313t-musllinux_1_2_aarch64.whl", hash = "sha256:15c0e1e02e93116177d29ff83e8b1619c93ddc9c49083f237d4312337a61165d", size = 15711620 },
     { url = "https://files.pythonhosted.org/packages/ab/5f/b38085618b950b79d2d9164a711c52b10aefc0ae6833b96f626b7021b2ed/pandas-2.2.3-cp313-cp313t-musllinux_1_2_x86_64.whl", hash = "sha256:ad5b65698ab28ed8d7f18790a0dc58005c7629f227be9ecc1072aa74c0c1d43a", size = 13098436 },
+]
+
+[[package]]
+name = "peft"
+version = "0.15.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "accelerate" },
+    { name = "huggingface-hub" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "psutil" },
+    { name = "pyyaml" },
+    { name = "safetensors" },
+    { name = "torch" },
+    { name = "tqdm" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ac/ef/c5c9f8dd6b8ceb080112f41037e9f0ce442cfd8937739cf3e5d8645de3d5/peft-0.15.1.tar.gz", hash = "sha256:e4c65af70683a9ef3baf1ab450710f1eb7181f369ef6172ca8bf15bf4ae6ff71", size = 471440 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d5/47/f2938c20b1c6d7b738ca2a129cf73cd1453cea76d5c9a2f2bbf6199bf037/peft-0.15.1-py3-none-any.whl", hash = "sha256:5fb3960beb518f00668f2cdc53424a5cc495c78281697821ce24609c90ca0a10", size = 411012 },
 ]
 
 [[package]]
