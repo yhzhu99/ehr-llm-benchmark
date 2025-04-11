@@ -14,6 +14,10 @@ from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 from tqdm import tqdm
 
+# Import libraries for new embedding models
+from sentence_transformers import SentenceTransformer
+from FlagEmbedding import BGEM3FlagModel
+
 from unstructured_note.utils.config import MODELS_CONFIG
 
 # Check if MPS is available (for Mac GPU)
@@ -21,11 +25,12 @@ mps_available = hasattr(torch.backends, "mps") and torch.backends.mps.is_availab
 set_seed(42)
 
 # Create model lists for argument selection
-BERTBasedModels = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "BERT"]
-LLM = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "GPT"]
+BERT_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "BERT"]
+LLM_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "GPT"]
+EMBEDDING_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "embedding"]
 
 parser = argparse.ArgumentParser(description='Get ICD-10 embeddings')
-parser.add_argument('--model', type=str, default='BERT', choices=BERTBasedModels + LLM)
+parser.add_argument('--model', type=str, default='BERT', choices=BERT_MODELS + LLM_MODELS + EMBEDDING_MODELS)
 parser.add_argument('--cuda', type=int, default=0, choices=[0,1,2,3,4,5,6,7])
 parser.add_argument('--batch_size', type=int, default=1)
 args = parser.parse_args()
@@ -64,8 +69,10 @@ class ICDDataset(Dataset):
         return self.data[idx][0], self.data[idx][1]  # code and disease name
 
 def run():
-    # Get model path from config
-    model_path = next(model["hf_id"] for model in MODELS_CONFIG if model["model_name"] == model_name)
+    # Get model info from config
+    model_info = next(model for model in MODELS_CONFIG if model["model_name"] == model_name)
+    model_path = model_info["hf_id"]
+    model_type = model_info["model_type"]
 
     # Determine the appropriate device
     if mps_available:
@@ -79,16 +86,24 @@ def run():
         print("Using CPU")
 
     # Load model based on type
-    if model_name in LLM:
+    if model_type == "GPT":
         model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True).to(device)
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         tokenizer.pad_token = tokenizer.eos_token
         model.config.pad_token_id = tokenizer.eos_token_id
-    elif model_name in BERTBasedModels:
+    elif model_type == "BERT":
         model = AutoModel.from_pretrained(model_path, trust_remote_code=True).to(device)
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+    elif model_type == "embedding":
+        if model_name == "BGE-M3":
+            model = BGEM3FlagModel(model_path, use_fp16=True)
+            tokenizer = None
+        else:
+            # SentenceTransformer models
+            model = SentenceTransformer(model_path)
+            tokenizer = None
     else:
-        raise ValueError(f"Model {model_name} not supported.")
+        raise ValueError(f"Model type {model_type} not supported.")
 
     # Set up data loader
     dataset = ICDDataset()
@@ -98,16 +113,26 @@ def run():
     for batch in tqdm(dataloader, desc=f'Processing ICD codes with {model_name}'):
         code, disease = batch
 
-        # Tokenize inputs
-        encoded_input = tokenizer(disease, padding="max_length", max_length=512, truncation=True, return_tensors="pt").to(device)
-
-        with torch.no_grad():
-            if model_name in LLM:
-                outputs = model(**encoded_input, output_hidden_states=True)
-                embedding = outputs.hidden_states[-1][0, -1, :].detach().cpu()
+        if model_type == "embedding":
+            # Process with embedding models
+            if model_name == "BGE-M3":
+                # BGE-M3 model
+                outputs = model.encode(disease)['dense_vecs']
+                embedding = torch.tensor(outputs[0])
             else:
-                outputs = model(**encoded_input)
-                embedding = outputs.last_hidden_state[0, 0, :].detach().cpu()
+                # SentenceTransformer models
+                embedding = torch.tensor(model.encode(disease)[0])
+        else:
+            # Process with BERT or LLM models
+            encoded_input = tokenizer(disease, padding="max_length", max_length=512, truncation=True, return_tensors="pt").to(device)
+
+            with torch.no_grad():
+                if model_type == "GPT":
+                    outputs = model(**encoded_input, output_hidden_states=True)
+                    embedding = outputs.hidden_states[-1][0, -1, :].detach().cpu()
+                else:  # BERT models
+                    outputs = model(**encoded_input)
+                    embedding = outputs.last_hidden_state[0, 0, :].detach().cpu()
 
         result.append({
             'code': code,

@@ -26,9 +26,10 @@ set_seed(42)
 # Create model type lists
 BERT_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "BERT"]
 LLM_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "GPT"]
+EMBEDDING_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "embedding"]
 
 parser = argparse.ArgumentParser(description='Fine-tune embeddings with MLP')
-parser.add_argument('--model', type=str, required=True, choices=BERT_MODELS + LLM_MODELS)
+parser.add_argument('--model', type=str, required=True, choices=BERT_MODELS + LLM_MODELS + EMBEDDING_MODELS)
 parser.add_argument('--task', type=str, required=True, choices=['mortality', 'readmission'])
 parser.add_argument('--batch_size', type=int, default=64)
 parser.add_argument('--learning_rate', type=float, default=1e-4)
@@ -192,6 +193,15 @@ def get_embedding_dim(model_name):
         return 3584
     elif model_name in ["gemma-3-4b-pt"]:
         return 2560
+    # Add embedding model dimensions
+    elif model_name == "BGE-M3":
+        return 1024
+    elif model_name == "all-MiniLM-L6-v2":
+        return 384
+    elif model_name == "BioBERT-embed":
+        return 768
+    elif model_name == "BGE-Med":
+        return 1024
     else:
         # Default for unknown models
         return 768
