@@ -50,6 +50,7 @@ Details of the features for each visit are as follows:
 - Serum chloride (Unit: mmol/L. Reference range: 96 - 106.): [103.7, 103.7, 104.2, 104.2, 104.2]
 ...... (other features omitted for brevity)
 
+Response:
 ```json { "think": "The patient is a 52-year-old male. Key labs like Troponin I are consistently normal and low. Hemoglobin is borderline low for a male but stable. Serum chloride is within normal limits and stable. Assuming other unlisted vital signs and labs are also stable or within normal limits, the overall picture suggests a relatively stable condition without indicators of severe organ damage or rapid decline commonly associated with high mortality risk in this context. The risk appears low.", "answer": 0.25 } ```
 ''',
     'los': '''\
@@ -62,6 +63,7 @@ Details of the features for each visit are as follows:
 - Serum chloride (Unit: mmol/L. Reference range: 96 - 106.): [103.7, 103.7, 104.2, 104.2, 104.2]
 ...... (other features omitted for brevity)
 
+Response:
 ```json {"think": "The patient is a 52-year-old male. The provided data spans 5 visits over an 8-day period (Feb 9 to Feb 17), indicating the stay is at least this long. Key available labs show stability: Hypersensitive cardiac troponin I is consistently low and normal, suggesting no acute cardiac injury. A prediction around 10-14 days seems reasonable given the stability but also the duration already observed.", "answer": 12.0 } ```
 '''
     },
@@ -76,6 +78,7 @@ Details of the features for each visit are as follows:
 - Glascow coma scale motor response: ["Obeys Commands", "Obeys Commands", "Obeys Commands", "Obeys Commands"]
 ...... (other features omitted for brevity)
 
+Response:
 ```json { "think": "Patient is 52 years old. GCS components indicate full alertness and responsiveness (spontaneous eye opening, obeys commands) consistently across the recorded time points. While capillary refill is unknown, the neurological status appears stable and good. Assuming other vital signs and labs (not shown) are not critically deranged, the current data suggests a lower risk of mortality.", "answer": 0.3 } ```
 ''',
         'readmission': '''\
@@ -88,6 +91,7 @@ Details of the features for each visit are as follows:
 - Glascow coma scale motor response: ["Obeys Commands", "Obeys Commands", "Obeys Commands", "Obeys Commands"]
 ...... (other features omitted for brevity)
 
+Response:
 ```json { "think": "The patient (52F) shows stable and normal neurological status (GCS) throughout the observed period. Assuming clinical stability in other domains leading to discharge, the risk of readmission based solely on this neurological data appears relatively low. However, without information on the primary diagnosis, comorbidities, or discharge status, a definitive low risk cannot be assumed. Assigning a moderate-low probability.", "answer": 0.3 } ```
 '''
     },
@@ -110,7 +114,6 @@ Instructions & Output Format:
 Handling Uncertainty:
 In situations where the provided data is clearly insufficient or too ambiguous to make a reasonable prediction, respond with the exact phrase: `I do not know`
 
-Examples:
 {EXAMPLE}
 
 Now, please analyze and predict for the following patient:
