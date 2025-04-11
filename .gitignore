@@ -11,6 +11,7 @@ my_datasets/biosses/
 my_datasets/icd10/
 *.DS_Store
 prompt_*.md
+test_*.py
 
 ###############
 
