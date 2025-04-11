@@ -18,3 +18,7 @@ for model in BERT ClinicalBERT BioBERT GatorTron Clinical-Longformer BioGPT medi
 done
 
 echo "All sentence embedding generation tasks completed!"
+
+python src/unstructured_note/medical_sentence_matching_task/process_sentence_results.py
+
+echo "All sentence matching tasks completed!"
