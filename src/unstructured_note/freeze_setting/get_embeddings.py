@@ -99,11 +99,11 @@ def extract_embeddings(data_split, split_name):
             # Process with embedding models
             if args.model == "BGE-M3":
                 # BGE-M3 model
-                outputs = model.encode(text)['dense_vecs']
-                embedding = torch.tensor(outputs[0])
+                outputs = model.encode(text, max_length=args.max_length)['dense_vecs']
+                embedding = torch.tensor(outputs[0]).detach().cpu()
             else:
                 # SentenceTransformer models
-                embedding = torch.tensor(model.encode(text))
+                embedding = torch.tensor(model.encode(text, max_length=args.max_length)).detach().cpu()
         else:
             # Tokenize for BERT or LLM models
             inputs = tokenizer(
