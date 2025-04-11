@@ -135,8 +135,8 @@ def run():
                     embedding = outputs.last_hidden_state[0, 0, :].detach().cpu()
 
         result.append({
-            'code': code,
-            'disease': disease,
+            'code': code[0],
+            'disease': disease[0],
             'embedding': embedding,
         })
 

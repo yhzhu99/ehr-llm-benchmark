@@ -23,8 +23,7 @@ EMBEDDING_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["mod
 parser = argparse.ArgumentParser(description='Process ICD embeddings with clustering')
 parser.add_argument('--model', type=str, default='BERT', choices=BERT_MODELS + LLM_MODELS + EMBEDDING_MODELS)
 parser.add_argument('--process_all', action='store_true', help='Process all models and generate performance table')
-parser.add_argument('--ks', type=str, default='2,5,10,15,20,25,30,35,40,45,50',
-                    help='Comma-separated list of cluster numbers')
+parser.add_argument('--ks', type=str, default='10,20,30,40,50', help='Comma-separated list of cluster numbers')
 args = parser.parse_args()
 
 def calculate_icd_distance(code1, code2):
@@ -65,13 +64,13 @@ def run_clustering(model_name, k_values):
     embeddings = pd.read_pickle(embedding_path)
 
     # Extract codes and embeddings
-    DATA = []
-    CODE = []
+    embedding_list = []
+    icd_code_list = []
     for disease_info in embeddings:
-        code = disease_info["code"][0]  # disease_info["code"] always has one item
+        code = disease_info["code"]
         embedding = disease_info["embedding"]
-        CODE.append(code)
-        DATA.append(embedding)
+        icd_code_list.append(code)
+        embedding_list.append(embedding)
 
     # Ensure output directory exists
     output_dir = Path(f'logs/icd/{model_name}')
@@ -83,13 +82,13 @@ def run_clustering(model_name, k_values):
 
         # Train KMeans model
         start_time = time.time()
-        kmeans = KMeans(n_clusters=k, random_state=42, n_init="auto").fit(DATA)
+        kmeans = KMeans(n_clusters=k, random_state=42, n_init="auto").fit(embedding_list)
         kmeans_time = time.time() - start_time
         print(f'Time cost of kmeans: {kmeans_time:.2f}s')
 
         # Calculate Calinski-Harabasz score
         start_time = time.time()
-        ch = calinski_harabasz_score(DATA, kmeans.labels_)
+        ch = calinski_harabasz_score(embedding_list, kmeans.labels_)
         ch_time = time.time() - start_time
         print(f'Time cost of Calinski-Harabasz: {ch_time:.2f}s')
 
@@ -97,7 +96,7 @@ def run_clustering(model_name, k_values):
         start_time = time.time()
         distances = []
         for i in range(k):
-            code_cur_cluster = np.array(CODE)[kmeans.labels_ == i]
+            code_cur_cluster = np.array(icd_code_list)[kmeans.labels_ == i]
             distance_temp = []
 
             # Skip empty clusters or clusters with only one element
