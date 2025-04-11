@@ -257,10 +257,6 @@ def run(args: argparse.Namespace):
     labels = []
     preds = []
 
-    ids = ids[:5]
-    notes = notes[:5]
-    ys = ys[:5]
-
     for pid, note, y in tqdm(zip(ids, notes, ys), total=len(notes)):
         # Process patient ID
         if isinstance(pid, float):
