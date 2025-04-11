@@ -257,7 +257,7 @@ def process_result(result: str, y: Any) -> Tuple[Any, Any]:
             print(json_string)
             raise ValueError("Invalid JSON content found in match1.")
 
-    match = re.search(pattern_backticks, result.strip() + "\"]}```", re.DOTALL)
+    match = re.search(pattern_backticks, result.strip() + "\"}```", re.DOTALL)
     if match:
         json_string = match.group(1).strip().replace("\n", "")
         try:
@@ -410,13 +410,6 @@ def run(args: argparse.Namespace):
     # Process each patient
     labels = []
     preds = []
-
-    # ids = ids[:3]
-    # xs = xs[:3]
-    # ys = ys[:3]
-    # missing_masks = missing_masks[:3]
-    # record_times = record_times[:3]
-    # features = features[:3]
 
     for pid, x, y, missing_mask, record_time in tqdm(zip(ids, xs, ys, missing_masks, record_times), total=len(xs)):
         # Process patient ID
