@@ -10,7 +10,7 @@ TASKS=("mortality" "readmission")
 for MODEL in "${GPT_MODELS[@]}"; do
     for TASK in "${TASKS[@]}"; do
         echo "Fine-tuning $MODEL for $TASK task using IA3 PEFT method"
-        python src/unstructured_note/finetune_gpt_based_models/finetune_models.py --model "$MODEL" --task "$TASK" --batch_size 8 --learning_rate 8e-3 --epochs 2 --patience 1
+        python src/unstructured_note/finetune_gpt_based_models/finetune_models.py --model "$MODEL" --task "$TASK" --batch_size 8 --learning_rate 8e-3 --epochs 5 --patience 1
     done
 done
 
