@@ -240,6 +240,11 @@ def run(args: argparse.Namespace):
         if isinstance(pid, float):
             pid = str(round(pid))
 
+        # Check if the patient has already been processed
+        if os.path.exists(os.path.join(logits_path, f'{pid}.pkl')):
+            print(f'Patient {pid} already processed, skipping.')
+            continue
+
         # Create the user prompt
         user_prompt = f"{instruction_prompt}\n\nNote:\n{note}"
 

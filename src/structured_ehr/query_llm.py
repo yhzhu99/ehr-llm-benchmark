@@ -155,8 +155,7 @@ def prepare_prompt(args: argparse.Namespace) -> Tuple[str, str, str, str]:
     if args.n_shot == 0:
         example = ''
     elif args.n_shot == 1:
-        example = 'Here is an example of input information:\n'
-        example += 'Example:\n'
+        example = 'Example:\n'
         example += EXAMPLE[args.dataset][args.task]
     else:
         raise ValueError(f'Invalid n_shot value: {args.n_shot}')
@@ -231,7 +230,7 @@ def load_dataset(args: argparse.Namespace) -> Tuple[List, List, List, List, List
     return ids, xs, ys, missing_masks, record_times, labtest_features, los_info
 
 
-def process_result(result: str, y: Any) -> Tuple[Any, Any]:
+def process_result(result: str, y: Any) -> Tuple[float, float, str]:
     """
     Process the LLM result into prediction and get the corresponding label.
 
@@ -415,6 +414,11 @@ def run(args: argparse.Namespace):
         # Process patient ID
         if isinstance(pid, float):
             pid = str(round(pid))
+
+        # Check if the patient has already been processed
+        if os.path.exists(os.path.join(logits_path, f'{pid}.pkl')):
+            print(f'Patient {pid} already processed, skipping.')
+            continue
 
         # Extract basic patient info
         length = len(x)
