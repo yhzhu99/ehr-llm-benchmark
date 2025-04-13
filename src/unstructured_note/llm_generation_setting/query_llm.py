@@ -84,8 +84,8 @@ def setup_output_paths(args: argparse.Namespace) -> Tuple[str, str]:
     save_filename = 'output'
 
     if args.output_logits:
-        logits_path = os.path.join(args.logits_root, 'generation', args.dataset, args.task, args.model, save_filename)
-        perf_path = os.path.join(args.perf_root, 'generation', args.dataset, args.task, args.model, save_filename)
+        logits_path = os.path.join(args.logits_root, 'generation', args.dataset, args.task, args.model)
+        perf_path = os.path.join(args.perf_root, 'generation', args.dataset, args.task, args.model)
         os.makedirs(logits_path, exist_ok=True)
         os.makedirs(perf_path, exist_ok=True)
     else:
@@ -93,7 +93,7 @@ def setup_output_paths(args: argparse.Namespace) -> Tuple[str, str]:
         perf_path = ''
 
     if args.output_prompts:
-        prompts_path = os.path.join(args.prompts_root, 'generation', args.dataset, args.task, args.model, save_filename)
+        prompts_path = os.path.join(args.prompts_root, 'generation', args.dataset, args.task, args.model)
         os.makedirs(prompts_path, exist_ok=True)
     else:
         prompts_path = ''
@@ -135,35 +135,13 @@ def process_result(result: str, y: Any) -> Tuple[Any, Any]:
     label = y[-1]
 
     # Parse the result into the correct format
-    pattern_backticks = r'```json(.*?)```'
-    match = re.search(pattern_backticks, result, re.DOTALL)
     result_dict = None
-    if match:
-        json_string = match.group(1).strip().replace("\n", "")
-        try:
-            result_dict = json.loads(json_string)
-        except json.JSONDecodeError:
-            print(json_string)
-            raise ValueError("Invalid JSON content found in match1.")
-
-    match = re.search(pattern_backticks, result.strip() + "\"]}```", re.DOTALL)
-    if match:
-        json_string = match.group(1).strip().replace("\n", "")
-        try:
-            result_dict = json.loads(json_string)
-        except json.JSONDecodeError:
-            print(json_string)
-            raise ValueError("Invalid JSON content found in match 2.")
-
-    pattern_json_object = r'\{.*?\}'
-    match = re.search(pattern_json_object, result, re.DOTALL)
-    if match:
-        json_string = match.group(0).strip().replace("\n", "")
-        try:
-            result_dict = json.loads(json_string)
-        except json.JSONDecodeError:
-            print(json_string)
-            raise ValueError("Invalid JSON content found in match 3.")
+    result = result.replace('`', '').replace('json', '').strip()
+    result = re.sub(r'}\S*', '}', result)
+    try:
+        result_dict = json.loads(result)
+    except json.JSONDecodeError:
+        print(f"Error decoding JSON: {result}")
 
     if result_dict:
         think = result_dict.get('think', None)
@@ -295,6 +273,7 @@ def run(args: argparse.Namespace):
                 pd.to_pickle({
                     'system_prompt': system_prompt,
                     'user_prompt': user_prompt,
+                    'response': result,
                     'think': think,
                     'pred': pred,
                     'label': label,
