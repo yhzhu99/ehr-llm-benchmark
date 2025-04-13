@@ -135,24 +135,19 @@ def process_result(result: str, y: Any) -> Tuple[Any, Any]:
     label = y[-1]
 
     # Parse the result into the correct format
-    result_dict = None
     result = result.replace('`', '').replace('json', '').strip()
     result = re.sub(r'}\S*', '}', result)
     try:
         result_dict = json.loads(result)
-    except json.JSONDecodeError:
-        print(f"Error decoding JSON: {result}")
-
-    if result_dict:
-        think = result_dict.get('think', None)
-        answer = result_dict.get('answer', None)
+        think = result_dict.get('think', '')
+        answer = result_dict.get('answer', 0.501)
         try:
             pred = float(answer)
-        except Exception as e:
-            print(f"Error converting answer to float: {answer}, Error: {e}")
+        except ValueError as e:
+            print(f"Error converting answer to float: {answer}, error: {e}")
             pred = 0.501
-    else:
-        raise ValueError("No valid JSON content found.")
+    except json.JSONDecodeError:
+        raise ValueError(f"Failed to decode JSON from result: {result}")
 
     return pred, label, think
 
