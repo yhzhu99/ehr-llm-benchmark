@@ -6,12 +6,12 @@ OUTPUT_PROMPTS=false
 
 # Parameter options
 MODEL_OPTIONS=(
-    "OpenBioLLM"
-    "Qwen2.5-7B"
+    "DeepSeek-V3"
+    "DeepSeek-R1-7B"
     "Gemma-3-4B"
     "HuatuoGPT-o1-7B"
-    # "DeepSeek-R1-7B"
-    "DeepSeek-V3"
+    "OpenBioLLM"
+    "Qwen2.5-7B"
 )
 DATASET_TASK_OPTIONS=(
     "tjh:mortality"
