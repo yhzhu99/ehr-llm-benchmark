@@ -1,6 +1,6 @@
 """
 src/unstructured_note/finetune_gpt_based_models/finetune_models.py
-Fine-tune GPT-based models for MIMIC-IV prediction tasks using PEFT IA3
+Fine-tune GPT-based models for MIMIC-IV prediction tasks using PEFT LoRA
 """
 
 import os
@@ -19,7 +19,7 @@ from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from lightning.pytorch.loggers import CSVLogger
 
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, set_seed
-from peft import IA3Config, get_peft_model
+from peft import LoraConfig, get_peft_model  # Changed from IA3Config to LoraConfig
 
 from unstructured_note.utils.config import MODELS_CONFIG
 from unstructured_note.utils.classification_metrics import get_binary_metrics
@@ -30,14 +30,17 @@ set_seed(42)
 # Get GPT models from config
 GPT_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "GPT"]
 
-parser = argparse.ArgumentParser(description='Fine-tune GPT models for MIMIC-IV using PEFT IA3')
+parser = argparse.ArgumentParser(description='Fine-tune GPT models for MIMIC-IV using PEFT LoRA')
 parser.add_argument('--model', type=str, required=True, choices=GPT_MODELS)
 parser.add_argument('--task', type=str, required=True, choices=['mortality', 'readmission'])
 parser.add_argument('--batch_size', type=int, default=8)
-parser.add_argument('--learning_rate', type=float, default=8e-3)  # Higher LR for IA3
+parser.add_argument('--learning_rate', type=float, default=2e-4)  # Lower LR for LoRA
 parser.add_argument('--epochs', type=int, default=30)
 parser.add_argument('--patience', type=int, default=5)
 parser.add_argument('--max_length', type=int, default=512)
+parser.add_argument('--lora_rank', type=int, default=8)  # New argument for LoRA rank
+parser.add_argument('--lora_alpha', type=int, default=16)  # New argument for LoRA alpha
+parser.add_argument('--lora_dropout', type=float, default=0.1)  # New argument for LoRA dropout
 args = parser.parse_args()
 
 # Custom sampler to randomly select a subset of samples each epoch
@@ -137,7 +140,10 @@ class MimicDataModule(L.LightningDataModule):
         return DataLoader(
             train_dataset,
             batch_size=self.batch_size,
-            sampler=sampler,  # Use our custom sampler instead of shuffle=True
+            # use random sampler
+            # sampler=sampler,  # Use our custom sampler instead of shuffle=True
+            # use whole training set
+            shuffle=True,
             num_workers=4,
             persistent_workers=True
         )
@@ -172,9 +178,9 @@ class MimicDataModule(L.LightningDataModule):
             persistent_workers=True
         )
 
-# Model for fine-tuning with IA3
-class GptIA3FineTuner(L.LightningModule):
-    def __init__(self, model_name, num_labels=2, learning_rate=8e-3):
+# Model for fine-tuning with LoRA
+class GptLoraFineTuner(L.LightningModule):
+    def __init__(self, model_name, lora_rank=8, lora_alpha=16, lora_dropout=0.1, num_labels=2, learning_rate=2e-4):
         super().__init__()
         self.save_hyperparameters()
 
@@ -193,10 +199,25 @@ class GptIA3FineTuner(L.LightningModule):
         if hasattr(self.base_model.config, 'pad_token_id') and self.base_model.config.pad_token_id is None:
             self.base_model.config.pad_token_id = self.base_model.config.eos_token_id
 
-        # Setup IA3 configuration
-        peft_config = IA3Config(task_type="SEQ_CLS")
+        # Setup LoRA configuration
+        # In GPT models, we typically target the attention modules
+        # Common target modules include: query, value, key and output projection layers
+        target_modules = ["q_proj", "v_proj"]  # Default target for most GPT models
 
-        # Create PEFT model with IA3
+        # For some models like GPT-2, the naming might be different
+        if "gpt2" in self.model_path.lower():
+            target_modules = ["c_attn"]
+
+        peft_config = LoraConfig(
+            task_type="SEQ_CLS",
+            r=lora_rank,                  # LoRA attention dimension
+            lora_alpha=lora_alpha,        # LoRA scaling parameter
+            lora_dropout=lora_dropout,    # Dropout probability for LoRA layers
+            target_modules=target_modules,
+            bias="none"                   # Whether to train bias parameters
+        )
+
+        # Create PEFT model with LoRA
         self.model = get_peft_model(self.base_model, peft_config)
 
         self.learning_rate = learning_rate
@@ -291,7 +312,7 @@ class GptIA3FineTuner(L.LightningModule):
         return metrics
 
     def configure_optimizers(self):
-        # IA3 typically does well with higher learning rates
+        # LoRA typically works well with lower learning rates compared to IA3
         return torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
 
 def run_finetuning():
@@ -299,7 +320,7 @@ def run_finetuning():
     model_name = args.model
     task = args.task
 
-    print(f"Fine-tuning {model_name} for {task} prediction using IA3")
+    print(f"Fine-tuning {model_name} for {task} prediction using LoRA")
     print(f"Only a small number of parameters will be trained while the base model remains frozen")
 
     # Create data module
@@ -311,8 +332,11 @@ def run_finetuning():
     )
 
     # Create model
-    model = GptIA3FineTuner(
+    model = GptLoraFineTuner(
         model_name=model_name,
+        lora_rank=args.lora_rank,
+        lora_alpha=args.lora_alpha,
+        lora_dropout=args.lora_dropout,
         learning_rate=args.learning_rate
     )
 
@@ -355,7 +379,7 @@ def run_finetuning():
     # Load best model for testing
     best_model_path = checkpoint_callback.best_model_path
     print(f"Loading best model from {best_model_path}")
-    best_model = GptIA3FineTuner.load_from_checkpoint(best_model_path)
+    best_model = GptLoraFineTuner.load_from_checkpoint(best_model_path)
 
     # Test model
     trainer.test(best_model, data_module)
