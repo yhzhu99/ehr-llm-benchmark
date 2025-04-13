@@ -245,40 +245,18 @@ def process_result(result: str, y: Any) -> Tuple[float, float, str]:
     label = y[-1]
 
     # Parse the result into the correct format
-    pattern_backticks = r'```json(.*?)```'
-    match = re.search(pattern_backticks, result, re.DOTALL)
     result_dict = None
-    if match:
-        json_string = match.group(1).strip().replace("\n", "")
-        try:
-            result_dict = json.loads(json_string)
-        except json.JSONDecodeError:
-            print(json_string)
-            raise ValueError("Invalid JSON content found in match1.")
-
-    match = re.search(pattern_backticks, result.strip() + "\"}```", re.DOTALL)
-    if match:
-        json_string = match.group(1).strip().replace("\n", "")
-        try:
-            result_dict = json.loads(json_string)
-        except json.JSONDecodeError:
-            print(json_string)
-            raise ValueError("Invalid JSON content found in match 2.")
-
-    pattern_json_object = r'\{.*?\}'
-    match = re.search(pattern_json_object, result, re.DOTALL)
-    if match:
-        json_string = match.group(0).strip().replace("\n", "")
-        try:
-            result_dict = json.loads(json_string)
-        except json.JSONDecodeError:
-            print(json_string)
-            raise ValueError("Invalid JSON content found in match 3.")
+    result = result.replace('`', '').replace('json', '').strip()
+    result = re.sub(r'}\S*', '}', result)
+    try:
+        result_dict = json.loads(result)
+    except json.JSONDecodeError:
+        print(f"Error decoding JSON: {result}")
 
     if result_dict:
-        think = result_dict.get('think', None)
-        answer = result_dict.get('answer', None)
         try:
+            think = result_dict['think']
+            answer = result_dict['answer']
             pred = float(answer)
         except Exception as e:
             print(f"Error converting answer to float: {answer}, Error: {e}")
