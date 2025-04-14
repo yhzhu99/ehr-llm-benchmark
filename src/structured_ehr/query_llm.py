@@ -44,8 +44,7 @@ def query_llm(
             messages=[
                 {'role': 'system', 'content': system_prompt},
                 {'role': 'user', 'content': user_prompt},
-            ],
-            max_completion_tokens=1024,
+            ]
         )
     except Exception as e:
         raise e
@@ -367,8 +366,8 @@ def run(args: argparse.Namespace):
     system_prompt, task_description, example, response_format = prepare_prompt(args)
 
     # Initialize LLM
-    if args.model.lower() == 'deepseek-v3':
-        llm_config = LLM_API_CONFIG['deepseek-v3-ark']
+    if args.model.lower() in ['deepseek-v3', 'deepseek-r1']:
+        llm_config = LLM_API_CONFIG[f'{args.model.lower()}-ark']
     elif args.model in MODELS_CONFIG.keys():
         llm_config = LLM_API_CONFIG['llm-studio']
         llm_config['model_name'] = MODELS_CONFIG[args.model]['lmstudio_id']
