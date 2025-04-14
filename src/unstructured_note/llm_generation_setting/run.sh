@@ -29,8 +29,6 @@ CURRENT_RUN=0
 
 echo "Starting evaluation with ${TOTAL_RUNS} different configurations..."
 
-eval "cd src/unstructured_note/llm_generation_setting"
-
 # Iterate over dataset and task combinations
 for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
     # Dataset and task
@@ -40,7 +38,7 @@ for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
         CURRENT_RUN=$((CURRENT_RUN + 1))
 
         # Construct command
-        CMD="python src.unstructured_note.llm_generation_setting.query_llm -d ${DATASET} -t ${TASK} -m ${MODEL}"
+        CMD="python -m src.unstructured_note.llm_generation_setting.query_llm -d ${DATASET} -t ${TASK} -m ${MODEL}"
 
         # Add output options
         if [ "$OUTPUT_LOGITS" = true ]; then
