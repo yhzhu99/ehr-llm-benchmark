@@ -2,6 +2,10 @@
 
 # Parameter options
 MODEL_OPTIONS=(
+    "CatBoost"
+    "DT"
+    "RF"
+    "XGBoost"
     "GRU"
     "LSTM"
     "Transformer"
