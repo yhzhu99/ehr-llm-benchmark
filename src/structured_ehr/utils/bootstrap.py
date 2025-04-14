@@ -1,6 +1,6 @@
 import numpy as np
 
-from structured_ehr.utils.metrics import get_all_metrics
+from .metrics import get_all_metrics
 
 
 def bootstrap(preds, labels, K=100, N=1000, seed=42):
@@ -39,7 +39,7 @@ def export_metrics(bootstrapped_samples, config):
 
     for sample in bootstrapped_samples:
         sample_preds, sample_labels = sample
-        res = get_all_metrics(sample_preds, sample_labels, config['task'], None)
+        res = get_all_metrics(sample_preds, sample_labels, config['task'], config['los_info'])
 
         for k, v in res.items():
             if k not in metrics:

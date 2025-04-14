@@ -1,10 +1,11 @@
-import torch
-from torch import nn
-import torch.nn.functional as F
 import math
 import copy
-import numpy as np
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence
+import numpy as np
 
 
 class Sparsemax(nn.Module):
