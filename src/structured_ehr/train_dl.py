@@ -222,7 +222,6 @@ class MlPipeline(L.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y, lens, pid = batch
         x, y = unpad_batch(x, y, lens)
-        print(x.shape, y.shape)
         self.model.fit(x, y)
 
     def validation_step(self, batch, batch_idx):
