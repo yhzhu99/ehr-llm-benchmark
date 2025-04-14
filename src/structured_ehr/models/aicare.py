@@ -426,9 +426,7 @@ class AICare(nn.Module):
         GRU_embeded_input = torch.cat((GRU_embeded_input, demo_main), 1)# b i+1 h
         posi_input = self.dropout(GRU_embeded_input) # batch_size * d_input * hidden_dim
 
-
         weighted_contexts = self.FinalAttentionQKV(posi_input)[0]
-        combined_hidden = torch.cat((weighted_contexts, \
-                                     demo_main.squeeze(1)), -1)#b n h
-        out = self.output_proj(combined_hidden)[:, -1, :]# b h
+        combined_hidden = torch.cat((weighted_contexts, demo_main.squeeze(1)), -1) # b h
+        out = self.output_proj(combined_hidden) # b h
         return out
