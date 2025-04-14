@@ -7,6 +7,11 @@ OUTPUT_PROMPTS=true
 # Parameter options
 MODEL_OPTIONS=(
     "DeepSeek-V3"
+    "DeepSeek-R1"
+
+    "o3-mini-high"
+    "chatgpt-4o-latest"
+
     "DeepSeek-R1-7B"
     "Gemma-3-4B"
     "HuatuoGPT-o1-7B"
@@ -35,7 +40,7 @@ for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
         CURRENT_RUN=$((CURRENT_RUN + 1))
 
         # Construct command
-        CMD="python query_llm.py -d ${DATASET} -t ${TASK} -m ${MODEL}"
+        CMD="python src.unstructured_note.llm_generation_setting.query_llm -d ${DATASET} -t ${TASK} -m ${MODEL}"
 
         # Add output options
         if [ "$OUTPUT_LOGITS" = true ]; then
