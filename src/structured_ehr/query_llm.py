@@ -1,6 +1,5 @@
 import json
 import os
-import re
 import argparse
 from typing import List, Tuple, Dict, Any
 
@@ -13,10 +12,11 @@ from tenacity import (
 from openai import OpenAI
 import pandas as pd
 import torch
+from json_repair import repair_json
 
-from structured_ehr.utils.llm_configs import LLM_API_CONFIG, MODELS_CONFIG
-from structured_ehr.utils.metrics import get_all_metrics, get_regression_metrics, reverse_los
-from structured_ehr.prompts.prompt_template import SYSTEMPROMPT, USERPROMPT, UNIT, REFERENCE_RANGE, TASK_DESCRIPTION, RESPONSE_FORMAT, EXAMPLE
+from src.structured_ehr.utils.llm_configs import LLM_API_CONFIG, MODELS_CONFIG
+from src.structured_ehr.utils.metrics import get_all_metrics, get_regression_metrics, reverse_los
+from src.structured_ehr.prompts.prompt_template import SYSTEMPROMPT, USERPROMPT, UNIT, REFERENCE_RANGE, TASK_DESCRIPTION, RESPONSE_FORMAT, EXAMPLE
 
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
@@ -245,19 +245,19 @@ def process_result(result: str, y: Any) -> Tuple[float, float, str]:
     label = y[-1]
 
     # Parse the result into the correct format
-    result = result.replace('`', '').replace('json', '').strip()
-    result = re.sub(r'}\S*', '}', result)
     try:
-        result_dict = json.loads(result)
-        think = result_dict.get('think', '')
-        answer = result_dict.get('answer', -1.0)
+        result_dict = repair_json(result, return_objects=True)
+        if isinstance(result_dict, list):
+            result_dict = result_dict[-1]
+        think = result_dict['think']
+        answer = result_dict['answer']
         try:
             pred = float(answer)
         except ValueError as e:
             print(f"Error converting answer to float: {answer}, error: {e}")
             pred = -1.0
     except json.JSONDecodeError:
-        raise ValueError(f"Failed to decode JSON from result: {result}")
+        raise ValueError(f"Invalid JSON content: {result}")
 
     return pred, label, think
 
@@ -372,6 +372,12 @@ def run(args: argparse.Namespace):
     elif args.model in MODELS_CONFIG.keys():
         llm_config = LLM_API_CONFIG['llm-studio']
         llm_config['model_name'] = MODELS_CONFIG[args.model]['lmstudio_id']
+    elif args.model.lower() == 'o3-mini-high':
+        llm_config = LLM_API_CONFIG['default']
+        llm_config['model_name'] = 'o3-mini-high'
+    elif args.model.lower() == 'chatgpt-4o-latest':
+        llm_config = LLM_API_CONFIG['v8']
+        llm_config['model_name'] = 'chatgpt-4o-latest'
     else:
         raise ValueError(f'Unknown model: {args.model}')
     llm = OpenAI(api_key=llm_config['api_key'], base_url=llm_config['base_url'])
@@ -455,6 +461,7 @@ def run(args: argparse.Namespace):
                 pd.to_pickle({
                     'system_prompt': system_prompt,
                     'user_prompt': user_prompt,
+                    'response': result,
                     'think': think,
                     'pred': pred,
                     'label': label,
