@@ -10,5 +10,6 @@ class GRU(nn.Module):
         self.gru = nn.GRU(input_size=input_dim, hidden_size=hidden_dim, num_layers=1, batch_first=True)
 
     def forward(self, x, **kwargs):
-        y, _ = self.gru(x)[:, -1, :]
+        y, _ = self.gru(x)
+        y = y[:, -1, :]  # Get the last time step output
         return y

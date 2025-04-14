@@ -91,5 +91,6 @@ class RNN(nn.Module):
         self.rnn = nn.RNN(input_size=input_dim, hidden_size=hidden_dim, num_layers=1, batch_first=True)
 
     def forward(self, x, **kwargs):
-        y, _ = self.rnn(x)[:, -1, :]
+        y, _ = self.rnn(x)
+        y = y[:, -1, :]  # Get the last time step output
         return y

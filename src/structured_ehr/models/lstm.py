@@ -10,5 +10,6 @@ class LSTM(nn.Module):
         self.lstm = nn.LSTM(input_size=input_dim, hidden_size=hidden_dim, num_layers=1, batch_first=True)
 
     def forward(self, x, **kwargs):
-        y, _ = self.lstm(x)[:, -1, :]
+        y, _ = self.lstm(x)
+        y = y[:, -1, :]  # Get the last time step output
         return y
