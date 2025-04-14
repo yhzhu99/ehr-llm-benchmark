@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import torch
 import torch.nn as nn
 
-from structured_ehr.utils.sequence_handler import get_last_visit
+from src.structured_ehr.utils.sequence_handler import get_last_visit
 
 
 class Sparsemax(nn.Module):
