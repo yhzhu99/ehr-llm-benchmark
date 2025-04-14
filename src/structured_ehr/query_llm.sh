@@ -7,6 +7,10 @@ OUTPUT_PROMPTS=false
 # Parameter options
 MODEL_OPTIONS=(
     "DeepSeek-V3"
+
+    "o3-mini-high"
+    "chatgpt-4o-latest"
+
     "DeepSeek-R1-7B"
     "Gemma-3-4B"
     "HuatuoGPT-o1-7B"
