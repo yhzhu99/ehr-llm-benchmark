@@ -2,7 +2,6 @@
 import os
 import argparse
 
-
 # Lightning
 import lightning as L
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
@@ -16,11 +15,11 @@ from torch.utils.data import Dataset, DataLoader
 # Data Processing
 import pandas as pd
 
-import structured_ehr.models as models
-from structured_ehr.utils.bootstrap import run_bootstrap
-from structured_ehr.utils.metrics import get_all_metrics, check_metric_is_better
-from structured_ehr.utils.loss import get_loss
-from structured_ehr.utils.sequence_handler import generate_mask, unpad_y
+import src.structured_ehr.models as models
+from src.structured_ehr.utils.bootstrap import run_bootstrap
+from src.structured_ehr.utils.metrics import get_all_metrics, check_metric_is_better
+from src.structured_ehr.utils.loss import get_loss
+from src.structured_ehr.utils.sequence_handler import generate_mask, unpad_y, unpad_batch
 
 
 class EhrDataset(Dataset):
@@ -116,26 +115,20 @@ class DlPipeline(L.LightningModule):
             self.embedding = embedding
             y_hat = self.head(embedding)
             return y_hat, embedding, decov_loss
-        elif self.model_name in ["GRASP", "Agent"]:
+        elif self.model_name in ["GRASP", "AICare"]:
             x_demo, x_lab, mask = x[:, 0, :self.demo_dim], x[:, :, self.demo_dim:], generate_mask(lens)
             embedding = self.ehr_encoder(x_lab, x_demo, mask).to(x.device)
             self.embedding = embedding
             y_hat = self.head(embedding)
             return y_hat, embedding
-        elif self.model_name in ["AdaCare", "RETAIN", "TCN", "Transformer", "StageNet"]:
+        elif self.model_name in ["AdaCare", "Transformer"]:
             mask = generate_mask(lens)
             embedding = self.ehr_encoder(x, mask).to(x.device)
             self.embedding = embedding
             y_hat = self.head(embedding)
             return y_hat, embedding
-        elif self.model_name in ["GRU", "LSTM", "RNN", "MLP"]:
+        elif self.model_name in ["GRU", "LSTM", "RNN"]:
             embedding = self.ehr_encoder(x).to(x.device)
-            self.embedding = embedding
-            y_hat = self.head(embedding)
-            return y_hat, embedding
-        elif self.model_name in ["MCGRU"]:
-            x_demo, x_lab = x[:, 0, :self.demo_dim], x[:, :, self.demo_dim:]
-            embedding = self.ehr_encoder(x_lab, x_demo).to(x.device)
             self.embedding = embedding
             y_hat = self.head(embedding)
             return y_hat, embedding
@@ -153,13 +146,13 @@ class DlPipeline(L.LightningModule):
         return loss, y, y_hat, embedding
 
     def training_step(self, batch, batch_idx):
-        x, y, lens, pid = batch
-        loss, y, y_hat, _ = self._get_loss(x, y, lens)
+        x, y, lens, _ = batch
+        loss, y, _, _ = self._get_loss(x, y, lens)
         self.log("train_loss", loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x, y, lens, pid = batch
+        x, y, lens, _ = batch
         loss, y, y_hat, _ = self._get_loss(x, y, lens)
         self.log("val_loss", loss)
         outs = {'preds': y_hat, 'labels': y, 'val_loss': loss}
@@ -184,7 +177,7 @@ class DlPipeline(L.LightningModule):
 
     def test_step(self, batch, batch_idx):
         x, y, lens, pid = batch
-        loss, y, y_hat, embedding = self._get_loss(x, y, lens)
+        loss, y, y_hat, _ = self._get_loss(x, y, lens)
         outs = {'pids': pid, 'preds': y_hat, 'labels': y}
         self.test_step_outputs.append(outs)
         return loss
@@ -204,10 +197,68 @@ class DlPipeline(L.LightningModule):
         return optimizer
 
 
-def run_experiment(config):
+class MlPipeline(L.LightningModule):
+    def __init__(self, config):
+        super().__init__()
+        self.save_hyperparameters()
+        self.task = config["task"]
+        self.los_info = config.get("los_info", None)
+        self.model_name = config["model"]
+        self.main_metric = config["main_metric"]
+        self.cur_best_performance = {}
+
+        model_class = getattr(models, self.model_name)
+        self.model = model_class(**config)
+
+        self.test_performance = {}
+        self.test_outputs = {}
+        checkpoint_folder = f'logs/{config["dataset"]}/{config["task"]}/dl_models/{config["model"]}/checkpoints/'
+        os.makedirs(checkpoint_folder, exist_ok=True)
+        self.checkpoint_path = os.path.join(checkpoint_folder, 'best.ckpt')
+
+    def forward(self, x):
+        pass
+
+    def training_step(self, batch, batch_idx):
+        x, y, lens, pid = batch
+        x, y = unpad_batch(x, y, lens)
+        print(x.shape, y.shape)
+        self.model.fit(x, y)
+
+    def validation_step(self, batch, batch_idx):
+        x, y, lens, pid = batch
+        x, y = unpad_batch(x, y, lens)
+        y_hat = self.model.predict(x)
+        metrics = get_all_metrics(y_hat, y, self.task, self.los_info)
+        main_score = metrics[self.main_metric]
+        if check_metric_is_better(self.cur_best_performance, self.main_metric, main_score, self.task):
+            self.cur_best_performance = metrics
+            for k, v in metrics.items():
+                self.log("best_" + k, v)
+            pd.to_pickle(self.model, self.checkpoint_path)
+        return main_score
+
+    def test_step(self, batch, batch_idx):
+        x, y, lens, pid = batch
+        x, y = unpad_batch(x, y, lens)
+        self.model = pd.read_pickle(self.checkpoint_path)
+        y_hat = self.model.predict(x)
+        self.test_performance = get_all_metrics(y_hat, y, self.task, self.los_info)
+        self.test_outputs = {'preds': y_hat, 'labels': y}
+        return self.test_performance
+
+    def configure_optimizers(self):
+        pass
+
+
+def run_dl_experiment(config):
     # data
     dataset_path = os.path.join(os.path.dirname(__file__), '..', '..', f'my_datasets/{config["dataset"]}/processed/split')
     dm = EhrDataModule(dataset_path, task=config["task"], batch_size=config["batch_size"])
+
+    # los infomation
+    los_info = pd.read_pickle(os.path.join(dataset_path, 'los_info.pkl'))
+    config["los_info"] = los_info
 
     # logger
     logger = CSVLogger(save_dir="logs", name=f'{config["dataset"]}/{config["task"]}/dl_models', version=f"{config['model']}")
@@ -243,7 +294,38 @@ def run_experiment(config):
 
     perf = pipeline.test_performance
     outs = pipeline.test_outputs
-    return perf, outs
+    return config, perf, outs
+
+
+def run_ml_experiment(config):
+    # data
+    dataset_path = os.path.join(os.path.dirname(__file__), '..', '..', f'my_datasets/{config["dataset"]}/processed/split')
+    dm = EhrDataModule(dataset_path, task=config["task"], batch_size=config["batch_size"])
+
+    # los infomation
+    los_info = pd.read_pickle(os.path.join(dataset_path, 'los_info.pkl'))
+    config["los_info"] = los_info
+
+    # logger
+    logger = CSVLogger(save_dir="logs", name=f'{config["dataset"]}/{config["task"]}/dl_models', version=f"{config['model']}")
+
+    # main metric
+    main_metric = "auroc" if config["task"] in ["mortality", "readmission"] else "mse"
+    config["main_metric"] = main_metric
+
+    # seed for reproducibility
+    L.seed_everything(42)
+
+    # train/val/test
+    pipeline = MlPipeline(config)
+    trainer = L.Trainer(accelerator="cpu", max_epochs=1, logger=logger, num_sanity_val_steps=0)
+    trainer.fit(pipeline, dm)
+
+    trainer.test(pipeline, dm)
+
+    perf = pipeline.test_performance
+    outs = pipeline.test_outputs
+    return config, perf, outs
 
 
 def parse_args():
@@ -252,15 +334,18 @@ def parse_args():
     # Basic configurations
     parser.add_argument('--model', '-m', type=str, nargs='+', required=True, help='Model name')
     parser.add_argument('--dataset', '-d', type=str, required=True, help='Dataset name', choices=['tjh', 'mimic-iv'])
-    parser.add_argument('--task', '-t', type=str, required=True, help='Task name', choices=['mortality', 'readmission'])
+    parser.add_argument('--task', '-t', type=str, required=True, help='Task name', choices=['mortality', 'readmission', 'los'])
 
     # Model and training hyperparameters
     parser.add_argument('--hidden_dim', '-hd', type=int, default=128, help='Hidden dimension')
     parser.add_argument('--learning_rate', '-lr', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--batch_size', '-bs', type=int, default=256, help='Batch size')
     parser.add_argument('--epochs', '-e', type=int, default=50, help='Number of epochs')
-    parser.add_argument('--patience', '-p', type=int, default=10, help='Patience for early stopping')
+    parser.add_argument('--patience', '-p', type=int, default=5, help='Patience for early stopping')
     parser.add_argument('--output_dim', '-od', type=int, default=1, help='Output dimension')
+    parser.add_argument('--seed', '-s', type=int, default=42, help='Random seed for reproducibility')
+    parser.add_argument('--n_estimators', type=int, default=100, help='Number of estimators for tree-based models')
+    parser.add_argument('--max_depth', type=int, default=10, help='Max depth for tree-based models')
 
     # Additional configurations
     parser.add_argument('--output_root', type=str, default='logs', help='Root directory for saving outputs')
@@ -283,6 +368,9 @@ if __name__ == "__main__":
         'epochs': args.epochs,
         'patience': args.patience,
         'output_dim': args.output_dim,
+        'seed': args.seed,
+        'n_estimators': args.n_estimators,
+        'max_depth': args.max_depth,
     }
 
     # Set the input dimensions based on the dataset
@@ -306,7 +394,8 @@ if __name__ == "__main__":
             print(f"{key}: {value}")
 
         # Run the experiment
-        perf, outs = run_experiment(config)
+        run_experiment = run_ml_experiment if model in ["CatBoost", "DT", "RF", "XGBoost"] else run_dl_experiment
+        config, perf, outs = run_experiment(config)
 
         # Save the performance and outputs
         save_dir = os.path.join(args.output_root, f"{args.dataset}/{args.task}/dl_models/{model}")
