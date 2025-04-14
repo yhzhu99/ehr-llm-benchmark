@@ -181,6 +181,6 @@ class Transformer(nn.Module):
         self.proj = nn.Linear(input_dim, hidden_dim)
 
     def forward(self, x, mask=None):
-        out = self.transformer_layer(x, mask)[1]
-        out = self.proj(out)
+        out = self.transformer_layer(x, mask)[0]
+        out = self.proj(out)[:, -1, :]
         return out
