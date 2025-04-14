@@ -14,9 +14,9 @@ from openai import OpenAI
 import pandas as pd
 import torch
 
-from unstructured_note.utils.config import LLM_API_CONFIG, MODELS_CONFIG
-from unstructured_note.utils.classification_metrics import get_binary_metrics
-from unstructured_note.llm_generation_setting.prompt_template import SYSTEMPROMPT, INSTRUCTION_PROMPT
+from src.unstructured_note.utils.config import LLM_API_CONFIG, LMSTUDIO_MODELS_CONFIG
+from src.unstructured_note.utils.classification_metrics import get_binary_metrics
+from src.unstructured_note.llm_generation_setting.prompt_template import SYSTEMPROMPT, INSTRUCTION_PROMPT
 
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
@@ -44,8 +44,7 @@ def query_llm(
             messages=[
                 {'role': 'system', 'content': system_prompt},
                 {'role': 'user', 'content': user_prompt},
-            ],
-            max_completion_tokens=1024,
+            ]
         )
     except Exception as e:
         raise e
@@ -214,11 +213,17 @@ def run(args: argparse.Namespace):
 
     # Initialize LLM
     if args.output_logits:
-        if args.model.lower() == 'deepseek-v3':
-            llm_config = LLM_API_CONFIG['deepseek-v3-ark']
-        elif args.model in MODELS_CONFIG.keys():
+        if args.model.lower() in ['deepseek-v3', 'deepseek-r1']:
+            llm_config = LLM_API_CONFIG[f'{args.model.lower()}-ark']
+        elif args.model in LMSTUDIO_MODELS_CONFIG.keys():
             llm_config = LLM_API_CONFIG['llm-studio']
-            llm_config['model_name'] = MODELS_CONFIG[args.model]['lmstudio_id']
+            llm_config['model_name'] = LMSTUDIO_MODELS_CONFIG[args.model]['lmstudio_id']
+        elif args.model.lower() == 'o3-mini-high':
+            llm_config = LLM_API_CONFIG['default']
+            llm_config['model_name'] = 'o3-mini-high'
+        elif args.model.lower() == 'chatgpt-4o-latest':
+            llm_config = LLM_API_CONFIG['v8']
+            llm_config['model_name'] = 'chatgpt-4o-latest'
         else:
             raise ValueError(f'Unknown model: {args.model}')
         llm = OpenAI(api_key=llm_config['api_key'], base_url=llm_config['base_url'])
