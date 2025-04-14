@@ -1,6 +1,5 @@
 import json
 import os
-import re
 import argparse
 from typing import List, Tuple, Dict, Any
 
@@ -13,6 +12,7 @@ from tenacity import (
 from openai import OpenAI
 import pandas as pd
 import torch
+from json_repair import repair_json
 
 from src.unstructured_note.utils.config import LLM_API_CONFIG, LMSTUDIO_MODELS_CONFIG
 from src.unstructured_note.utils.classification_metrics import get_binary_metrics
@@ -134,19 +134,19 @@ def process_result(result: str, y: Any) -> Tuple[Any, Any]:
     label = y[-1]
 
     # Parse the result into the correct format
-    result = result.replace('`', '').replace('json', '').strip()
-    result = re.sub(r'}\S*', '}', result)
     try:
-        result_dict = json.loads(result)
-        think = result_dict.get('think', '')
-        answer = result_dict.get('answer', 0.501)
+        result_dict = repair_json(result, return_objects=True)
+        if isinstance(result_dict, list):
+            result_dict = result_dict[-1]
+        think = result_dict['think']
+        answer = result_dict['answer']
         try:
             pred = float(answer)
         except ValueError as e:
             print(f"Error converting answer to float: {answer}, error: {e}")
-            pred = 0.501
+            pred = -1.0
     except json.JSONDecodeError:
-        raise ValueError(f"Failed to decode JSON from result: {result}")
+        raise ValueError(f"Invalid JSON content: {result}")
 
     return pred, label, think
 
