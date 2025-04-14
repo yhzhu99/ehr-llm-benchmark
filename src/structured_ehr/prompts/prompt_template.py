@@ -122,11 +122,11 @@ Clinical Features Over Time:
 {DETAIL}"""
 
 UNIT = {
-    'tjh': 'prompts/tjh/unit.json',
-    'mimic-iv': 'prompts/mimic-iv/unit.json',
+    'tjh': 'src/structured_ehr/prompts/tjh/unit.json',
+    'mimic-iv': 'src/structured_ehr/prompts/mimic-iv/unit.json',
 }
 
 REFERENCE_RANGE = {
-    'tjh': 'prompts/tjh/range.json',
-    'mimic-iv': 'prompts/mimic-iv/range.json',
+    'tjh': 'src/structured_ehr/prompts/tjh/range.json',
+    'mimic-iv': 'src/structured_ehr/prompts/mimic-iv/range.json',
 }
