@@ -2,11 +2,12 @@
 
 # Basic configurations
 OUTPUT_LOGITS=true
-OUTPUT_PROMPTS=false
+OUTPUT_PROMPTS=true
 
 # Parameter options
 MODEL_OPTIONS=(
     "DeepSeek-V3"
+    "DeepSeek-R1"
 
     "o3-mini-high"
     "chatgpt-4o-latest"
