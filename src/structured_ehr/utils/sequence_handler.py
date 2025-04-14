@@ -5,14 +5,18 @@ from torch.nn.utils.rnn import unpad_sequence
 def unpad_y(preds, labels, lens):
     raw_device = preds.device
     device = torch.device("cpu")
-    preds, labels, lens = preds.to(device), labels.to(device), lens.to(device)
-    preds_unpad = unpad_sequence(preds, batch_first=True, lengths=lens)
-    preds_unpad = [p[-1] for p in preds_unpad]
-    preds_stack = torch.vstack(preds_unpad).squeeze(dim=-1)
-    labels_unpad = unpad_sequence(labels, batch_first=True, lengths=lens)
-    labels_unpad = [l[-1] for l in labels_unpad]
-    labels_stack = torch.vstack(labels_unpad).squeeze(dim=-1)
-    return preds_stack.to(raw_device), labels_stack.to(raw_device)
+    preds, labels, lens = preds.squeeze(dim=-1).to(device), labels.squeeze(dim=-1).to(device), lens.to(device)
+    if preds.dim() == 2:
+        preds_unpad = unpad_sequence(preds, batch_first=True, lengths=lens)
+        preds_unpad = [pred[-1] for pred in preds_unpad]
+        preds = torch.vstack(preds_unpad)
+    preds = preds.squeeze(dim=-1)
+    if labels.dim() == 2:
+        labels_unpad = unpad_sequence(labels, batch_first=True, lengths=lens)
+        labels_unpad = [label[-1] for label in labels_unpad]
+        labels = torch.vstack(labels_unpad)
+    labels = labels.squeeze(dim=-1)
+    return preds.to(raw_device), labels.to(raw_device)
 
 
 def unpad_batch(x, y, lens):
@@ -20,10 +24,12 @@ def unpad_batch(x, y, lens):
     y = y.detach().cpu()
     lens = lens.detach().cpu()
     x_unpad = unpad_sequence(x, batch_first=True, lengths=lens)
+    x_unpad = [x[-1] for x in x_unpad]
     x_stack = torch.vstack(x_unpad).squeeze(dim=-1)
     y_unpad = unpad_sequence(y, batch_first=True, lengths=lens)
+    y_unpad = [y[-1] for y in y_unpad]
     y_stack = torch.vstack(y_unpad).squeeze(dim=-1)
-    return x_stack.numpy(), y_stack.numpy()
+    return x_stack.numpy().squeeze(), y_stack.numpy().squeeze()
 
 
 def generate_mask(seq_lens):
