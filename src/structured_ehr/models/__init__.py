@@ -12,9 +12,9 @@ from .rnn import RNN
 
 # Deep Learning Models for structured EHR
 from .adacare import AdaCare
-from .aicare import AiCare
+from .aicare import AICare
 from .concare import ConCare
-from .grasp import Grasp
+from .grasp import GRASP
 
 __all__ = [
     "CatBoost",
@@ -26,7 +26,7 @@ __all__ = [
     "Transformer",
     "RNN",
     "AdaCare",
-    "AiCare",
+    "AICare",
     "ConCare",
-    "Grasp",
+    "GRASP",
 ]
