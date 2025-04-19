@@ -49,12 +49,18 @@ test_df = df[df['RecordID'].isin(test_patients)]
 
 # For llm setting, export data on test set:
 # Export the missing mask
+train_missing_mask = export_missing_mask(df, demographic_features, labtest_features, id_column='RecordID')
+val_missing_mask = export_missing_mask(df, demographic_features, labtest_features, id_column='RecordID')
 test_missing_mask = export_missing_mask(test_df, demographic_features, labtest_features, id_column='RecordID')
 
 # Export the record time
+train_record_time = export_record_time(df, id_column='RecordID')
+val_record_time = export_record_time(df, id_column='RecordID')
 test_record_time = export_record_time(test_df, id_column='RecordID')
 
 # Export the raw data
+_, train_raw_x, _, _ = forward_fill_pipeline(df, None, demographic_features, labtest_features, target_features, [], id_column='RecordID')
+_, val_raw_x, _, _ = forward_fill_pipeline(df, None, demographic_features, labtest_features, target_features, [], id_column='RecordID')
 _, test_raw_x, _, _ = forward_fill_pipeline(test_df, None, demographic_features, labtest_features, target_features, [], id_column='RecordID')
 
 # For ml/dl models, convert categorical features to one-hot encoding
@@ -108,18 +114,24 @@ train_data = [{
     'id': id_item,
     'x_ts': x_item,
     'x_note': note_item,
+    'x_llm_ts': x_llm_item,
+    'record_time': record_time_item,
+    'missing_mask': missing_mask_item,
     'y_mortality': [y[0] for y in y_item],
     'y_los': [y[1] for y in y_item],
     'y_readmission': [y[2] for y in y_item],
-} for id_item, x_item, note_item, y_item in zip(train_pid, train_x, train_note, train_y)]
+} for id_item, x_item, x_llm_item, note_item, record_time_item, missing_mask_item, y_item in zip(train_pid, train_x, train_raw_x, train_note, train_record_time, train_missing_mask, train_y)]
 val_data = [{
     'id': id_item,
     'x_ts': x_item,
     'x_note': note_item,
+    'x_llm_ts': x_llm_item,
+    'record_time': record_time_item,
+    'missing_mask': missing_mask_item,
     'y_mortality': [y[0] for y in y_item],
     'y_los': [y[1] for y in y_item],
     'y_readmission': [y[2] for y in y_item],
-} for id_item, x_item, note_item, y_item in zip(val_pid, val_x, val_note, val_y)]
+} for id_item, x_item, x_llm_item, note_item, record_time_item, missing_mask_item, y_item in zip(val_pid, val_x, val_raw_x, val_note, val_record_time, val_missing_mask, val_y)]
 test_data = [{
     'id': id_item,
     'x_ts': x_item,

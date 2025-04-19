@@ -99,12 +99,18 @@ test_df = df[df['PatientID'].isin(test_patients)]
 
 # For llm setting, export data on test set:
 # Export the missing mask
+train_missing_mask = export_missing_mask(train_df, demographic_features, labtest_features)
+val_missing_mask = export_missing_mask(val_df, demographic_features, labtest_features)
 test_missing_mask = export_missing_mask(test_df, demographic_features, labtest_features)
 
 # Export the record time
+train_record_time = export_record_time(train_df)
+val_record_time = export_record_time(val_df)
 test_record_time = export_record_time(test_df)
 
 # Export the raw data
+_, train_raw_x, _, _ = forward_fill_pipeline(train_df, None, demographic_features, labtest_features, target_features, [])
+_, val_raw_x, _, _ = forward_fill_pipeline(val_df, None, demographic_features, labtest_features, target_features, [])
 _, test_raw_x, _, _ = forward_fill_pipeline(test_df, None, demographic_features, labtest_features, target_features, [])
 
 # For dl setting, export data on train/val/test set:
@@ -121,15 +127,21 @@ test_df, test_x, test_y, test_pid = forward_fill_pipeline(test_df, default_fill,
 train_data = [{
     'id': id_item,
     'x_ts': x_item,
+    'x_llm_ts': x_llm_item,
+    'record_time': record_time_item,
+    'missing_mask': missing_mask_item,
     'y_mortality': [y[0] for y in y_item],
     'y_los': [y[1] for y in y_item],
-} for id_item, x_item, y_item in zip(train_pid, train_x, train_y)]
+} for id_item, x_item, x_llm_item, record_time_item, missing_mask_item, y_item in zip(train_pid, train_x, train_raw_x, train_record_time, train_missing_mask, train_y)]
 val_data = [{
     'id': id_item,
     'x_ts': x_item,
+    'x_llm_ts': x_llm_item,
+    'record_time': record_time_item,
+    'missing_mask': missing_mask_item,
     'y_mortality': [y[0] for y in y_item],
     'y_los': [y[1] for y in y_item],
-} for id_item, x_item, y_item in zip(val_pid, val_x, val_y)]
+} for id_item, x_item, x_llm_item, record_time_item, missing_mask_item, y_item in zip(val_pid, val_x, val_raw_x, val_record_time, val_missing_mask, val_y)]
 test_data = [{
     'id': id_item,
     'x_ts': x_item,
