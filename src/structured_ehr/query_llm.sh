@@ -6,17 +6,17 @@ OUTPUT_PROMPTS=true
 
 # Parameter options
 MODEL_OPTIONS=(
-    "DeepSeek-V3"
-    "DeepSeek-R1"
-
-    "o3-mini-high"
     "chatgpt-4o-latest"
+    "o3-mini-high"
 
     "DeepSeek-R1-7B"
     "Gemma-3-4B"
     "HuatuoGPT-o1-7B"
     "OpenBioLLM"
     "Qwen2.5-7B"
+
+    "DeepSeek-V3"
+    "DeepSeek-R1"
 )
 DATASET_TASK_OPTIONS=(
     "tjh:mortality"
