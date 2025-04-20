@@ -403,7 +403,10 @@ if __name__ == "__main__":
         # Run bootstrap
         perf_boot = run_bootstrap(outs['preds'], outs['labels'], config)
         for key, value in perf_boot.items():
-            perf_boot[key] = f'{value["mean"] * 100:.2f}±{value["std"] * 100:.2f}'
+            if args.task in ["mortality", "readmission"]:
+                perf_boot[key] = f'{value["mean"] * 100:.2f}±{value["std"] * 100:.2f}'
+            else:
+                perf_boot[key] = f'{value["mean"]:.2f}±{value["std"]:.2f}'
 
         # Save performance and outputs
         perf_boot = dict({
