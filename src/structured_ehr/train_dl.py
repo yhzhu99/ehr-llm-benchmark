@@ -263,7 +263,7 @@ def run_dl_experiment(config):
     logger = CSVLogger(save_dir="logs", name=f'{config["dataset"]}/{config["task"]}/dl_models', version=f"{config['model']}")
 
     # main metric
-    main_metric = "auroc" if config["task"] in ["mortality", "readmission"] else "mse"
+    main_metric = "auroc" if config["task"] in ["mortality", "readmission"] else "mae"
     mode = "max" if config["task"] in ["mortality", "readmission"] else "min"
     config["main_metric"] = main_metric
 
@@ -309,7 +309,7 @@ def run_ml_experiment(config):
     logger = CSVLogger(save_dir="logs", name=f'{config["dataset"]}/{config["task"]}/dl_models', version=f"{config['model']}")
 
     # main metric
-    main_metric = "auroc" if config["task"] in ["mortality", "readmission"] else "mse"
+    main_metric = "auroc" if config["task"] in ["mortality", "readmission"] else "mae"
     config["main_metric"] = main_metric
 
     # seed for reproducibility
