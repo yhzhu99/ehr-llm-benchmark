@@ -252,7 +252,8 @@ class MlPipeline(L.LightningModule):
 
 def run_dl_experiment(config):
     # data
-    dataset_path = os.path.join(os.path.dirname(__file__), '..', '..', f'my_datasets/{config["dataset"]}/processed/split')
+    sub_dir = 'split' if config["shot"] == "full" else '10_shot'
+    dataset_path = os.path.join(os.path.dirname(__file__), '..', '..', f'my_datasets/{config["dataset"]}/processed/{sub_dir}')
     dm = EhrDataModule(dataset_path, task=config["task"], batch_size=config["batch_size"])
 
     # los infomation
@@ -298,7 +299,8 @@ def run_dl_experiment(config):
 
 def run_ml_experiment(config):
     # data
-    dataset_path = os.path.join(os.path.dirname(__file__), '..', '..', f'my_datasets/{config["dataset"]}/processed/split')
+    sub_dir = 'split' if config["shot"] == "full" else '10_shot'
+    dataset_path = os.path.join(os.path.dirname(__file__), '..', '..', f'my_datasets/{config["dataset"]}/processed/{sub_dir}')
     dm = EhrDataModule(dataset_path, task=config["task"], batch_size=config["batch_size"])
 
     # los infomation
@@ -334,6 +336,7 @@ def parse_args():
     parser.add_argument('--model', '-m', type=str, nargs='+', required=True, help='Model name')
     parser.add_argument('--dataset', '-d', type=str, required=True, help='Dataset name', choices=['tjh', 'mimic-iv'])
     parser.add_argument('--task', '-t', type=str, required=True, help='Task name', choices=['mortality', 'readmission', 'los'])
+    parser.add_argument('--shot', '-s', type=str, nargs='+', required=True, help='Shot type for few-shot learning (full, few)')
 
     # Model and training hyperparameters
     parser.add_argument('--hidden_dim', '-hd', type=int, default=128, help='Hidden dimension')
@@ -342,7 +345,7 @@ def parse_args():
     parser.add_argument('--epochs', '-e', type=int, default=50, help='Number of epochs')
     parser.add_argument('--patience', '-p', type=int, default=5, help='Patience for early stopping')
     parser.add_argument('--output_dim', '-od', type=int, default=1, help='Output dimension')
-    parser.add_argument('--seed', '-s', type=int, default=42, help='Random seed for reproducibility')
+    parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
     parser.add_argument('--n_estimators', type=int, default=100, help='Number of estimators for tree-based models')
     parser.add_argument('--max_depth', type=int, default=10, help='Max depth for tree-based models')
 
@@ -387,40 +390,49 @@ if __name__ == "__main__":
         # Add the model name to the configuration
         config['model'] = model
 
-        # Print the configuration
-        print("Configuration:")
-        for key, value in config.items():
-            print(f"{key}: {value}")
+        for shot in args.shot:
+            # Set the shot type in the configuration
+            config['shot'] = shot
 
-        # Run the experiment
-        run_experiment = run_ml_experiment if model in ["CatBoost", "DT", "RF", "XGBoost"] else run_dl_experiment
-        config, perf, outs = run_experiment(config)
+            # Print the configuration
+            print("Configuration:")
+            for key, value in config.items():
+                print(f"{key}: {value}")
 
-        # Save the performance and outputs
-        save_dir = os.path.join(args.output_root, f"{args.dataset}/{args.task}/dl_models/{model}")
-        os.makedirs(save_dir, exist_ok=True)
+            # Run the experiment
+            try:
+                run_experiment = run_ml_experiment if model in ["CatBoost",     "DT", "RF", "XGBoost"] else run_dl_experiment
+                config, perf, outs = run_experiment(config)
+            except Exception:
+                print(f"Error occurred while running the experiment for model {model} with shot {shot}.")
+                continue
 
-        # Run bootstrap
-        perf_boot = run_bootstrap(outs['preds'], outs['labels'], config)
-        for key, value in perf_boot.items():
-            if args.task in ["mortality", "readmission"]:
-                perf_boot[key] = f'{value["mean"] * 100:.2f}±{value["std"] * 100:.2f}'
-            else:
-                perf_boot[key] = f'{value["mean"]:.2f}±{value["std"]:.2f}'
+            # Save the performance and outputs
+            save_dir = os.path.join(args.output_root, f"{args.dataset}/{args.task}/dl_models/{model}")
+            os.makedirs(save_dir, exist_ok=True)
 
-        # Save performance and outputs
-        perf_boot = dict({
-            'model': model,
-            'dataset': args.dataset,
-            'task': args.task,
-        }, **perf_boot)
-        perf_df = pd.DataFrame(perf_boot, index=[0])
-        perf_df.to_csv(os.path.join(save_dir, "performance.csv"), index=False)
-        pd.to_pickle(outs, os.path.join(save_dir, "outputs.pkl"))
-        print(f"Performance and outputs saved to {save_dir}")
+            # Run bootstrap
+            perf_boot = run_bootstrap(outs['preds'], outs['labels'], config)
+            for key, value in perf_boot.items():
+                if args.task in ["mortality", "readmission"]:
+                    perf_boot[key] = f'{value["mean"] * 100:.2f}±{value["std"] * 100:.2f}'
+                else:
+                    perf_boot[key] = f'{value["mean"]:.2f}±{value["std"]:.2f}'
 
-        # Append performance to the all performance DataFrame
-        perf_all_df = pd.concat([perf_all_df, perf_df], ignore_index=True)
+            # Save performance and outputs
+            perf_boot = dict({
+                'model': model,
+                'dataset': args.dataset,
+                'task': args.task,
+                'shot': f'{shot} shot',
+            }, **perf_boot)
+            perf_df = pd.DataFrame(perf_boot, index=[0])
+            perf_df.to_csv(os.path.join(save_dir, "performance.csv"), index=False)
+            pd.to_pickle(outs, os.path.join(save_dir, "outputs.pkl"))
+            print(f"Performance and outputs saved to {save_dir}")
+
+            # Append performance to the all performance DataFrame
+            perf_all_df = pd.concat([perf_all_df, perf_df], ignore_index=True)
 
     # Save all performance
     perf_all_df.to_csv(os.path.join(args.output_root, f"{args.dataset}/{args.task}/dl_models/all_performance.csv"), index=False)

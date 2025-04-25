@@ -21,6 +21,10 @@ DATASET_TASK_OPTIONS=(
     "mimic-iv:mortality"
     "mimic-iv:readmission"
 )
+SHOT_OPTIONS=(
+    "few"
+    "full"
+)
 
 # Compute total runs for progress display
 TOTAL_RUNS=$((${#DATASET_TASK_OPTIONS[@]}))
@@ -37,7 +41,7 @@ for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
     CURRENT_RUN=$((CURRENT_RUN + 1))
 
     # Construct command
-    CMD="python -m src.structured_ehr.train_dl -d ${DATASET} -t ${TASK} -m ${MODEL_OPTIONS[@]}"
+    CMD="python -m src.structured_ehr.train_dl -d ${DATASET} -t ${TASK} -m ${MODEL_OPTIONS[@]} -s ${SHOT_OPTIONS[@]}"
 
     # Print the counter and command
     echo "[$CURRENT_RUN/$TOTAL_RUNS] Running configuration..."
