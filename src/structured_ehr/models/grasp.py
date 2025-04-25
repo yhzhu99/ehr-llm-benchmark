@@ -258,7 +258,7 @@ class GRASP(nn.Module):
         lab_dim: int,
         demo_dim: int = 0,
         hidden_dim: int = 64,
-        cluster_num: int = 12,
+        cluster_num: int = 2,
         dropout: int = 0.5,
         block: str = "GRU",
         **kwargs
