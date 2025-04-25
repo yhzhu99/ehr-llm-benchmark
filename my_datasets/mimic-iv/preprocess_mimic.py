@@ -1,4 +1,5 @@
 import os
+import random
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -159,3 +160,24 @@ pd.to_pickle(los_info, os.path.join(save_dir, "los_info.pkl"))
 
 # Export the labtest feature names
 pd.to_pickle(labtest_features, os.path.join(save_dir, "labtest_features.pkl"))
+
+# Extract 10 shots (5 pos nad 5 neg) from train set and valid set
+train_pos_data = [item for item in train_data if item['y_mortality'][0] == 1]
+train_neg_data = [item for item in train_data if item['y_mortality'][0] == 0]
+val_pos_data = [item for item in val_data if item['y_mortality'][0] == 1]
+val_neg_data = [item for item in val_data if item['y_mortality'][0] == 0]
+train_pos_data = random.sample(train_pos_data, min(5, len(train_pos_data)))
+train_neg_data = random.sample(train_neg_data, min(5, len(train_neg_data)))
+val_pos_data = random.sample(val_pos_data, min(5, len(val_pos_data)))
+val_neg_data = random.sample(val_neg_data, min(5, len(val_neg_data)))
+train_shot_data = train_pos_data + train_neg_data
+val_shot_data = val_pos_data + val_neg_data
+
+save_dir = os.path.join(processed_data_dir, '10_shot')
+os.makedirs(save_dir, exist_ok=True)
+
+# Save the data to pickle files
+pd.to_pickle(train_shot_data, os.path.join(save_dir, "train_data.pkl"))
+pd.to_pickle(val_shot_data, os.path.join(save_dir, "val_data.pkl"))
+pd.to_pickle(test_data, os.path.join(save_dir, "test_data.pkl"))
+pd.to_pickle(los_info, os.path.join(save_dir, "los_info.pkl"))
