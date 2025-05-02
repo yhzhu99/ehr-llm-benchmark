@@ -1,16 +1,13 @@
 import os
 import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from utils.preprocess import forward_fill_pipeline, normalize_dataframe, export_missing_mask, export_record_time, export_note
+from my_datasets.utils.preprocess import forward_fill_pipeline, normalize_dataframe, export_missing_mask, export_record_time, export_note
 
-data_dir = os.path.dirname(os.path.abspath(__file__))
-raw_data_dir = os.path.join(data_dir, 'raw')
-processed_data_dir = os.path.join(data_dir, 'processed')
+processed_data_dir = os.path.join("./my_datasets/mimic-iv", 'processed')
 os.makedirs(processed_data_dir, exist_ok=True)
 SEED = 42
 
