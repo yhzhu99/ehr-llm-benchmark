@@ -61,4 +61,4 @@ We examine a diverse array of models including GPT-based LLMs, BERT-based models
 
 To get started with the repository, ensure your environment meets the following requirements. We use `uv` as our Python package manager with Python 3.12.
 
-- Run `uv pip install -e .`
+- Run `uv sync`
