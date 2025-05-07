@@ -73,9 +73,9 @@ Input information of a patient:
 The patient is a female, aged 52 years.
 The patient had 4 visits that occurred at 0, 1, 2, 3.
 Details of the features for each visit are as follows:
-- Capillary refill rate: ["unknown", "unknown", "unknown", "unknown"]
-- Glascow coma scale eye opening: ["Spontaneously", "Spontaneously", "Spontaneously", "Spontaneously"]
-- Glascow coma scale motor response: ["Obeys Commands", "Obeys Commands", "Obeys Commands", "Obeys Commands"]
+- Capillary refill rate (Unit: /. Reference range: /.): ["unknown", "unknown", "unknown", "unknown"]
+- Glascow coma scale eye opening (Unit: /. Reference range: /.): ["Spontaneously", "Spontaneously", "Spontaneously", "Spontaneously"]
+- Glascow coma scale motor response (Unit: /. Reference range: /.): ["Obeys Commands", "Obeys Commands", "Obeys Commands", "Obeys Commands"]
 ...... (other features omitted for brevity)
 
 Response:
@@ -86,9 +86,9 @@ Input information of a patient:
 The patient is a female, aged 52 years.
 The patient had 4 visits that occurred at 0, 1, 2, 3.
 Details of the features for each visit are as follows:
-- Capillary refill rate: ["unknown", "unknown", "unknown", "unknown"]
-- Glascow coma scale eye opening: ["Spontaneously", "Spontaneously", "Spontaneously", "Spontaneously"]
-- Glascow coma scale motor response: ["Obeys Commands", "Obeys Commands", "Obeys Commands", "Obeys Commands"]
+- Capillary refill rate (Unit: /. Reference range: /.): ["unknown", "unknown", "unknown", "unknown"]
+- Glascow coma scale eye opening (Unit: /. Reference range: /.): ["Spontaneously", "Spontaneously", "Spontaneously", "Spontaneously"]
+- Glascow coma scale motor response (Unit: /. Reference range: /.): ["Obeys Commands", "Obeys Commands", "Obeys Commands", "Obeys Commands"]
 ...... (other features omitted for brevity)
 
 Response:
@@ -98,8 +98,8 @@ Response:
 }
 
 USERPROMPT = """\
-I will provide you with longitudinal medical information for a patient. The data covers {LENGTH} visits/time points that occurred at {RECORD_TIME_LIST}.
-Each clinical feature is presented as a list of values, corresponding to these time points. Missing values are represented as `NaN` for numerical values and "unknown" for categorical values. Note that units and reference ranges are provided alongside relevant features.
+I will provide you with longitudinal medical information for a patient. The data covers {LENGTH} visits that occurred at {RECORD_TIME_LIST}.
+Each clinical feature is presented as a list of values, corresponding to these visits. Missing values are represented as `NaN` for numerical values and "unknown" for categorical values. Note that units and reference ranges are provided alongside relevant features.
 
 Patient Background:
 - Sex: {SEX}
@@ -112,7 +112,7 @@ Instructions & Output Format:
 {RESPONSE_FORMAT}
 
 Handling Uncertainty:
-In situations where the provided data is clearly insufficient or too ambiguous to make a reasonable prediction, respond with the exact phrase: `I do not know`
+In situations where the provided data is clearly insufficient or too ambiguous to make a reasonable prediction, respond with the exact phrase: `I do not know`.
 
 {EXAMPLE}
 
