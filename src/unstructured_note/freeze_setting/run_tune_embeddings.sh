@@ -5,10 +5,11 @@
 # Define arrays of models and tasks
 BERT_MODELS=("BERT" "ClinicalBERT" "BioBERT" "GatorTron" "Clinical-Longformer")
 LLM_MODELS=("BioGPT" "meditron" "OpenBioLLM" "BioMistral" "GPT-2" "Qwen2.5-7B" "gemma-3-4b-pt" "HuatuoGPT-o1-7B" "DeepSeek-R1-Distill-Qwen-7B")
+EMBEDDING_MODELS=("BGE-M3" "all-MiniLM-L6-v2" "BioBERT-embed" "BGE-Med")
 TASKS=("mortality" "readmission")
 
 # Train MLP on embeddings for all models
-ALL_MODELS=("${BERT_MODELS[@]}" "${LLM_MODELS[@]}")
+ALL_MODELS=("${BERT_MODELS[@]}" "${LLM_MODELS[@]}" "${EMBEDDING_MODELS[@]}")
 
 for MODEL in "${ALL_MODELS[@]}"; do
     for TASK in "${TASKS[@]}"; do

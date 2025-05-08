@@ -12,11 +12,9 @@ from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from lightning.pytorch.loggers import CSVLogger
 
 import torch
-import torch.nn.functional as F
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
-import numpy as np
 from transformers import set_seed
 
 from unstructured_note.utils.config import MODELS_CONFIG
@@ -28,9 +26,10 @@ set_seed(42)
 # Create model type lists
 BERT_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "BERT"]
 LLM_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "GPT"]
+EMBEDDING_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "embedding"]
 
 parser = argparse.ArgumentParser(description='Fine-tune embeddings with MLP')
-parser.add_argument('--model', type=str, required=True, choices=BERT_MODELS + LLM_MODELS)
+parser.add_argument('--model', type=str, required=True, choices=BERT_MODELS + LLM_MODELS + EMBEDDING_MODELS)
 parser.add_argument('--task', type=str, required=True, choices=['mortality', 'readmission'])
 parser.add_argument('--batch_size', type=int, default=64)
 parser.add_argument('--learning_rate', type=float, default=1e-4)
@@ -50,8 +49,8 @@ class EmbeddingDataset(Dataset):
     def __getitem__(self, idx):
         item = self.data[idx]
         embedding = item['embedding'].float()
-        label = torch.tensor(item['label']).float()
-        return embedding, label.unsqueeze(0)
+        label = torch.tensor(item[f'y_{args.task}'])[0].float()
+        return embedding, label.unsqueeze(dim=0)
 
 # Lightning data module
 class EmbeddingDataModule(L.LightningDataModule):
@@ -68,13 +67,13 @@ class EmbeddingDataModule(L.LightningDataModule):
         self.test_dataset = EmbeddingDataset(f"{self.base_path}/test_embeddings.pkl")
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=4)
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=4)
+        return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=4, persistent_workers=True)
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=4)
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False, num_workers=4, persistent_workers=True)
 
 # MLP classifier
 class MLPClassifier(nn.Module):
@@ -188,8 +187,21 @@ def get_embedding_dim(model_name):
         return 768
     elif model_name in ["GatorTron", "BioGPT"]:
         return 1024
-    elif model_name in ["HuatuoGPT-o1-7B", "DeepSeek-R1-Distill-Qwen-7B", "Qwen2.5-7B", "gemma-3-4b-pt", "meditron", "OpenBioLLM", "BioMistral"]:
+    elif model_name in ["meditron", "OpenBioLLM", "BioMistral"]:
         return 4096
+    elif model_name in ["Qwen2.5-7B", "HuatuoGPT-o1-7B", "DeepSeek-R1-Distill-Qwen-7B"]:
+        return 3584
+    elif model_name in ["gemma-3-4b-pt"]:
+        return 2560
+    # Add embedding model dimensions
+    elif model_name == "BGE-M3":
+        return 1024
+    elif model_name == "all-MiniLM-L6-v2":
+        return 384
+    elif model_name == "BioBERT-embed":
+        return 768
+    elif model_name == "BGE-Med":
+        return 1024
     else:
         # Default for unknown models
         return 768
