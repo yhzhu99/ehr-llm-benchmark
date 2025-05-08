@@ -87,6 +87,16 @@ train_val_patients = train_test_split(train_val_patients, test_size=10000, rando
 train_val_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in train_val_patients])
 train_patients, val_patients = train_test_split(train_val_patients, test_size=1/8, random_state=SEED, stratify=train_val_patients_outcome)
 
+# Print the sizes of the datasets
+print("Train patients size:", len(train_patients))
+print("Validation patients size:", len(val_patients))
+print("Test patients size:", len(test_patients))
+
+# Assert there is no data leakage
+assert len(set(train_patients) & set(val_patients)) == 0, "Data leakage between train and val sets"
+assert len(set(train_patients) & set(test_patients)) == 0, "Data leakage between train and test sets"
+assert len(set(val_patients) & set(test_patients)) == 0, "Data leakage between val and test sets"
+
 # Create train, val dataframes
 train_df = df[df['RecordID'].isin(train_patients)]
 val_df = df[df['RecordID'].isin(val_patients)]
