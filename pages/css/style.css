@@ -1,0 +1,347 @@
+/* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f9f9f9;
+}
+
+.container {
+    width: 85%;
+    max-width: 1100px;
+    margin: auto;
+    overflow: hidden;
+    padding: 0 20px;
+}
+
+/* Header & Navigation */
+header {
+    background: #fff;
+    color: #333;
+    padding: 1rem 0;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+header nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-decoration: none;
+    color: #007bff; /* Primary color */
+}
+
+header ul {
+    list-style: none;
+    display: flex;
+}
+
+header ul li {
+    margin-left: 20px;
+}
+
+header ul li a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+header ul li a:hover, header ul li a.active {
+    color: #007bff;
+}
+
+/* Main Content Sections */
+main section {
+    padding: 40px 0;
+    border-bottom: 1px solid #e7e7e7;
+}
+
+main section:last-child {
+    border-bottom: none;
+}
+
+h1 {
+    font-size: 2.1rem;
+    margin-bottom: 10px;
+    color: #222;
+    line-height: 1.2;
+}
+
+h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #007bff;
+    display: inline-block;
+    color: #333;
+}
+
+h3 {
+    font-size: 1.5rem;
+    margin-top: 25px;
+    margin-bottom: 10px;
+    color: #444;
+}
+
+h4 {
+    font-size: 1.2rem;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #555;
+}
+
+p {
+    margin-bottom: 15px;
+    color: #555;
+}
+
+ul {
+    margin-bottom: 15px;
+    list-style-position: inside;
+}
+
+ul li {
+    margin-bottom: 8px;
+}
+
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Hero Section */
+#hero {
+    background: #007bff; /* Primary color */
+    color: #fff;
+    padding: 60px 0;
+    text-align: center;
+}
+
+#hero h1 {
+    color: #fff;
+    font-size: 2.rem;
+}
+
+#hero .tagline {
+    font-size: 1.3rem;
+    color: #f0f0f0;
+    margin-top: 10px;
+}
+
+/* Key Findings Summary */
+#key-findings-summary ul {
+    list-style-type: disc;
+    padding-left: 20px;
+}
+#key-findings-summary ul li {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+}
+
+.cta-button {
+    display: inline-block;
+    background: #28a745; /* Success color for CTA */
+    color: #fff;
+    padding: 12px 25px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+    margin-top: 20px;
+}
+
+.cta-button:hover {
+    background: #218838;
+    text-decoration: none;
+}
+
+/* Table Styling */
+.table-container {
+    overflow-x: auto; /* Makes table scrollable on small screens */
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+caption {
+    font-size: 1rem;
+    font-style: italic;
+    padding: 10px;
+    text-align: left;
+    caption-side: top;
+    color: #555;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+}
+
+th, td {
+    padding: 10px 12px;
+    text-align: left;
+    border: 1px solid #e0e0e0;
+    vertical-align: middle;
+}
+
+thead th {
+    background-color: #f0f2f5;
+    font-weight: bold;
+    color: #333;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+td[rowspan] {
+    font-weight: bold;
+    background-color: #f5f5f5;
+}
+
+strong { /* For bolded results in table */
+    font-weight: bold;
+    color: #007bff; /* Or another color to highlight */
+}
+
+em { /* For italicized results in table */
+    font-style: italic;
+    color: #28a745; /* Or another color to highlight */
+}
+
+.table-note {
+    font-size: 0.85rem;
+    color: #777;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #fff8e1;
+    border-left: 3px solid #ffc107;
+}
+
+/* About Page Specifics */
+#about-study pre {
+    background: #f4f4f4;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    border: 1px solid #ddd;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.9em;
+}
+
+/* Footer */
+footer {
+    background: #333;
+    color: #fff;
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 30px;
+}
+
+footer p {
+    color: #ccc;
+    margin-bottom: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    header nav {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    header ul {
+        margin-top: 10px;
+        flex-direction: column;
+    }
+    header ul li {
+        margin-left: 0;
+        margin-bottom: 10px;
+    }
+    h1, #hero h1 {
+        font-size: 2.2rem;
+    }
+    h2 {
+        font-size: 1.8rem;
+    }
+    .container {
+        width: 95%;
+    }
+}
+
+/* Style for full horizontal rule like \midrule */
+.midrule-after td {
+    border-bottom: 1px solid black; /* Or a thicker line */
+}
+
+/* Style for partial horizontal rule like \cmidrule{2-7} */
+/* This example is for cmidrule-2-7. You'd need to adjust selectors
+   if the rowspan/colspan structure makes direct nth-child complex.
+   This rule should apply to columns 2 through 7.
+   Assuming the first column is not part of the rule, and cells are direct children: */
+.cmidrule-after td:nth-child(n+2):nth-child(-n+7) { /* If first child is column 1 */
+    border-bottom: 1px dashed #666; /* Lighter or dashed line */
+}
+/* More robustly, if specific cells making up columns 2-7 in that row get a specific class:
+.cmidrule-cell-on-bottom { border-bottom: 1px dashed #666; }
+Then apply this class to the relevant <td> elements.
+For simplicity, the class is on the <tr> below.
+*/
+
+/* For general styling from LaTeX hints */
+table.latex-table-custom {
+    border-collapse: collapse; /* Common for tables like this */
+    margin-left: auto; /* for \centering */
+    margin-right: auto; /* for \centering */
+    font-size: small; /* for \footnotesize */
+}
+
+table.latex-table-custom th, table.latex-table-custom td {
+    padding: 4px 8px; /* Adjust padding as needed */
+    text-align: center; /* Most cells seem centered */
+}
+
+/* Vertical borders as hinted by '|' in tabular{c|c|c|cc|cc} */
+/* Column 1 (Method Category), Column 2 (Method Name), Column 3 (Setting), Column 5 (Outcome AUPRC) get a right border */
+/* This requires careful nth-child or specific classes on cells/columns */
+/* Example for first three columns: */
+table.latex-table-custom th:nth-child(1), table.latex-table-custom td:nth-child(1),
+table.latex-table-custom th:nth-child(2), table.latex-table-custom td:nth-child(2),
+table.latex-table-custom th:nth-child(3), table.latex-table-custom td:nth-child(3) {
+    border-right: 1px solid #ccc;
+}
+/* Example for the border after the 5th column (Outcome AUPRC) */
+/* This depends on colspan in header. If data cells are direct children: */
+table.latex-table-custom th:nth-child(5), table.latex-table-custom td:nth-child(5) {
+   border-right: 1px solid #ccc;
+}
+/* A more precise way for column borders considering colspans in header:
+   Header cell "Outcome": give it a class.
+   Data cells in column 5: give them a class.
+*/
