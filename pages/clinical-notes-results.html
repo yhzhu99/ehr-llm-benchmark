@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClinicRealm</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Tab styling */
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        .tab-buttons {
+            overflow: hidden;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+        .tab-buttons button {
+            background-color: #f1f1f1;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            font-size: 17px;
+            border-radius: 5px 5px 0 0;
+            margin-right: 2px;
+        }
+        .tab-buttons button:hover {
+            background-color: #ddd;
+        }
+        .tab-buttons button.active {
+            background-color: #ccc;
+        }
+        .tab-content {
+            display: none;
+            padding: 6px 12px;
+            border-top: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .latex-table-custom {
+            width: 100%;
+            /* Add any specific custom table styling here if needed */
+        }
+        th button {
+            background-color: inherit;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: inherit;
+        }
+        th button:hover {
+            text-decoration: underline;
+        }
+        .filter-row th { /* Style for filter row cells */
+            padding: 8px;
+            text-align: left;
+        }
+        .filter-row select {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="container">
+                <a href="index.html" class="logo">ClinicRealm</a>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="structured-ehr-results.html">Structured EHR Results</a></li>
+                    <li><a href="clinical-notes-results.html">Clinical Notes Results</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="unstructured-notes">
+            <div class="container">
+                <h2>Benchmark Results: Unstructured Clinical Notes</h2>
+                <p>This section presents the performance comparison of BERT-based and GPT-based models on MIMIC mortality and readmission prediction tasks using unstructured clinical notes.</p>
+
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button class="tab-button active" onclick="openTab(event, 'Outcome')">Outcome</button>
+                        <button class="tab-button" onclick="openTab(event, 'Readmission')">Readmission</button>
+                    </div>
+
+                    <div id="Outcome" class="tab-content active">
+                        <h3>Outcome Prediction Performance (MIMIC Clinical Notes)</h3>
+                        <div class="table-container">
+                            <table class="latex-table-custom" id="outcomeTable">
+                                <caption>Table 2a: <em>Performance comparison of BERT-based and GPT-based models on MIMIC mortality prediction tasks using unstructured clinical notes.</em> <strong>Bold</strong> denotes the best performance. We use a bootstrapping strategy on all test set samples 100 times to report the mean±std results. All metrics are multiplied by 100 for readability purposes.</caption>
+                                <thead>
+                                    <tr class="filter-row">
+                                        <th><select id="outcomeTableMethodCatFilter" title="Filter by Method Category"></select></th>
+                                        <th><select id="outcomeTableMethodNameFilter" title="Filter by Method Name"></select></th>
+                                        <th><select id="outcomeTableSettingFilter" title="Filter by Setting"></select></th>
+                                        <th colspan="2"></th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2" rowspan="2"><strong>Method</strong></th>
+                                        <th rowspan="2"><strong>Setting</strong></th>
+                                        <th colspan="2"><strong>Outcome</strong></th>
+                                    </tr>
+                                    <tr>
+                                        <th><button onclick="sortTable('outcomeTable', 3, 'Outcome')">AUROC (&uarr;)</button></th>
+                                        <th><button onclick="sortTable('outcomeTable', 4, 'Outcome')">AUPRC (&uarr;)</button></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td rowspan="10">BERT-based LM</td>
+                                        <td rowspan="2">BERT</td>
+                                        <td>freeze</td>
+                                        <td>69.96±6.78</td>
+                                        <td>24.99±7.33</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>81.04±5.14</td>
+                                        <td>40.90±9.21</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">Clinical-Longformer</td>
+                                        <td>freeze</td>
+                                        <td>75.68±6.15</td>
+                                        <td>36.81±10.80</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>88.06±4.45</td>
+                                        <td>62.92±9.40</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">BioBERT</td>
+                                        <td>freeze</td>
+                                        <td>75.30±4.95</td>
+                                        <td>29.49±8.17</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>75.85±6.63</td>
+                                        <td>36.93±10.89</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">GatorTron</td>
+                                        <td>freeze</td>
+                                        <td>89.47±4.45</td>
+                                        <td>54.53±9.90</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>91.47±3.44</td>
+                                        <td>71.43±8.79</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">ClinicalBERT</td>
+                                        <td>freeze</td>
+                                        <td>73.55±5.69</td>
+                                        <td>26.98±8.32</td>
+                                    </tr>
+                                    <tr class="midrule-after">
+                                        <td>finetune</td>
+                                        <td>84.95±4.72</td>
+                                        <td>53.01±10.67</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="18">GPT-based Base LLM</td>
+                                        <td rowspan="2">GPT-2-117M</td>
+                                        <td>freeze</td>
+                                        <td>65.60±6.36</td>
+                                        <td>17.08±5.85</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>82.30±5.50</td>
+                                        <td>46.68±10.38</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">BioGPT-347M</td>
+                                        <td>freeze</td>
+                                        <td>77.41±3.78</td>
+                                        <td>24.94±7.17</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>88.39±4.51</td>
+                                        <td>62.62±10.42</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">Meditron-7B</td>
+                                        <td>freeze</td>
+                                        <td>71.98±6.15</td>
+                                        <td>26.77±8.52</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>79.05±5.05</td>
+                                        <td>39.10±9.84</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">BioMistral-7B</td>
+                                        <td>freeze</td>
+                                        <td>70.78±7.30</td>
+                                        <td>33.64±9.81</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>74.42±5.88</td>
+                                        <td>40.31±9.32</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="3">OpenBioLLM-8B</td>
+                                        <td>freeze</td>
+                                        <td>61.24±6.51</td>
+                                        <td>12.85±3.55</td>
+                                    </tr>
+                                    <tr>
+                                        <td>finetune</td>
+                                        <td>80.85±5.71</td>
+                                        <td>55.56±11.92</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>prompt</td>
+                                        <td>65.70±5.43</td>
+                                        <td>13.81±3.35</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="3">Qwen2.5-7B</td>
+                                        <td>freeze</td>
+                                        <td>64.52±6.46</td>
+                                        <td>14.31±4.61</td>
+                                    </tr>
+                                    <tr>
+                                        <td>finetune</td>
+                                        <td>89.04±3.93</td>
+                                        <td>60.89±10.18</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>prompt</td>
+                                        <td>88.39±4.11</td>
+                                        <td>44.33±8.33</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">Gemma-3-4B</td>
+                                        <td>freeze</td>
+                                        <td>66.24±6.26</td>
+                                        <td>28.78±9.54</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>prompt</td>
+                                        <td>96.57±1.32</td>
+                                        <td>68.97±9.29</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td rowspan="1">DeepSeek-V3</td>
+                                        <td>prompt</td>
+                                        <td>97.13±1.07</td>
+                                        <td>65.16±10.39</td>
+                                    </tr>
+                                    <tr class="midrule-after">
+                                        <td rowspan="1">GPT-4o</td>
+                                        <td>prompt</td>
+                                        <td>93.99±2.00</td>
+                                        <td>58.04±10.01</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="8">Reasoning LLM</td>
+                                        <td rowspan="3">HuatuoGPT-o1-7B</td>
+                                        <td>freeze</td>
+                                        <td>60.69±5.52</td>
+                                        <td>11.67±2.88</td>
+                                    </tr>
+                                    <tr>
+                                        <td>finetune</td>
+                                        <td>88.16±3.95</td>
+                                        <td>62.39±9.52</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>prompt</td>
+                                        <td>83.84±3.55</td>
+                                        <td>29.72±6.79</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="3">DeepSeek-R1-7B</td>
+                                        <td>freeze</td>
+                                        <td>56.76±6.73</td>
+                                        <td>16.72±7.24</td>
+                                    </tr>
+                                    <tr>
+                                        <td>finetune</td>
+                                        <td>87.32±5.98</td>
+                                        <td>55.75±12.11</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>prompt</td>
+                                        <td>83.17±4.63</td>
+                                        <td>36.25±8.75</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td rowspan="1">DeepSeek-R1</td>
+                                        <td>prompt</td>
+                                        <td><strong>97.64±1.08</strong></td>
+                                        <td>69.61±10.13</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="1">o3-mini-high</td>
+                                        <td>prompt</td>
+                                        <td>97.45±1.01</td>
+                                        <td><strong>71.72±10.31</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="Readmission" class="tab-content">
+                        <h3>Readmission Prediction Performance (MIMIC Clinical Notes)</h3>
+                        <div class="filter-container">
+                        </div>
+                        <div class="table-container">
+                            <table class="latex-table-custom" id="readmissionTable">
+                                <caption>Table 2b: <em>Performance comparison of BERT-based and GPT-based models on MIMIC readmission prediction tasks using unstructured clinical notes.</em> <strong>Bold</strong> denotes the best performance. We use a bootstrapping strategy on all test set samples 100 times to report the mean±std results. All metrics are multiplied by 100 for readability purposes.</caption>
+                                <thead>
+                                    <tr class="filter-row">
+                                        <th><select id="readmissionTableMethodCatFilter" title="Filter by Method Category"></select></th>
+                                        <th><select id="readmissionTableMethodNameFilter" title="Filter by Method Name"></select></th>
+                                        <th><select id="readmissionTableSettingFilter" title="Filter by Setting"></select></th>
+                                        <th colspan="2"></th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2" rowspan="2"><strong>Method</strong></th>
+                                        <th rowspan="2"><strong>Setting</strong></th>
+                                        <th colspan="2"><strong>Readmission</strong></th>
+                                    </tr>
+                                    <tr>
+                                        <th><button onclick="sortTable('readmissionTable', 3, 'Readmission')">AUROC (&uarr;)</button></th>
+                                        <th><button onclick="sortTable('readmissionTable', 4, 'Readmission')">AUPRC (&uarr;)</button></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td rowspan="10">BERT-based LM</td>
+                                        <td rowspan="2">BERT</td>
+                                        <td>freeze</td>
+                                        <td>62.93±4.15</td>
+                                        <td>38.77±6.13</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>67.99±4.61</td>
+                                        <td>47.20±7.06</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">Clinical-Longformer</td>
+                                        <td>freeze</td>
+                                        <td>65.04±4.98</td>
+                                        <td>48.70±6.04</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>75.56±4.42</td>
+                                        <td>59.19±6.65</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">BioBERT</td>
+                                        <td>freeze</td>
+                                        <td>62.86±4.43</td>
+                                        <td>37.10±5.40</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>75.85±6.63</td>
+                                        <td>36.93±10.89</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">GatorTron</td>
+                                        <td>freeze</td>
+                                        <td>70.75±4.24</td>
+                                        <td>47.74±7.09</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>75.96±4.34</td>
+                                        <td>59.01±6.85</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">ClinicalBERT</td>
+                                        <td>freeze</td>
+                                        <td>64.94±4.40</td>
+                                        <td>40.90±6.10</td>
+                                    </tr>
+                                    <tr class="midrule-after">
+                                        <td>finetune</td>
+                                        <td>71.93±4.35</td>
+                                        <td>53.82±6.85</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="18">GPT-based Base LLM</td>
+                                        <td rowspan="2">GPT-2-117M</td>
+                                        <td>freeze</td>
+                                        <td>60.43±5.00</td>
+                                        <td>37.05±6.14</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>71.81±4.58</td>
+                                        <td>50.14±6.67</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">BioGPT-347M</td>
+                                        <td>freeze</td>
+                                        <td>66.54±4.04</td>
+                                        <td>37.62±5.37</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>71.66±4.10</td>
+                                        <td>52.23±6.63</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">Meditron-7B</td>
+                                        <td>freeze</td>
+                                        <td>59.70±4.32</td>
+                                        <td>34.97±5.50</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>64.04±4.40</td>
+                                        <td>40.90±6.21</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">BioMistral-7B</td>
+                                        <td>freeze</td>
+                                        <td>67.41±4.09</td>
+                                        <td>42.95±5.55</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>finetune</td>
+                                        <td>75.66±4.37</td>
+                                        <td>61.60±6.28</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="3">OpenBioLLM-8B</td>
+                                        <td>freeze</td>
+                                        <td>57.09±3.50</td>
+                                        <td>32.06±5.08</td>
+                                    </tr>
+                                    <tr>
+                                        <td>finetune</td>
+                                        <td>77.22±3.73</td>
+                                        <td>63.91±5.82</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>prompt</td>
+                                        <td>58.47±4.21</td>
+                                        <td>32.99±4.66</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="3">Qwen2.5-7B</td>
+                                        <td>freeze</td>
+                                        <td>61.48±4.46</td>
+                                        <td>40.03±5.98</td>
+                                    </tr>
+                                    <tr>
+                                        <td>finetune</td>
+                                        <td>75.80±4.00</td>
+                                        <td>58.42±6.72</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>prompt</td>
+                                        <td>77.32±4.75</td>
+                                        <td>66.64±6.05</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">Gemma-3-4B</td>
+                                        <td>freeze</td>
+                                        <td>63.83±4.27</td>
+                                        <td>35.15±4.70</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>prompt</td>
+                                        <td>85.21±3.92</td>
+                                        <td>71.51±5.77</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td rowspan="1">DeepSeek-V3</td>
+                                        <td>prompt</td>
+                                        <td>87.33±3.44</td>
+                                        <td><strong>78.53±5.06</strong></td>
+                                    </tr>
+                                    <tr class="midrule-after">
+                                        <td rowspan="1">GPT-4o</td>
+                                        <td>prompt</td>
+                                        <td>75.89±5.51</td>
+                                        <td>66.38±6.65</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="8">Reasoning LLM</td>
+                                        <td rowspan="3">HuatuoGPT-o1-7B</td>
+                                        <td>freeze</td>
+                                        <td>59.14±4.26</td>
+                                        <td>37.67±6.05</td>
+                                    </tr>
+                                    <tr>
+                                        <td>finetune</td>
+                                        <td>77.82±3.84</td>
+                                        <td>62.21±6.25</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>prompt</td>
+                                        <td>67.33±5.35</td>
+                                        <td>49.50±7.09</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="3">DeepSeek-R1-7B</td>
+                                        <td>freeze</td>
+                                        <td>53.21±3.81</td>
+                                        <td>33.12±5.35</td>
+                                    </tr>
+                                    <tr>
+                                        <td>finetune</td>
+                                        <td>74.54±3.94</td>
+                                        <td>51.13±6.80</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>prompt</td>
+                                        <td>61.69±4.65</td>
+                                        <td>34.50±5.75</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td rowspan="1">DeepSeek-R1</td>
+                                        <td>prompt</td>
+                                        <td>58.18±6.23</td>
+                                        <td>56.25±6.53</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="1">o3-mini-high</td>
+                                        <td>prompt</td>
+                                        <td><strong>87.59±3.34</strong></td>
+                                        <td>75.48±5.74</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <h4>Key Observations (Unstructured Clinical Notes):</h4>
+                <ul>
+                    <li>State-of-the-art LLMs (e.g., DeepSeek R1/V3, GPT o3-mini-high, DeepSeek-R1) in zero-shot settings considerably outperform fine-tuned BERT-based models.</li>
+                    <li>GPT-based models, especially with prompting, show strong performance, with models like DeepSeek-R1 and o3-mini-high achieving top results in AUROC and AUPRC for outcome prediction.</li>
+                    <li>DeepSeek-V3 and o3-mini-high also show leading performance for readmission prediction.</li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Your Name/Institution. All rights reserved.</p>
+        </div>
+    </footer>
+    <script>
+        let sortDirections = {};
+        window.logicalTableData = {}; // To store parsed table data for filtering
+        let dropdownsPopulated = {}; // To track if dropdowns for a table are populated
+
+        function openTab(evt, tabName) {
+            var i, tabcontent, tabbuttons;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+                tabcontent[i].classList.remove("active");
+            }
+            tabbuttons = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tabbuttons.length; i++) {
+                tabbuttons[i].classList.remove("active");
+            }
+            document.getElementById(tabName).style.display = "block";
+            document.getElementById(tabName).classList.add("active");
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.classList.add("active");
+            }
+
+            let tableId; // Determine tableId based on tabName for this page
+            if (tabName === 'Outcome') tableId = "outcomeTable";
+            else if (tabName === 'Readmission') tableId = "readmissionTable";
+
+            if (tableId) {
+                if (!dropdownsPopulated[tableId]) {
+                    populateDropdowns(tableId, tabName);
+                }
+                // Always ensure logical data is current for the tab and apply filters.
+                // updateLogicalTableData might be redundant if populateDropdowns was just called,
+                // but ensures consistency if tab is reactivated.
+                updateLogicalTableData(tableId, tabName);
+                filterTable(tabName);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            var defaultActiveButton = document.querySelector(".tab-button.active");
+            if (defaultActiveButton) {
+                const onclickAttr = defaultActiveButton.getAttribute("onclick");
+                const tabNameMatch = onclickAttr.match(/openTab\s*\(\s*event\s*,\s*'([^']+)'\s*\)/);
+                if (tabNameMatch && tabNameMatch[1]) {
+                    // Call openTab for the default active tab to initialize it correctly
+                    openTab(null, tabNameMatch[1]); 
+                }
+            } else {
+                 // Fallback: if no button has .active, try to open the first tab if it exists
+                const firstTabButton = document.querySelector(".tab-button");
+                if(firstTabButton){
+                    const onclickAttr = firstTabButton.getAttribute("onclick");
+                    const tabNameMatch = onclickAttr.match(/openTab\s*\(\s*event\s*,\s*'([^']+)'\s*\)/);
+                    if (tabNameMatch && tabNameMatch[1]) {
+                        openTab(null, tabNameMatch[1]); 
+                    }
+                }
+            }
+        });
+
+        function getLogicalTableConfig(tabName) {
+            // For clinical-notes-results.html, both tables have 5 columns
+            if (tabName === 'Outcome') return { tableId: "outcomeTable", totalVisualColumns: 5 };
+            if (tabName === 'Readmission') return { tableId: "readmissionTable", totalVisualColumns: 5 };
+            return null;
+        }
+
+        function updateLogicalTableData(tableId, tabName) {
+            const table = document.getElementById(tableId);
+            if (!table) return [];
+            const tbody = table.getElementsByTagName("tbody")[0];
+            if (!tbody) return [];
+            
+            const originalRows = Array.from(tbody.getElementsByTagName("tr"));
+            const config = getLogicalTableConfig(tabName);
+            if (!config) return [];
+            const totalVisualColumns = config.totalVisualColumns;
+
+            let parsedData = [];
+            let currentMethodCatText = "";
+            let catSpanLeft = 0;
+            let currentMethodNameText = "";
+            let nameSpanLeft = 0;
+
+            for (const row of originalRows) {
+                const actualCells = Array.from(row.cells);
+                let logicalCells = new Array(totalVisualColumns).fill("");
+                let actualCellIndex = 0;
+
+                // Column 0: Method Category
+                if (catSpanLeft === 0) {
+                    if (actualCells.length > actualCellIndex && actualCells[actualCellIndex].getAttribute('rowspan')) {
+                        currentMethodCatText = actualCells[actualCellIndex].textContent.trim();
+                        catSpanLeft = parseInt(actualCells[actualCellIndex].getAttribute("rowspan"), 10);
+                        logicalCells[0] = currentMethodCatText;
+                        actualCellIndex++;
+                    } else if (actualCells.length > actualCellIndex) {
+                        currentMethodCatText = actualCells[actualCellIndex].textContent.trim();
+                        catSpanLeft = 1;
+                        logicalCells[0] = currentMethodCatText;
+                        actualCellIndex++;
+                    } else {
+                        logicalCells[0] = currentMethodCatText; 
+                    }
+                } else {
+                    logicalCells[0] = currentMethodCatText;
+                }
+                catSpanLeft--;
+
+                // Column 1: Method Name
+                if (nameSpanLeft === 0) {
+                    if (actualCells.length > actualCellIndex && actualCells[actualCellIndex].getAttribute('rowspan')) {
+                        currentMethodNameText = actualCells[actualCellIndex].textContent.trim();
+                        nameSpanLeft = parseInt(actualCells[actualCellIndex].getAttribute("rowspan"), 10);
+                        logicalCells[1] = currentMethodNameText;
+                        actualCellIndex++;
+                    } else if (actualCells.length > actualCellIndex) {
+                        currentMethodNameText = actualCells[actualCellIndex].textContent.trim();
+                        nameSpanLeft = 1; 
+                        logicalCells[1] = currentMethodNameText;
+                        actualCellIndex++;
+                    } else {
+                        logicalCells[1] = currentMethodNameText; 
+                    }
+                } else {
+                    logicalCells[1] = currentMethodNameText;
+                }
+                nameSpanLeft--;
+                
+                // Remaining columns (Setting, metrics...)
+                for (let k = 2; k < totalVisualColumns; k++) {
+                    if (actualCells.length > actualCellIndex) {
+                        logicalCells[k] = actualCells[actualCellIndex++].textContent.trim();
+                    } else {
+                        logicalCells[k] = ""; 
+                    }
+                }
+                parsedData.push({ originalTr: row, values: logicalCells });
+            }
+            window.logicalTableData[tableId] = parsedData;
+            return parsedData;
+        }
+
+        function populateDropdowns(tableId, tabName) {
+            if (dropdownsPopulated[tableId]) return;
+
+            // Ensure logical data is fresh before populating for the first time
+            updateLogicalTableData(tableId, tabName); 
+            const logicalRows = window.logicalTableData[tableId];
+            if (!logicalRows || logicalRows.length === 0) return;
+
+            const methodCatSet = new Set();
+            const methodNameSet = new Set();
+            const settingSet = new Set();
+
+            logicalRows.forEach(data => {
+                if (data.values[0]) methodCatSet.add(data.values[0]);
+                if (data.values[1]) methodNameSet.add(data.values[1]);
+                if (data.values[2]) settingSet.add(data.values[2]);
+            });
+
+            // Corrected IDs for clinical-notes page, assuming similar naming convention to previous file
+            const catFilterSelect = document.getElementById(tableId + "MethodCatFilter");
+            const nameFilterSelect = document.getElementById(tableId + "MethodNameFilter");
+            const settingFilterSelect = document.getElementById(tableId + "SettingFilter");
+
+            function fillSelect(selectElement, valuesSet) {
+                if (!selectElement) return;
+                selectElement.innerHTML = '<option value="All">All</option>'; 
+                Array.from(valuesSet).sort().forEach(val => {
+                    const option = document.createElement('option');
+                    option.value = val;
+                    option.textContent = val;
+                    selectElement.appendChild(option);
+                });
+                selectElement.onchange = () => filterTable(tabName);
+            }
+
+            fillSelect(catFilterSelect, methodCatSet);
+            fillSelect(nameFilterSelect, methodNameSet);
+            fillSelect(settingFilterSelect, settingSet);
+
+            dropdownsPopulated[tableId] = true;
+        }
+
+        function filterTable(tabName) {
+            const config = getLogicalTableConfig(tabName);
+            if (!config) return;
+            const tableId = config.tableId;
+
+            // Ensure logical data is available
+            if (!window.logicalTableData[tableId]) {
+                updateLogicalTableData(tableId, tabName); 
+                if (!window.logicalTableData[tableId]) return; // Still no data, abort
+            }
+            
+            const catFilterValue = document.getElementById(tableId + "MethodCatFilter") ? document.getElementById(tableId + "MethodCatFilter").value : "All";
+            const nameFilterValue = document.getElementById(tableId + "MethodNameFilter") ? document.getElementById(tableId + "MethodNameFilter").value : "All";
+            const settingFilterValue = document.getElementById(tableId + "SettingFilter") ? document.getElementById(tableId + "SettingFilter").value : "All";
+
+            (window.logicalTableData[tableId] || []).forEach(item => {
+                const rowMethodCat = item.values[0] || "";
+                const rowMethodName = item.values[1] || "";
+                const rowSetting = item.values[2] || "";
+
+                const catMatch = (catFilterValue === "All" || rowMethodCat === catFilterValue);
+                const nameMatch = (nameFilterValue === "All" || rowMethodName === nameFilterValue);
+                const settingMatch = (settingFilterValue === "All" || rowSetting === settingFilterValue);
+
+                if (catMatch && nameMatch && settingMatch) {
+                    item.originalTr.style.display = "";
+                } else {
+                    item.originalTr.style.display = "none";
+                }
+            });
+        }
+
+        function sortTable(tableId, visualColumnIndex, tabName, initialSortOrder = 'asc') {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            const tbody = table.getElementsByTagName("tbody")[0];
+            if (!tbody) return;
+            
+            const originalRowsForSort = Array.from(tbody.getElementsByTagName("tr"));
+            const config = getLogicalTableConfig(tabName);
+            if (!config) return;
+            const totalVisualColumns = config.totalVisualColumns;
+
+            let logicalRowDataForSort = [];
+            let currentMethodCatText = "";
+            let catSpanLeft = 0;
+            let currentMethodNameText = "";
+            let nameSpanLeft = 0;
+
+            for (const row of originalRowsForSort) {
+                const actualCells = Array.from(row.cells);
+                let logicalCells = new Array(totalVisualColumns).fill("");
+                let actualCellIndex = 0;
+
+                if (catSpanLeft === 0) {
+                    if (actualCells.length > actualCellIndex && actualCells[actualCellIndex].getAttribute('rowspan')) {
+                        currentMethodCatText = actualCells[actualCellIndex].textContent.trim();
+                        catSpanLeft = parseInt(actualCells[actualCellIndex].getAttribute("rowspan"), 10);
+                        logicalCells[0] = currentMethodCatText;
+                        actualCellIndex++;
+                    } else if (actualCells.length > actualCellIndex) {
+                        currentMethodCatText = actualCells[actualCellIndex].textContent.trim();
+                        catSpanLeft = 1; 
+                        logicalCells[0] = currentMethodCatText;
+                        actualCellIndex++;
+                    } else { logicalCells[0] = currentMethodCatText; }
+                } else { logicalCells[0] = currentMethodCatText; }
+                catSpanLeft--;
+
+                if (nameSpanLeft === 0) {
+                    if (actualCells.length > actualCellIndex && actualCells[actualCellIndex].getAttribute('rowspan')) {
+                        currentMethodNameText = actualCells[actualCellIndex].textContent.trim();
+                        nameSpanLeft = parseInt(actualCells[actualCellIndex].getAttribute("rowspan"), 10);
+                        logicalCells[1] = currentMethodNameText;
+                        actualCellIndex++;
+                    } else if (actualCells.length > actualCellIndex) {
+                        currentMethodNameText = actualCells[actualCellIndex].textContent.trim();
+                        nameSpanLeft = 1; 
+                        logicalCells[1] = currentMethodNameText;
+                        actualCellIndex++;
+                    } else { logicalCells[1] = currentMethodNameText; }
+                } else { logicalCells[1] = currentMethodNameText; }
+                nameSpanLeft--;
+                
+                for (let k = 2; k < totalVisualColumns; k++) {
+                    if (actualCells.length > actualCellIndex) {
+                        logicalCells[k] = actualCells[actualCellIndex++].textContent.trim();
+                    } else { logicalCells[k] = ""; }
+                }
+                
+                let sortValueCellContent = logicalCells[visualColumnIndex] || "";
+                sortValueCellContent = sortValueCellContent.split("±")[0].trim();
+                
+                logicalRowDataForSort.push({
+                    values: logicalCells, 
+                    sortKey: parseFloat(sortValueCellContent)
+                });
+            }
+
+            const columnKey = tableId + '-' + visualColumnIndex;
+            if (!sortDirections[columnKey]) {
+                sortDirections[columnKey] = initialSortOrder;
+            } else {
+                sortDirections[columnKey] = sortDirections[columnKey] === 'asc' ? 'desc' : 'asc';
+            }
+            const direction = sortDirections[columnKey];
+
+            logicalRowDataForSort.sort((a, b) => {
+                const valA = a.sortKey;
+                const valB = b.sortKey;
+                if (isNaN(valA) && isNaN(valB)) return 0;
+                if (isNaN(valA)) return direction === 'asc' ? 1 : -1;
+                if (isNaN(valB)) return direction === 'asc' ? -1 : 1;
+                return direction === 'asc' ? valA - valB : valB - valA;
+            });
+
+            while (tbody.firstChild) {
+                tbody.removeChild(tbody.firstChild);
+            }
+
+            logicalRowDataForSort.forEach(data => {
+                const newTr = document.createElement('tr');
+                data.values.forEach(cellVal => { 
+                    const newTd = document.createElement('td');
+                    newTd.textContent = cellVal;
+                    newTr.appendChild(newTd);
+                });
+                tbody.appendChild(newTr);
+            });
+            
+            updateLogicalTableData(tableId, tabName);
+            filterTable(tabName);
+        }
+
+    </script>
+</body>
+</html> 
