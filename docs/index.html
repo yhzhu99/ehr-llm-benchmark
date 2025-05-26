@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClinicRealm</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="container">
+                <a href="index.html" class="logo">ClinicRealm</a>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="structured-ehr-results.html">Structured EHR Results</a></li>
+                    <li><a href="clinical-notes-results.html">Clinical Notes Results</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero">
+            <div class="container">
+                <h1>ClinicRealm: Re-evaluating Large Language Models with Conventional Machine Learning for Non-Generative Clinical Prediction Tasks</h1>
+                <p class="tagline">Understanding the efficacy of LLMs compared to established methods in medicine using structured EHR and unstructured clinical notes.</p>
+            </div>
+        </section>
+
+        <section id="abstract">
+            <div class="container">
+                <h2>Abstract</h2>
+                <p>The rapidly expanding deployment of Large Language Models (LLMs) in medicine necessitates a clearer understanding of their efficacy in conventional non-generative clinical prediction tasks, where their performance relative to established methods has been uncertain. This study comprehensively benchmarks 9 GPT-based LLMs, 5 BERT-based models, and 7 conventional clinical prediction methods across supervised predictions using structured Electronic Health Records (EHR) and unstructured clinical notes. Our findings significantly revise previous assumptions: for clinical note-based predictions, state-of-the-art LLMs (e.g., DeepSeek R1/V3, GPT o3-mini-high) in zero-shot settings now considerably outperform fine-tuned BERT-based models. With structured EHR data, while specialized conventional models achieve superior performance when fully trained with ample data, leading LLMs (e.g., GPT-4o, DeepSeek R1/V3) demonstrate strong zero-shot capabilities, often surpassing conventional models trained on limited datasets, with a narrowing performance gap. Notably, open-source LLMs are competitive or even superior to proprietary LLMs. These results indicate modern LLMs are increasingly potent for non-generative clinical tasks, excelling with unstructured text and offering data-efficient solutions for structured data, thus warranting a nuanced model selection strategy.</p>
+            </div>
+        </section>
+
+        <section id="key-findings-summary">
+            <div class="container">
+                <h2>Key Findings</h2>
+                <ul>
+                    <li>State-of-the-art LLMs in zero-shot settings now considerably outperform fine-tuned BERT-based models for clinical note-based predictions.</li>
+                    <li>With structured EHR, leading LLMs demonstrate strong zero-shot capabilities, often surpassing conventional models trained on limited datasets.</li>
+                    <li>Open-source LLMs are competitive with, or even superior to, proprietary LLMs in these tasks.</li>
+                    <li>Modern LLMs are increasingly potent for non-generative clinical tasks, especially with unstructured text and as data-efficient solutions for structured data.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="about-study">
+            <div class="container">
+                <h2>About This Study</h2>
+                <h3>Authors</h3>
+                <p>Yinghao Zhu<sup>5,7,+</sup>, Junyi Gao<sup>2,3,+</sup>, Zixiang Wang<sup>5,+</sup>, Weibin Liao<sup>4,5,+</sup>, Xiaochen Zheng<sup>6</sup>, Lifang Liang<sup>5</sup>, Miguel O. Bernabeu<sup>2</sup>, Yasha Wang<sup>5</sup>, Lequan Yu<sup>7</sup>, Chengwei Pan<sup>1,*</sup>, Ewen M. Harrison<sup>2,*</sup>, Liantao Ma<sup>5,*</sup></p>
+
+                <h3>Affiliations</h3>
+                <p><sup>1</sup> School of Artificial Intelligence, Beihang University, Beijing, China, 100191</p>
+                <p><sup>2</sup> Centre for Medical Informatics, The University of Edinburgh, Edinburgh, UK, EH8 9YL</p>
+                <p><sup>3</sup> Health Data Research UK, UK</p>
+                <p><sup>4</sup> School of Computer Science, Peking University, Beijing, China, 100871</p>
+                <p><sup>5</sup> National Engineering Research Center for Software Engineering, Peking University, Beijing, China, 100871</p>
+                <p><sup>6</sup> ETH Zurich, Zurich, Switzerland, 8092</p>
+                <p><sup>7</sup> School of Computing and Data Science, The University of Hong Kong, Hong Kong SAR, China, 999077</p>
+                <p><sup>*</sup> Correspond to pancw@buaa.edu.cn, ewen.harrison@ed.ac.uk, malt@pku.edu.cn</p>
+                <p><sup>+</sup> These authors contributed equally to this work</p>
+
+                <h3>Citation</h3>
+                <p>To cite this work, please use the following:</p>
+                <pre>
+Zhu, Y., Gao, J., Wang, Z., Liao, W., Zheng, X., Liang, L., Wang, Y., Pan, C., Harrison, E. M., & Ma, L. (2024). Is larger always better? Evaluating and prompting large language models for non-generative medical tasks. arXiv preprint arXiv:2407.18525.
+                </pre>
+                <p>A pre-print of the paper is available on arXiv:</p>
+                <p><a href="https://arxiv.org/abs/2407.18525" target="_blank">https://arxiv.org/abs/2407.18525</a></p>
+
+                <h3>Data Privacy and Code Availability</h3>
+                <p>This research did not involve the collection of new patient EHR data. The TJH EHR dataset utilized in this study is publicly available on GitHub (<a href="https://github.com/HAIRLAB/Pre_Surv_COVID_19" target="_blank">https://github.com/HAIRLAB/Pre_Surv_COVID_19</a>). The MIMIC datasets are open to researchers and can be accessed on request, including structured EHR data (<a href="https://physionet.org/content/mimiciv/3.1/" target="_blank">https://physionet.org/content/mimiciv/3.1/</a>) and clinical notes data (<a href="https://physionet.org/content/mimic-iv-note/2.2/" target="_blank">https://physionet.org/content/mimic-iv-note/2.2/</a>). We use these datasets under their respective licenses.</p>
+                <p>Throughout the experiments, we strictly adhere to the data use agreement, reaffirming our commitment to responsible data handling and usage. The performance of GPT-4o and GPT o3-mini-high on all datasets is processed using the secure Azure OpenAI API, and the performance of DeepSeek-V3 and DeepSeek-R1 is obtained via the DeepSeek's official APIs, with human review of the data waived. Additionally, all other models, including ML, DL, and other LLMs, are deployed locally.</p>
+
+                <h3>Acknowledgements</h3>
+                <p>This work was supported by the National Natural Science Foundation of China (U23A20468), and Xuzhou Scientific Technological Projects (KC23143).</p>
+                <p>Junyi Gao acknowledges the receipt of studentship awards from the Health Data Research UK-The Alan Turing Institute Wellcome PhD Programme in Health Data Science (grant 218529/Z/19/Z).</p>
+                <p>We extend our gratitude to Jingkun An, Yuning Tong, Enshen Zhou, Bowen Jiang, and Yifan He for their preliminary discussions and experiments. We thank Enshen Zhou for providing computing resources for part of our research. We also thank Ahmed Allam for his suggestions on experimental settings.</p>
+
+                <h3>Code Repository</h3>
+                <p>The code and resources for this study are available on GitHub:</p>
+                <p><a href="https://github.com/yhzhu99/ehr-llm-benchmark" target="_blank">https://github.com/yhzhu99/ehr-llm-benchmark</a></p>
+                <p>This repository contains the implementation of our comprehensive benchmark of various models, including GPT-based LLMs, BERT-based language models, and conventional clinical predictive models for non-generative medical tasks.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

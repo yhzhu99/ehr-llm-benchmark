@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClinicRealm</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Tab styling */
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        .tab-buttons {
+            overflow: hidden;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+        .tab-buttons button {
+            background-color: #f1f1f1;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            font-size: 17px;
+            border-radius: 5px 5px 0 0;
+            margin-right: 2px;
+        }
+        .tab-buttons button:hover {
+            background-color: #ddd;
+        }
+        .tab-buttons button.active {
+            background-color: #ccc;
+        }
+        .tab-content {
+            display: none;
+            padding: 6px 12px;
+            border-top: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .latex-table-responsive {
+            width: 100%;
+            overflow-x: auto; /* Ensures table is scrollable on small screens */
+        }
+        th button {
+            background-color: inherit;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: inherit;
+        }
+        th button:hover {
+            text-decoration: underline;
+        }
+        .filter-row th { /* Style for filter row cells */
+            padding: 8px;
+            text-align: left;
+        }
+        .filter-row select {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="container">
+                <a href="index.html" class="logo">ClinicRealm</a>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="structured-ehr-results.html">Structured EHR Results</a></li>
+                    <li><a href="clinical-notes-results.html">Clinical Notes Results</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="structured-ehr">
+            <div class="container">
+                <h2>Benchmark Results: Structured EHR Data</h2>
+                <p>This section details the performance of mortality and readmission prediction on TJH and MIMIC datasets using structured Electronic Health Records (EHR).</p>
+
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button class="tab-button active" onclick="openTab(event, 'Outcome')">Outcome</button>
+                        <button class="tab-button" onclick="openTab(event, 'LOS')">LOS</button>
+                        <button class="tab-button" onclick="openTab(event, 'Readmission')">Readmission</button>
+                    </div>
+
+                    <div id="Outcome" class="tab-content active">
+                        <h3>Outcome Prediction Performance</h3>
+                        <div class="table-container">
+                            <table class="latex-table-responsive latex-table-small latex-table-centered" id="outcomeTable">
+                                <caption><em>Performance of mortality prediction on TJH and MIMIC datasets using structured EHR.</em> <strong>Bold</strong> indicates the best performance excluding results using the full dataset. <em>Italic</em> indicates the proposed prompting framework outperforms basic prompts. We use bootstrapping on all test set samples 100 times to report the standard deviations. All metrics are multiplied by 100 for readability purposes.</caption>
+                                <thead>
+                                    <tr class="filter-row">
+                                        <th><select id="outcomeTableMethodCatFilter" title="Filter by Method Category"></select></th>
+                                        <th><select id="outcomeTableMethodNameFilter" title="Filter by Method Name"></select></th>
+                                        <th><select id="outcomeTableSettingFilter" title="Filter by Setting"></select></th>
+                                        <th colspan="4"></th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2" rowspan="2"><strong>Methods</strong></th>
+                                        <th rowspan="2"><strong>Setting</strong></th>
+                                        <th colspan="2"><strong>TJH Outcome</strong></th>
+                                        <th colspan="2"><strong>MIMIC-IV Outcome</strong></th>
+                                    </tr>
+                                    <tr>
+                                        <th><button onclick="sortTable('outcomeTable', 3, 'Outcome')">AUROC (&uarr;)</button></th>
+                                        <th><button onclick="sortTable('outcomeTable', 4, 'Outcome')">AUPRC (&uarr;)</button></th>
+                                        <th><button onclick="sortTable('outcomeTable', 5, 'Outcome')">AUROC (&uarr;)</button></th>
+                                        <th><button onclick="sortTable('outcomeTable', 6, 'Outcome')">AUPRC (&uarr;)</button></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- ML Models -->
+                                    <tr>
+                                        <td rowspan="8">ML</td>
+                                        <td rowspan="2">CatBoost</td>
+                                        <td>10 shot</td>
+                                        <td><strong>99.43±0.31</strong></td>
+                                        <td><strong>99.31±0.39</strong></td>
+                                        <td>62.18±7.41</td>
+                                        <td>19.48±5.81</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>99.16±0.47</td>
+                                        <td>98.99±0.59</td>
+                                        <td>71.18±6.72</td>
+                                        <td>28.27±8.53</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">DT</td>
+                                        <td>10 shot</td>
+                                        <td>79.64±2.78</td>
+                                        <td>69.20±4.42</td>
+                                        <td>59.48±5.84</td>
+                                        <td>11.98±3.23</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>92.20±1.83</td>
+                                        <td>87.79±3.04</td>
+                                        <td>51.81±3.69</td>
+                                        <td>10.48±2.64</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">RF</td>
+                                        <td>10 shot</td>
+                                        <td>99.16±0.44</td>
+                                        <td>98.99±0.54</td>
+                                        <td>59.92±8.79</td>
+                                        <td>22.51±7.55</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>99.18±0.46</td>
+                                        <td>99.05±0.56</td>
+                                        <td>67.06±5.54</td>
+                                        <td>15.89±3.84</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">XGBoost</td>
+                                        <td>10 shot</td>
+                                        <td>62.66±3.38</td>
+                                        <td>53.15±4.37</td>
+                                        <td>55.77±5.43</td>
+                                        <td>10.76±2.55</td>
+                                    </tr>
+                                    <tr class="midrule-after">
+                                        <td>full shot</td>
+                                        <td>98.05±0.94</td>
+                                        <td>95.58±2.18</td>
+                                        <td>64.62±4.97</td>
+                                        <td>17.66±5.12</td>
+                                    </tr>
+                                    <!-- DL Models -->
+                                    <tr>
+                                        <td rowspan="14">DL</td> <td rowspan="2">GRU</td>
+                                        <td>10 shot</td>
+                                        <td>87.79±2.26</td>
+                                        <td>83.42±3.72</td>
+                                        <td>74.96±6.67</td>
+                                        <td>25.74±7.04</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>93.57±1.71</td>
+                                        <td>90.40±3.19</td>
+                                        <td>92.49±3.03</td>
+                                        <td>72.05±7.58</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">LSTM</td>
+                                        <td>10 shot</td>
+                                        <td>92.46±1.97</td>
+                                        <td>85.71±4.29</td>
+                                        <td>56.42±7.93</td>
+                                        <td>16.52±5.56</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>92.98±1.91</td>
+                                        <td>86.97±4.12</td>
+                                        <td>93.12±3.24</td>
+                                        <td>76.18±7.90</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">RNN</td>
+                                        <td>10 shot</td>
+                                        <td>95.53±1.28</td>
+                                        <td>94.27±1.78</td>
+                                        <td>62.03±7.97</td>
+                                        <td>26.07±8.62</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>96.42±1.10</td>
+                                        <td>95.18±1.62</td>
+                                        <td>91.76±3.12</td>
+                                        <td>72.03±8.15</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">AdaCare</td>
+                                        <td>10 shot</td>
+                                        <td>77.11±3.97</td>
+                                        <td>76.24±4.70</td>
+                                        <td>80.02±6.32</td>
+                                        <td>54.93±9.85</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>99.02±0.46</td>
+                                        <td>98.86±0.53</td>
+                                        <td><strong>94.28±3.52</strong></td>
+                                        <td><strong>81.93±6.97</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">AICare</td>
+                                        <td>10 shot</td>
+                                        <td>86.79±2.41</td>
+                                        <td>82.98±3.96</td>
+                                        <td>60.87±6.25</td>
+                                        <td>23.69±8.14</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>95.97±1.31</td>
+                                        <td>94.56±2.02</td>
+                                        <td>92.89±3.66</td>
+                                        <td>77.84±7.10</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">ConCare</td>
+                                        <td>10 shot</td>
+                                        <td>90.98±1.97</td>
+                                        <td>91.43±2.12</td>
+                                        <td>72.58±6.42</td>
+                                        <td>30.73±8.44</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>91.00±2.14</td>
+                                        <td>91.72±2.30</td>
+                                        <td>94.08±3.70</td>
+                                        <td>80.65±6.98</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">GRASP</td>
+                                        <td>10 shot</td>
+                                        <td>87.25±2.53</td>
+                                        <td>84.32±3.56</td>
+                                        <td>69.89±8.80</td>
+                                        <td>45.96±10.33</td>
+                                    </tr>
+                                    <tr class="midrule-after">
+                                        <td>full shot</td>
+                                        <td>94.25±1.58</td>
+                                        <td>92.03±2.54</td>
+                                        <td>93.14±3.03</td>
+                                        <td>72.55±8.36</td>
+                                    </tr>
+                                    <!-- Base LLM Models -->
+                                    <tr>
+                                        <td rowspan="10">Base LLM</td>
+                                        <td rowspan="2">OpenBioLLM-8B</td>
+                                        <td>base prompt</td>
+                                        <td>49.37±2.70</td>
+                                        <td>46.17±4.40</td>
+                                        <td>52.35±4.65</td>
+                                        <td>10.31±2.28</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td><em>56.75±3.92</em></td>
+                                        <td><em>49.76±4.67</em></td>
+                                        <td><em>58.69±6.06</em></td>
+                                        <td><em>12.85±3.77</em></td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">Qwen2.5-7B</td>
+                                        <td>base prompt</td>
+                                        <td>72.96±4.00</td>
+                                        <td>64.49±5.06</td>
+                                        <td>70.68±5.15</td>
+                                        <td>17.55±4.54</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td><em>79.83±2.68</em></td>
+                                        <td><em>70.87±4.61</em></td>
+                                        <td>61.57±7.12</td>
+                                        <td>13.58±3.17</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">Gemma-3-4B</td>
+                                        <td>base prompt</td>
+                                        <td>65.64±3.53</td>
+                                        <td>64.83±4.68</td>
+                                        <td>63.46±7.68</td>
+                                        <td>17.76±5.71</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td><em>76.01±3.46</em></td>
+                                        <td><em>71.62±4.97</em></td>
+                                        <td>57.78±7.40</td>
+                                        <td>15.16±5.11</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">DeepSeek-V3</td>
+                                        <td>base prompt</td>
+                                        <td>89.59±1.93</td>
+                                        <td>85.06±3.01</td>
+                                        <td>78.07±6.13</td>
+                                        <td>43.76±10.43</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td><em>89.67±1.90</em></td>
+                                        <td>82.93±3.58</td>
+                                        <td>76.86±4.71</td>
+                                        <td>33.47±9.58</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">GPT-4o</td>
+                                        <td>base prompt</td>
+                                        <td>96.76±1.30</td>
+                                        <td>93.90±2.55</td>
+                                        <td>76.96±6.59</td>
+                                        <td>33.90±9.17</td>
+                                    </tr>
+                                    <tr class="midrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>95.72±1.21</td>
+                                        <td>93.04±2.08</td>
+                                        <td><em>85.99±3.85</em></td>
+                                        <td><em>42.20±9.92</em></td>
+                                    </tr>
+                                    <!-- Reasoning LLM Models -->
+                                    <tr>
+                                        <td rowspan="8">Reasoning LLM</td>
+                                        <td rowspan="2">HuatuoGPT-o1-7B</td>
+                                        <td>base prompt</td>
+                                        <td>77.74±3.34</td>
+                                        <td>71.89±4.83</td>
+                                        <td>73.20±6.12</td>
+                                        <td>22.32±6.87</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td><em>85.34±2.61</em></td>
+                                        <td><em>77.31±4.26</em></td>
+                                        <td>70.39±7.60</td>
+                                        <td>20.33±5.51</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">DeepSeek-R1-7B</td>
+                                        <td>base prompt</td>
+                                        <td>53.59±3.88</td>
+                                        <td>49.06±4.05</td>
+                                        <td>53.59±5.26</td>
+                                        <td>10.53±2.75</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>52.70±1.95</td>
+                                        <td>47.89±4.09</td>
+                                        <td>40.94±3.97</td>
+                                        <td>9.43±2.27</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">DeepSeek-R1</td>
+                                        <td>base prompt</td>
+                                        <td>90.63±1.99</td>
+                                        <td>83.59±3.85</td>
+                                        <td>73.68±7.52</td>
+                                        <td>33.27±9.51</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>85.59±1.97</td>
+                                        <td>76.87±3.56</td>
+                                        <td><em>83.95±4.60</em></td>
+                                        <td><em>42.10±9.95</em></td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">o3-mini-high</td>
+                                        <td>base prompt</td>
+                                        <td>85.43±2.15</td>
+                                        <td>76.52±3.91</td>
+                                        <td>71.13±5.41</td>
+                                        <td>18.35±5.02</td>
+                                    </tr>
+                                    <tr>
+                                        <td>optimized prompt</td>
+                                        <td><em>84.42±2.52</em></td>
+                                        <td><em>75.65±4.48</em></td>
+                                        <td><em>71.23±7.19</em></td>
+                                        <td><em>28.99±7.88</em></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="LOS" class="tab-content">
+                        <h3>Length of Stay (LOS) Prediction Performance</h3>
+                        <div class="table-container">
+                            <table class="latex-table-responsive latex-table-small latex-table-centered" id="losTable">
+                                <caption><em>Performance of LOS prediction on TJH dataset using structured EHR.</em> <strong>Bold</strong> indicates the best performance excluding results using the full dataset. <em>Italic</em> indicates the proposed prompting framework outperforms basic prompts. We use bootstrapping on all test set samples 100 times to report the standard deviations. All metrics are multiplied by 100 for readability purposes.</caption>
+                                <thead>
+                                    <tr class="filter-row">
+                                        <th><select id="losTableMethodCatFilter" title="Filter by Method Category"></select></th>
+                                        <th><select id="losTableMethodNameFilter" title="Filter by Method Name"></select></th>
+                                        <th><select id="losTableSettingFilter" title="Filter by Setting"></select></th>
+                                        <th colspan="3"></th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2" rowspan="2"><strong>Methods</strong></th>
+                                        <th rowspan="2"><strong>Setting</strong></th>
+                                        <th><button onclick="sortTable('losTable', 3, 'LOS', 'desc')">MAE (&darr;)</button></th>
+                                        <th><button onclick="sortTable('losTable', 4, 'LOS', 'desc')">MSE (&darr;)</button></th>
+                                        <th><button onclick="sortTable('losTable', 5, 'LOS', 'desc')">RMSE (&darr;)</button></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- ML Models -->
+                                    <tr>
+                                        <td rowspan="8">ML</td>
+                                        <td rowspan="2">CatBoost</td>
+                                        <td>10 shot</td>
+                                        <td>4.14±0.18</td>
+                                        <td>24.04±3.63</td>
+                                        <td>4.89±0.37</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>3.09±0.21</td>
+                                        <td>18.61±4.24</td>
+                                        <td>4.29±0.49</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">DT</td>
+                                        <td>10 shot</td>
+                                        <td>6.25±0.72</td>
+                                        <td>118.50±17.13</td>
+                                        <td>10.86±0.78</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>3.53±0.42</td>
+                                        <td>50.40±9.04</td>
+                                        <td>7.07±0.65</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">RF</td>
+                                        <td>10 shot</td>
+                                        <td>4.60±0.22</td>
+                                        <td>31.21±3.70</td>
+                                        <td>5.58±0.33</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>3.09±0.24</td>
+                                        <td>23.04±4.74</td>
+                                        <td>4.77±0.49</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">XGBoost</td>
+                                        <td>10 shot</td>
+                                        <td>4.22±0.18</td>
+                                        <td>24.73±3.59</td>
+                                        <td>4.96±0.36</td>
+                                    </tr>
+                                    <tr class="midrule-after">
+                                        <td>full shot</td>
+                                        <td>3.06±0.21</td>
+                                        <td>18.70±4.29</td>
+                                        <td>4.30±0.49</td>
+                                    </tr>
+                                    <!-- DL Models -->
+                                    <tr>
+                                        <td rowspan="14">DL</td> <td rowspan="2">GRU</td>
+                                        <td>10 shot</td>
+                                        <td>4.43±0.23</td>
+                                        <td>31.35±3.69</td>
+                                        <td>5.59±0.33</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>2.50±0.21</td>
+                                        <td>17.35±4.27</td>
+                                        <td>4.13±0.51</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">LSTM</td>
+                                        <td>10 shot</td>
+                                        <td>3.83±0.23</td>
+                                        <td>25.94±3.91</td>
+                                        <td>5.08±0.38</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>2.64±0.21</td>
+                                        <td>17.76±4.21</td>
+                                        <td>4.18±0.50</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">RNN</td>
+                                        <td>10 shot</td>
+                                        <td>4.32±0.19</td>
+                                        <td>25.97±3.58</td>
+                                        <td>5.08±0.35</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td><strong>2.07±0.24</strong></td>
+                                        <td>16.64±5.00</td>
+                                        <td>4.03±0.61</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">AdaCare</td>
+                                        <td>10 shot</td>
+                                        <td>3.79±0.20</td>
+                                        <td>23.38±3.70</td>
+                                        <td>4.82±0.38</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>2.49±0.24</td>
+                                        <td>18.12±4.63</td>
+                                        <td>4.22±0.54</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">AICare</td>
+                                        <td>10 shot</td>
+                                        <td>3.24±0.22</td>
+                                        <td>20.35±4.43</td>
+                                        <td>4.48±0.49</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>2.17±0.23</td>
+                                        <td><strong>16.28±4.84</strong></td>
+                                        <td><strong>3.99±0.60</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">ConCare</td>
+                                        <td>10 shot</td>
+                                        <td>4.01±0.29</td>
+                                        <td>30.03±6.41</td>
+                                        <td>5.45±0.58</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>2.32±0.24</td>
+                                        <td>17.94±4.99</td>
+                                        <td>4.19±0.59</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">GRASP</td>
+                                        <td>10 shot</td>
+                                        <td>5.81±0.18</td>
+                                        <td>41.25±2.96</td>
+                                        <td>6.42±0.23</td>
+                                    </tr>
+                                    <tr class="midrule-after">
+                                        <td>full shot</td>
+                                        <td>3.84±0.20</td>
+                                        <td>23.89±3.07</td>
+                                        <td>4.88±0.31</td>
+                                    </tr>
+                                    <!-- Base LLM Models -->
+                                    <tr>
+                                        <td rowspan="10">Base LLM</td>
+                                        <td rowspan="2">OpenBioLLM-8B</td>
+                                        <td>base prompt</td>
+                                        <td>6.50±0.32</td>
+                                        <td>61.41±6.84</td>
+                                        <td>7.82±0.44</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>8.97±0.36</td>
+                                        <td>105.23±6.52</td>
+                                        <td>10.25±0.32</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">Qwen2.5-7B</td>
+                                        <td>base prompt</td>
+                                        <td>12.44±0.43</td>
+                                        <td>184.73±12.89</td>
+                                        <td>13.58±0.47</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>15.34±0.71</td>
+                                        <td>313.70±27.84</td>
+                                        <td>17.69±0.79</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">Gemma-3-4B</td>
+                                        <td>base prompt</td>
+                                        <td>13.25±0.35</td>
+                                        <td>199.67±9.20</td>
+                                        <td>14.13±0.33</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>14.87±0.39</td>
+                                        <td>250.80±10.36</td>
+                                        <td>15.83±0.33</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">DeepSeek-V3</td>
+                                        <td>base prompt</td>
+                                        <td>13.83±0.41</td>
+                                        <td>220.52±11.64</td>
+                                        <td>14.84±0.39</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>18.04±0.42</td>
+                                        <td>359.87±14.22</td>
+                                        <td>18.97±0.38</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">GPT-4o</td>
+                                        <td>base prompt</td>
+                                        <td>14.56±0.47</td>
+                                        <td>258.23±14.89</td>
+                                        <td>16.06±0.46</td>
+                                    </tr>
+                                    <tr class="midrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>17.93±0.58</td>
+                                        <td>378.94±21.17</td>
+                                        <td>19.46±0.55</td>
+                                    </tr>
+                                    <!-- Reasoning LLM Models -->
+                                    <tr>
+                                        <td rowspan="8">Reasoning LLM</td>
+                                        <td rowspan="2">HuatuoGPT-o1-7B</td>
+                                        <td>base prompt</td>
+                                        <td>8.87±0.26</td>
+                                        <td>98.61±5.83</td>
+                                        <td>9.93±0.29</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>11.12±0.42</td>
+                                        <td>157.38±11.66</td>
+                                        <td>12.54±0.47</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">DeepSeek-R1-7B</td>
+                                        <td>base prompt</td>
+                                        <td>5.24±0.22</td>
+                                        <td>37.66±4.89</td>
+                                        <td>6.12±0.39</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>5.59±0.24</td>
+                                        <td>44.07±4.66</td>
+                                        <td>6.63±0.35</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">DeepSeek-R1</td>
+                                        <td>base prompt</td>
+                                        <td>12.89±0.41</td>
+                                        <td>194.28±10.52</td>
+                                        <td>13.93±0.38</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>15.20±0.39</td>
+                                        <td>263.05±11.49</td>
+                                        <td>16.21±0.35</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">o3-mini-high</td>
+                                        <td>base prompt</td>
+                                        <td>13.44±0.46</td>
+                                        <td>217.77±15.54</td>
+                                        <td>14.75±0.52</td>
+                                    </tr>
+                                    <tr>
+                                        <td>optimized prompt</td>
+                                        <td>15.63±0.40</td>
+                                        <td>276.67±13.52</td>
+                                        <td>16.63±0.41</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="Readmission" class="tab-content">
+                        <h3>Readmission Prediction Performance</h3>
+                        <div class="table-container">
+                             <table class="latex-table-responsive latex-table-small latex-table-centered" id="readmissionTable">
+                                <caption><em>Performance of readmission prediction on MIMIC-IV dataset using structured EHR.</em> <strong>Bold</strong> indicates the best performance excluding results using the full dataset. <em>Italic</em> indicates the proposed prompting framework outperforms basic prompts. We use bootstrapping on all test set samples 100 times to report the standard deviations. All metrics are multiplied by 100 for readability purposes.</caption>
+                                <thead>
+                                    <tr class="filter-row">
+                                        <th><select id="readmissionTableMethodCatFilter" title="Filter by Method Category"></select></th>
+                                        <th><select id="readmissionTableMethodNameFilter" title="Filter by Method Name"></select></th>
+                                        <th><select id="readmissionTableSettingFilter" title="Filter by Setting"></select></th>
+                                        <th colspan="2"></th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2" rowspan="2"><strong>Methods</strong></th>
+                                        <th rowspan="2"><strong>Setting</strong></th>
+                                        <th><button onclick="sortTable('readmissionTable', 3, 'Readmission')">AUROC (&uarr;)</button></th>
+                                        <th><button onclick="sortTable('readmissionTable', 4, 'Readmission')">AUPRC (&uarr;)</button></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- ML Models -->
+                                    <tr>
+                                        <td rowspan="8">ML</td>
+                                        <td rowspan="2">CatBoost</td>
+                                        <td>10 shot</td>
+                                        <td>52.29±5.39</td>
+                                        <td>26.96±5.10</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>61.78±4.82</td>
+                                        <td>31.76±5.71</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">DT</td>
+                                        <td>10 shot</td>
+                                        <td>55.68±3.38</td>
+                                        <td>24.91±3.75</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>51.55±2.72</td>
+                                        <td>23.65±3.72</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">RF</td>
+                                        <td>10 shot</td>
+                                        <td>58.33±5.27</td>
+                                        <td>31.21±5.46</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>57.43±4.32</td>
+                                        <td>29.67±5.34</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">XGBoost</td>
+                                        <td>10 shot</td>
+                                        <td>56.40±4.53</td>
+                                        <td>29.10±4.63</td>
+                                    </tr>
+                                    <tr class="midrule-after">
+                                        <td>full shot</td>
+                                        <td>64.23±4.34</td>
+                                        <td>34.31±6.65</td>
+                                    </tr>
+                                    <!-- DL Models -->
+                                    <tr>
+                                        <td rowspan="14">DL</td> <td rowspan="2">GRU</td>
+                                        <td>10 shot</td>
+                                        <td>58.19±5.42</td>
+                                        <td>37.76±7.17</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>81.30±3.81</td>
+                                        <td>63.70±6.56</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">LSTM</td>
+                                        <td>10 shot</td>
+                                        <td>50.98±5.70</td>
+                                        <td>35.39±5.89</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td><strong>82.52±3.78</strong></td>
+                                        <td>66.32±6.58</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">RNN</td>
+                                        <td>10 shot</td>
+                                        <td>60.80±5.22</td>
+                                        <td>44.51±6.86</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>80.90±3.64</td>
+                                        <td>64.07±6.56</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">AdaCare</td>
+                                        <td>10 shot</td>
+                                        <td>64.39±4.76</td>
+                                        <td>42.47±6.43</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>82.26±3.80</td>
+                                        <td><strong>68.82±6.76</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">AICare</td>
+                                        <td>10 shot</td>
+                                        <td>66.32±4.55</td>
+                                        <td>43.76±7.02</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>80.20±4.23</td>
+                                        <td>65.50±6.72</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">ConCare</td>
+                                        <td>10 shot</td>
+                                        <td>70.30±4.62</td>
+                                        <td>48.68±7.41</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>full shot</td>
+                                        <td>79.17±4.42</td>
+                                        <td>64.27±6.97</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">GRASP</td>
+                                        <td>10 shot</td>
+                                        <td>53.76±5.54</td>
+                                        <td>36.35±6.24</td>
+                                    </tr>
+                                    <tr class="midrule-after">
+                                        <td>full shot</td>
+                                        <td>77.76±4.17</td>
+                                        <td>62.42±7.08</td>
+                                    </tr>
+                                    <!-- Base LLM Models -->
+                                    <tr>
+                                        <td rowspan="10">Base LLM</td>
+                                        <td rowspan="2">OpenBioLLM-8B</td>
+                                        <td>base prompt</td>
+                                        <td>54.95±4.45</td>
+                                        <td>28.49±5.68</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>50.21±4.97</td>
+                                        <td>24.23±4.02</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">Qwen2.5-7B</td>
+                                        <td>base prompt</td>
+                                        <td>61.63±4.43</td>
+                                        <td>28.96±4.35</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>55.86±3.98</td>
+                                        <td>25.32±4.02</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">Gemma-3-4B</td>
+                                        <td>base prompt</td>
+                                        <td>59.85±4.12</td>
+                                        <td>28.94±4.64</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td><em>60.02±4.23</em></td>
+                                        <td><em>29.05±5.37</em></td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">DeepSeek-V3</td>
+                                        <td>base prompt</td>
+                                        <td>66.70±4.76</td>
+                                        <td>34.02±5.89</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>62.68±4.49</td>
+                                        <td>30.91±5.30</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">GPT-4o</td>
+                                        <td>base prompt</td>
+                                        <td>59.16±5.45</td>
+                                        <td>28.70±5.08</td>
+                                    </tr>
+                                    <tr class="midrule-after">
+                                        <td>optimized prompt</td>
+                                        <td><em>62.72±4.87</em></td>
+                                        <td><em>34.43±5.73</em></td>
+                                    </tr>
+                                    <!-- Reasoning LLM Models -->
+                                    <tr>
+                                        <td rowspan="8">Reasoning LLM</td>
+                                        <td rowspan="2">HuatuoGPT-o1-7B</td>
+                                        <td>base prompt</td>
+                                        <td>56.39±4.88</td>
+                                        <td>29.35±5.27</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td>50.54±4.88</td>
+                                        <td>24.30±4.22</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">DeepSeek-R1-7B</td>
+                                        <td>base prompt</td>
+                                        <td>52.62±3.76</td>
+                                        <td>23.55±4.01</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td><em>53.19±4.13</em></td>
+                                        <td><em>24.53±3.66</em></td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">DeepSeek-R1</td>
+                                        <td>base prompt</td>
+                                        <td>65.31±4.98</td>
+                                        <td>38.68±6.88</td>
+                                    </tr>
+                                    <tr class="cmidrule-after">
+                                        <td>optimized prompt</td>
+                                        <td><em>73.92±3.78</em></td>
+                                        <td><em>43.59±6.42</em></td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2">o3-mini-high</td>
+                                        <td>base prompt</td>
+                                        <td>62.89±4.72</td>
+                                        <td>33.69±5.82</td>
+                                    </tr>
+                                    <tr>
+                                        <td>optimized prompt</td>
+                                        <td><em>63.30±4.85</em></td>
+                                        <td><em>36.13±6.18</em></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <h4>Key Observations (Structured EHR):</h4>
+                <ul>
+                    <li>Specialized conventional models (e.g., CatBoost on 10-shot TJH Outcome) achieve superior performance when fully trained with ample data.</li>
+                    <li>Leading LLMs (e.g., GPT-4o, DeepSeek R1/V3) demonstrate strong zero-shot capabilities, often surpassing conventional models trained on limited datasets.</li>
+                    <li>There's a narrowing performance gap between LLMs and conventional models for structured data.</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025. All rights reserved.</p>
+        </div>
+    </footer>
+    <script>
+        let sortDirections = {};
+        window.logicalTableData = {}; // To store parsed table data for filtering
+        let dropdownsPopulated = {}; // To track if dropdowns for a table are populated
+
+        function openTab(evt, tabName) {
+            var i, tabcontent, tabbuttons;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+                tabcontent[i].classList.remove("active");
+            }
+            tabbuttons = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tabbuttons.length; i++) {
+                tabbuttons[i].classList.remove("active");
+            }
+            document.getElementById(tabName).style.display = "block";
+            document.getElementById(tabName).classList.add("active");
+            if (evt && evt.currentTarget) { // Check if evt and currentTarget exist
+                evt.currentTarget.classList.add("active");
+            }
+
+            let tableId;
+            if (tabName === 'Outcome') tableId = "outcomeTable";
+            else if (tabName === 'LOS') tableId = "losTable";
+            else if (tabName === 'Readmission') tableId = "readmissionTable";
+
+            if (tableId) {
+                if (!dropdownsPopulated[tableId]) {
+                    populateDropdowns(tableId, tabName);
+                } else {
+                    // If dropdowns are already populated, ensure logical data is current and re-apply filter
+                    updateLogicalTableData(tableId, tabName); // Important if table could be modified by other means
+                }
+                filterTable(tabName); // Apply filters when tab is opened
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Ensure the first tab's content is displayed and its filters are set up.
+            var defaultActiveButton = document.querySelector(".tab-button.active");
+            if (defaultActiveButton) {
+                 // Programmatically call openTab for the default active tab
+                 // Need to find the tabName from the button's onclick attribute or a data attribute
+                 // Assuming the onclick is "openTab(event, 'TabName')"
+                const onclickAttr = defaultActiveButton.getAttribute("onclick");
+                const tabNameMatch = onclickAttr.match(/openTab\s*\(\s*event\s*,\s*'([^']+)'\s*\)/);
+                if (tabNameMatch && tabNameMatch[1]) {
+                    openTab(null, tabNameMatch[1]); // Pass null for event as it's a programmatic call
+                }
+            }
+        });
+
+        function getLogicalTableConfig(tabName) {
+            if (tabName === 'Outcome') return { tableId: "outcomeTable", totalVisualColumns: 7 };
+            if (tabName === 'LOS') return { tableId: "losTable", totalVisualColumns: 6 };
+            if (tabName === 'Readmission') return { tableId: "readmissionTable", totalVisualColumns: 5 };
+            return null;
+        }
+
+        function updateLogicalTableData(tableId, tabName) {
+            const table = document.getElementById(tableId);
+            if (!table) return [];
+            const tbody = table.getElementsByTagName("tbody")[0];
+            if (!tbody) return [];
+            
+            const originalRows = Array.from(tbody.getElementsByTagName("tr"));
+            const config = getLogicalTableConfig(tabName);
+            if (!config) return [];
+            const totalVisualColumns = config.totalVisualColumns;
+
+            let parsedData = [];
+            let currentMethodCatText = "";
+            let catSpanLeft = 0;
+            let currentMethodNameText = "";
+            let nameSpanLeft = 0;
+
+            for (const row of originalRows) {
+                const actualCells = Array.from(row.cells);
+                let logicalCells = new Array(totalVisualColumns).fill("");
+                let actualCellIndex = 0;
+
+                // Column 0: Method Category
+                if (catSpanLeft === 0) {
+                    if (actualCells.length > actualCellIndex && actualCells[actualCellIndex].getAttribute('rowspan')) {
+                        currentMethodCatText = actualCells[actualCellIndex].textContent.trim();
+                        catSpanLeft = parseInt(actualCells[actualCellIndex].getAttribute("rowspan"), 10);
+                        logicalCells[0] = currentMethodCatText;
+                        actualCellIndex++;
+                    } else if (actualCells.length > actualCellIndex) {
+                        currentMethodCatText = actualCells[actualCellIndex].textContent.trim();
+                        catSpanLeft = 1;
+                        logicalCells[0] = currentMethodCatText;
+                        actualCellIndex++;
+                    } else {
+                        logicalCells[0] = currentMethodCatText; 
+                    }
+                } else { logicalCells[0] = currentMethodCatText; }
+                catSpanLeft--;
+
+                // Column 1: Method Name
+                if (nameSpanLeft === 0) {
+                    if (actualCells.length > actualCellIndex && actualCells[actualCellIndex].getAttribute('rowspan')) {
+                        currentMethodNameText = actualCells[actualCellIndex].textContent.trim();
+                        nameSpanLeft = parseInt(actualCells[actualCellIndex].getAttribute("rowspan"), 10);
+                        logicalCells[1] = currentMethodNameText;
+                        actualCellIndex++;
+                    } else if (actualCells.length > actualCellIndex) {
+                        currentMethodNameText = actualCells[actualCellIndex].textContent.trim();
+                        nameSpanLeft = 1; 
+                        logicalCells[1] = currentMethodNameText;
+                        actualCellIndex++;
+                    } else { logicalCells[1] = currentMethodNameText; }
+                } else { logicalCells[1] = currentMethodNameText; }
+                nameSpanLeft--;
+                
+                // Remaining columns (Setting, metrics...)
+                for (let k = 2; k < totalVisualColumns; k++) {
+                    if (actualCells.length > actualCellIndex) {
+                        logicalCells[k] = actualCells[actualCellIndex++].textContent.trim();
+                    } else { logicalCells[k] = ""; }
+                }
+                parsedData.push({ originalTr: row, values: logicalCells });
+            }
+            window.logicalTableData[tableId] = parsedData;
+            return parsedData;
+        }
+
+        function populateDropdowns(tableId, tabName) {
+            if (dropdownsPopulated[tableId]) return;
+
+            const logicalRows = updateLogicalTableData(tableId, tabName);
+            if (!logicalRows || logicalRows.length === 0) return;
+
+            const methodCatSet = new Set();
+            const methodNameSet = new Set();
+            const settingSet = new Set();
+
+            logicalRows.forEach(data => {
+                if (data.values[0]) methodCatSet.add(data.values[0]);
+                if (data.values[1]) methodNameSet.add(data.values[1]);
+                if (data.values[2]) settingSet.add(data.values[2]);
+            });
+
+            const catFilterSelect = document.getElementById(tableId + "MethodCatFilter");
+            const nameFilterSelect = document.getElementById(tableId + "MethodNameFilter");
+            const settingFilterSelect = document.getElementById(tableId + "SettingFilter");
+
+            function fillSelect(selectElement, valuesSet) {
+                if (!selectElement) return;
+                selectElement.innerHTML = '<option value="All">All</option>'; // Clear and add default
+                Array.from(valuesSet).sort().forEach(val => {
+                    const option = document.createElement('option');
+                    option.value = val;
+                    option.textContent = val;
+                    selectElement.appendChild(option);
+                });
+                selectElement.onchange = () => filterTable(tabName);
+            }
+
+            fillSelect(catFilterSelect, methodCatSet);
+            fillSelect(nameFilterSelect, methodNameSet);
+            fillSelect(settingFilterSelect, settingSet);
+
+            dropdownsPopulated[tableId] = true;
+        }
+
+        function filterTable(tabName) {
+            const config = getLogicalTableConfig(tabName);
+            if (!config) return;
+            const tableId = config.tableId;
+
+            const logicalData = window.logicalTableData[tableId];
+            if (!logicalData) {
+                // This might happen if filterTable is called before data is ready.
+                // Forcing an update could be an option, or ensuring openTab always prepares it.
+                updateLogicalTableData(tableId, tabName); // Ensure data is there
+                if(!window.logicalTableData[tableId]) return; // Still no data, abort.
+            }
+            
+            const catFilterValue = document.getElementById(tableId + "MethodCatFilter") ? document.getElementById(tableId + "MethodCatFilter").value : "All";
+            const nameFilterValue = document.getElementById(tableId + "MethodNameFilter") ? document.getElementById(tableId + "MethodNameFilter").value : "All";
+            const settingFilterValue = document.getElementById(tableId + "SettingFilter") ? document.getElementById(tableId + "SettingFilter").value : "All";
+
+            (window.logicalTableData[tableId] || []).forEach(item => {
+                const rowMethodCat = item.values[0] || "";
+                const rowMethodName = item.values[1] || "";
+                const rowSetting = item.values[2] || "";
+
+                const catMatch = (catFilterValue === "All" || rowMethodCat === catFilterValue);
+                const nameMatch = (nameFilterValue === "All" || rowMethodName === nameFilterValue);
+                const settingMatch = (settingFilterValue === "All" || rowSetting === settingFilterValue);
+
+                if (catMatch && nameMatch && settingMatch) {
+                    item.originalTr.style.display = "";
+                } else {
+                    item.originalTr.style.display = "none";
+                }
+            });
+        }
+
+        function sortTable(tableId, visualColumnIndex, tabName, initialSortOrder = 'asc') {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            const tbody = table.getElementsByTagName("tbody")[0];
+            if (!tbody) return;
+            
+            // Use logical data for sorting, which is already parsed correctly
+            // Important: updateLogicalTableData needs to be called if the raw tbody was manipulated elsewhere.
+            // However, sortTable itself will rebuild tbody, so its internal parsing is what matters for sorting.
+            // The key is to call updateLogicalTableData *after* tbody is rebuilt by sortTable.
+            
+            // Perform parsing for sorting (similar to updateLogicalTableData but focused on sort key extraction)
+            const originalRowsForSort = Array.from(tbody.getElementsByTagName("tr")); // Get current state for sort
+            const config = getLogicalTableConfig(tabName);
+            if (!config) return;
+            const totalVisualColumns = config.totalVisualColumns;
+
+            let logicalRowDataForSort = [];
+            let currentMethodCatText = "";
+            let catSpanLeft = 0;
+            let currentMethodNameText = "";
+            let nameSpanLeft = 0;
+
+            for (const row of originalRowsForSort) {
+                const actualCells = Array.from(row.cells);
+                let logicalCells = new Array(totalVisualColumns).fill("");
+                let actualCellIndex = 0;
+
+                if (catSpanLeft === 0) {
+                    if (actualCells.length > actualCellIndex && actualCells[actualCellIndex].getAttribute('rowspan')) {
+                        currentMethodCatText = actualCells[actualCellIndex].textContent.trim();
+                        catSpanLeft = parseInt(actualCells[actualCellIndex].getAttribute("rowspan"), 10);
+                        logicalCells[0] = currentMethodCatText;
+                        actualCellIndex++;
+                    } else if (actualCells.length > actualCellIndex) {
+                        currentMethodCatText = actualCells[actualCellIndex].textContent.trim();
+                        catSpanLeft = 1; 
+                        logicalCells[0] = currentMethodCatText;
+                        actualCellIndex++;
+                    } else { logicalCells[0] = currentMethodCatText; }
+                } else { logicalCells[0] = currentMethodCatText; }
+                catSpanLeft--;
+
+                if (nameSpanLeft === 0) {
+                    if (actualCells.length > actualCellIndex && actualCells[actualCellIndex].getAttribute('rowspan')) {
+                        currentMethodNameText = actualCells[actualCellIndex].textContent.trim();
+                        nameSpanLeft = parseInt(actualCells[actualCellIndex].getAttribute("rowspan"), 10);
+                        logicalCells[1] = currentMethodNameText;
+                        actualCellIndex++;
+                    } else if (actualCells.length > actualCellIndex) {
+                        currentMethodNameText = actualCells[actualCellIndex].textContent.trim();
+                        nameSpanLeft = 1; 
+                        logicalCells[1] = currentMethodNameText;
+                        actualCellIndex++;
+                    } else { logicalCells[1] = currentMethodNameText; }
+                } else { logicalCells[1] = currentMethodNameText; }
+                nameSpanLeft--;
+                
+                for (let k = 2; k < totalVisualColumns; k++) {
+                    if (actualCells.length > actualCellIndex) {
+                        logicalCells[k] = actualCells[actualCellIndex++].textContent.trim();
+                    } else { logicalCells[k] = ""; }
+                }
+                
+                let sortValueCellContent = logicalCells[visualColumnIndex] || "";
+                sortValueCellContent = sortValueCellContent.split("±")[0].trim();
+                
+                logicalRowDataForSort.push({
+                    values: logicalCells, // These are the full logical cells for the row
+                    sortKey: parseFloat(sortValueCellContent),
+                    originalRowHTML: row.innerHTML // Preserve original HTML to reconstruct if needed, or just values
+                });
+            }
+            // End of parsing logic for sorting
+
+            const columnKey = tableId + '-' + visualColumnIndex;
+            if (!sortDirections[columnKey]) {
+                sortDirections[columnKey] = initialSortOrder;
+            } else {
+                sortDirections[columnKey] = sortDirections[columnKey] === 'asc' ? 'desc' : 'asc';
+            }
+            const direction = sortDirections[columnKey];
+
+            logicalRowDataForSort.sort((a, b) => {
+                const valA = a.sortKey;
+                const valB = b.sortKey;
+                if (isNaN(valA) && isNaN(valB)) return 0;
+                if (isNaN(valA)) return direction === 'asc' ? 1 : -1;
+                if (isNaN(valB)) return direction === 'asc' ? -1 : 1;
+                return direction === 'asc' ? valA - valB : valB - valA;
+            });
+
+            while (tbody.firstChild) {
+                tbody.removeChild(tbody.firstChild);
+            }
+
+            logicalRowDataForSort.forEach(data => {
+                const newTr = document.createElement('tr');
+                data.values.forEach(cellVal => { // Reconstruct from flattened logical values
+                    const newTd = document.createElement('td');
+                    newTd.textContent = cellVal;
+                    newTr.appendChild(newTd);
+                });
+                tbody.appendChild(newTr);
+            });
+            
+            // IMPORTANT: After rebuilding tbody, update the global logical data store
+            updateLogicalTableData(tableId, tabName);
+            
+            // Now apply filtering
+            filterTable(tabName);
+        }
+    </script>
+</body>
+</html> 
