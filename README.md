@@ -7,7 +7,7 @@ This repository contains the code and resources for our paper "ClinicRealm: Re-e
 - **Paper:** [https://arxiv.org/abs/2407.18525](https://arxiv.org/abs/2407.18525)
 - **Online Benchmark Results:** [https://yhzhu99.github.io/ehr-llm-benchmark/](https://yhzhu99.github.io/ehr-llm-benchmark/)
 - **MIMIC-IV Preprocessing Code:** [https://github.com/PKU-AICare/mimic_preprocessor](https://github.com/PKU-AICare/mimic_preprocessor)
-- **MIMIC-IV Preprocessing Code:** [https://github.com/yhzhu99/pyehr](https://github.com/yhzhu99/pyehr)
+- **TJH Preprocessing Code:** [https://github.com/yhzhu99/pyehr](https://github.com/yhzhu99/pyehr)
 
 ## 📖 Overview
 
