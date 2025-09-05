@@ -202,7 +202,7 @@ def run(args: argparse.Namespace):
     completion_tokens = 0
 
     # Validate arguments
-    assert args.dataset in ['mimic-iv'], f'Unknown dataset: {args.dataset}'
+    assert args.dataset in ['mimic-iv', 'mimic-iii'], f'Unknown dataset: {args.dataset}'
     assert args.task in ['mortality', 'readmission'], f'Unknown task: {args.task}'
 
     # Load the dataset
@@ -327,7 +327,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Run LLM evaluation on structured EHR data')
 
     # Dataset and task configuration
-    parser.add_argument('--dataset', '-d', type=str, required=True, choices=['mimic-iv'], help='Dataset to use')
+    parser.add_argument('--dataset', '-d', type=str, required=True, choices=['mimic-iv', 'mimic-iii'], help='Dataset to use')
     parser.add_argument('--task', '-t', type=str, required=True, choices=['mortality', 'readmission'], help='Task to perform')
     parser.add_argument('--model', '-m', type=str, required=True, help='LLM model to use')
     parser.add_argument('--seed', '-s', type=int, default=42, help='Random seed for reproducibility')

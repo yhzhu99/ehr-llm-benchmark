@@ -60,7 +60,7 @@ val_df = df[df["RecordID"].isin(val_patients)]
 test_df = df[df["RecordID"].isin(test_patients)]
 
 # Create the directory to save the processed data
-save_dir = os.path.join(processed_data_dir, "fold_llm")
+save_dir = os.path.join(processed_data_dir, "split")
 os.makedirs(save_dir, exist_ok=True)
 
 # Convert the data to the required format

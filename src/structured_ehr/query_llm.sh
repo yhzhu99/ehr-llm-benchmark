@@ -46,7 +46,7 @@ for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
 
             # Add parameters
             if [ "$USE_UNIT_RANGE" = true ]; then
-              CMD="${CMD} -u -r -n 1"
+              CMD="${CMD} -u -r"
             fi
 
             # Add output options
