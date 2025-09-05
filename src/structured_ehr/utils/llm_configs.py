@@ -63,7 +63,7 @@ LLM_API_CONFIG = {
     },
     "llm-studio": {
         "api_key": os.getenv("LLMSTUDIO_API_KEY"),
-        "base_url": "https://llmapi.yhzhu.uk/v1"
+        "base_url": "https://llm.yhzhu.uk/v1"
     },
     "v8": {
         "api_key": os.getenv("XDAI_V8_API_KEY"),
