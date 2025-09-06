@@ -275,14 +275,14 @@ def run(args: argparse.Namespace):
                 pred, label, think = process_result(result, y)
 
                 # Save the result
-                pd.to_pickle({
+                json.dump({
                     'system_prompt': system_prompt,
                     'user_prompt': user_prompt,
                     'response': result,
                     'think': think,
                     'pred': pred,
                     'label': label,
-                }, os.path.join(logits_path, f'{pid}.pkl'))
+                }, os.path.join(logits_path, f'{pid}.json'), indent=4, ensure_ascii=False)
 
                 labels.append(label)
                 preds.append(pred)
@@ -291,20 +291,20 @@ def run(args: argparse.Namespace):
                 print(f'Error processing result for patient {pid}: {e}')
 
                 # Save original result for debugging
-                pd.to_pickle({
+                json.dump({
                     'system_prompt': system_prompt,
                     'user_prompt': user_prompt,
                     'response': result,
-                }, os.path.join(logits_path, f'{pid}.pkl'))
+                }, os.path.join(logits_path, f'{pid}.json'), indent=4, ensure_ascii=False)
                 continue
 
     if args.output_logits:
         # Save the final results
-        pd.to_pickle({
+        json.dump({
             'config': vars(args),
             'preds': preds,
             'labels': labels,
-        }, os.path.join(logits_path, f'0_{save_filename}.pkl'))
+        }, os.path.join(logits_path, f'0_{save_filename}.json'), indent=4, ensure_ascii=False)
 
         # Save performance metrics
         try:
