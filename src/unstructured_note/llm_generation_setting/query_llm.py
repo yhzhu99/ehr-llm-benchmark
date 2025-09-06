@@ -131,7 +131,7 @@ def process_result(result: str, y: Any) -> Tuple[Any, Any]:
         Tuple of (processed prediction, ground truth label)
     """
     # Get the label from the ground truth
-    label = y[-1]
+    label = y[-1] if isinstance(y, list) else y
 
     # Parse the result into the correct format
     try:
@@ -246,6 +246,8 @@ def run(args: argparse.Namespace):
             print(f'Patient {pid} already processed, skipping.')
             continue
 
+        print(f"Processing patient {pid}...")
+
         # Create the user prompt
         user_prompt = f"{instruction_prompt}\n\nNote:\n{note}"
 
@@ -275,6 +277,8 @@ def run(args: argparse.Namespace):
             try:
                 pred, label, think = process_result(result, y)
 
+                print(f"Processed result for patient {pid}: {pred}, {label}, {think[:100]}")
+
                 # Save the result
                 json.dump({
                     'system_prompt': system_prompt,
@@ -283,7 +287,7 @@ def run(args: argparse.Namespace):
                     'think': think,
                     'pred': pred,
                     'label': label,
-                }, os.path.join(logits_path, f'{pid}.json'), indent=4, ensure_ascii=False)
+                }, open(os.path.join(logits_path, f'{pid}.json'), 'w'), indent=4, ensure_ascii=False)
 
                 labels.append(label)
                 preds.append(pred)
@@ -296,16 +300,21 @@ def run(args: argparse.Namespace):
                     'system_prompt': system_prompt,
                     'user_prompt': user_prompt,
                     'response': result,
-                }, os.path.join(logits_path, f'{pid}.json'), indent=4, ensure_ascii=False)
+                }, open(os.path.join(logits_path, f'{pid}.json'), 'w'), indent=4, ensure_ascii=False)
+
+                print(f"Saved original result for patient {pid}")
+
                 continue
 
     if args.output_logits:
+        print(f"Saving final results...")
+
         # Save the final results
         json.dump({
             'config': vars(args),
             'preds': preds,
             'labels': labels,
-        }, os.path.join(logits_path, f'0_{save_filename}.json'), indent=4, ensure_ascii=False)
+        }, open(os.path.join(logits_path, f'0_{save_filename}.json'), 'w'), indent=4, ensure_ascii=False)
 
         # Save performance metrics
         try:
