@@ -215,7 +215,7 @@ def run(args: argparse.Namespace):
     if args.output_logits:
         llm_config = LLM_API_CONFIG["laozhang"]
         if args.model.lower() == "deepseek-v3":
-            llm_config["model_name"] = "deepseek-v3-250324"
+            llm_config["model_name"] = "deepseek-v3-0324"
         elif args.model.lower() == "deepseek-r1":
             llm_config["model_name"] = "deepseek-r1-250528"
         elif args.model.lower() == "o3-mini-high":
@@ -249,7 +249,13 @@ def run(args: argparse.Namespace):
         print(f"Processing patient {pid}...")
 
         # Create the user prompt
-        user_prompt = f"{instruction_prompt}\n\nNote:\n{note}"
+        user_prompt = f"{instruction_prompt}\n\n"
+        if args.dataset == 'mimic-iv':
+            user_prompt += f"Discharge Summary Note:\n{note}"
+        elif args.dataset == 'mimic-iii':
+            user_prompt += f"Admission Summary Note:\n{note}"
+        else:
+            raise ValueError(f"Unknown dataset: {args.dataset}")
 
         # Save prompts if required
         if args.output_prompts:
