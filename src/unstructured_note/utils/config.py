@@ -98,12 +98,8 @@ LLM_API_CONFIG = {
         "api_key": os.getenv("LLMSTUDIO_API_KEY"),
         "base_url": "https://llm.yhzhu.uk/v1"
     },
-    "v8": {
-        "api_key": os.getenv("XDAI_V8_API_KEY"),
-        "base_url": "https://xdaicn.top/v1",
-    },
-    "default": {
-        "api_key": os.getenv("XDAI_DEFAULT_API_KEY"),
-        "base_url": "https://xdaicn.top/v1",
-    },
+    "laozhang": {
+        "api_key": os.getenv("LAOZHANG_API_KEY"),
+        "base_url": "https://api.laozhang.ai"
+    }
 }
