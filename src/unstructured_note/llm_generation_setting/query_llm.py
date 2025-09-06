@@ -213,20 +213,21 @@ def run(args: argparse.Namespace):
 
     # Initialize LLM
     if args.output_logits:
-        if args.model.lower() in ['deepseek-v3', 'deepseek-r1']:
-            llm_config = LLM_API_CONFIG[f'{args.model.lower()}-ark']
-        elif args.model in LMSTUDIO_MODELS_CONFIG.keys():
-            llm_config = LLM_API_CONFIG['llm-studio']
-            llm_config['model_name'] = LMSTUDIO_MODELS_CONFIG[args.model]['lmstudio_id']
-        elif args.model.lower() == 'o3-mini-high':
-            llm_config = LLM_API_CONFIG['default']
-            llm_config['model_name'] = 'o3-mini-high'
-        elif args.model.lower() == 'chatgpt-4o-latest':
-            llm_config = LLM_API_CONFIG['v8']
-            llm_config['model_name'] = 'chatgpt-4o-latest'
+        llm_config = LLM_API_CONFIG["laozhang"]
+        if args.model.lower() == "deepseek-v3":
+            llm_config["model_name"] = "deepseek-v3-250324"
+        elif args.model.lower() == "deepseek-r1":
+            llm_config["model_name"] = "deepseek-r1-250528"
+        elif args.model.lower() == "o3-mini-high":
+            llm_config["model_name"] = "o3-mini"
+            llm_config["reasoning_effort"] = "high"
+        elif args.model.lower() == "chatgpt-4o-latest":
+            llm_config["model_name"] = "chatgpt-4o-latest"
+        elif args.model.lower() == "gpt-5-chat-latest":
+            llm_config["model_name"] = "gpt-5-chat-latest"
         else:
-            raise ValueError(f'Unknown model: {args.model}')
-        llm = OpenAI(api_key=llm_config['api_key'], base_url=llm_config['base_url'])
+            raise ValueError(f"Unknown model: {args.model}")
+        llm = OpenAI(api_key=llm_config["api_key"], base_url=llm_config["base_url"])
 
     # Setup output paths
     logits_path, prompts_path, perf_path, save_filename = setup_output_paths(args)
