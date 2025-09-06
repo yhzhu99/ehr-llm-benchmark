@@ -100,6 +100,6 @@ LLM_API_CONFIG = {
     },
     "laozhang": {
         "api_key": os.getenv("LAOZHANG_API_KEY"),
-        "base_url": "https://api.laozhang.ai"
+        "base_url": "https://api.laozhang.ai/v1"
     }
 }
