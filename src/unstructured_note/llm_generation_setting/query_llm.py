@@ -83,8 +83,8 @@ def setup_output_paths(args: argparse.Namespace) -> Tuple[str, str]:
     save_filename = 'output'
 
     if args.output_logits:
-        logits_path = os.path.join(args.logits_root, 'generation', args.dataset, args.task, args.model)
-        perf_path = os.path.join(args.perf_root, 'generation', args.dataset, args.task, args.model)
+        logits_path = os.path.join(args.logits_root, 'unstructured_note', f"{args.dataset}-note", args.task, args.model)
+        perf_path = os.path.join(args.perf_root, 'unstructured_note', f"{args.dataset}-note", args.task, args.model)
         os.makedirs(logits_path, exist_ok=True)
         os.makedirs(perf_path, exist_ok=True)
     else:
@@ -92,7 +92,7 @@ def setup_output_paths(args: argparse.Namespace) -> Tuple[str, str]:
         perf_path = ''
 
     if args.output_prompts:
-        prompts_path = os.path.join(args.prompts_root, 'generation', args.dataset, args.task, args.model)
+        prompts_path = os.path.join(args.prompts_root, 'unstructured_note', f"{args.dataset}-note", args.task, args.model)
         os.makedirs(prompts_path, exist_ok=True)
     else:
         prompts_path = ''
@@ -242,7 +242,7 @@ def run(args: argparse.Namespace):
             pid = str(round(pid))
 
         # Check if the patient has already been processed
-        if os.path.exists(os.path.join(logits_path, f'{pid}.pkl')):
+        if os.path.exists(os.path.join(logits_path, f'{pid}.json')):
             print(f'Patient {pid} already processed, skipping.')
             continue
 
@@ -338,11 +338,11 @@ def parse_args():
                        help='Save model predictions')
     parser.add_argument('--output_prompts', action='store_true', default=False,
                        help='Save prompts used')
-    parser.add_argument('--logits_root', type=str, default='logits',
+    parser.add_argument('--logits_root', type=str, default='logs',
                        help='Root directory for saving logits')
     parser.add_argument('--prompts_root', type=str, default='logs',
                        help='Root directory for saving prompts')
-    parser.add_argument('--perf_root', type=str, default='performance',
+    parser.add_argument('--perf_root', type=str, default='logs',
                         help='Root directory for saving performance metrics')
 
     return parser.parse_args()
