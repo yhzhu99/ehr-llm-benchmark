@@ -183,8 +183,8 @@ def setup_output_paths(args: argparse.Namespace) -> Tuple[str, str]:
         save_filename += '_range'
 
     if args.output_logits:
-        logits_path = os.path.join(args.logits_root, args.dataset, args.task, args.model, save_filename)
-        perf_path = os.path.join(args.perf_root, args.dataset, args.task, args.model, save_filename)
+        logits_path = os.path.join(args.logits_root, "structured_ehr", f"{args.dataset}-ehr", args.task, args.model, save_filename)
+        perf_path = os.path.join(args.perf_root, "structured_ehr", f"{args.dataset}-ehr", args.task, args.model, save_filename)
         os.makedirs(logits_path, exist_ok=True)
         os.makedirs(perf_path, exist_ok=True)
     else:
@@ -192,7 +192,7 @@ def setup_output_paths(args: argparse.Namespace) -> Tuple[str, str]:
         perf_path = ''
 
     if args.output_prompts:
-        prompts_path = os.path.join(args.prompts_root, args.dataset, args.task, args.model, save_filename)
+        prompts_path = os.path.join(args.prompts_root, "structured_ehr", f"{args.dataset}-ehr", args.task, args.model, save_filename)
         os.makedirs(prompts_path, exist_ok=True)
     else:
         prompts_path = ''
@@ -395,7 +395,7 @@ def run(args: argparse.Namespace):
             pid = str(round(pid))
 
         # Check if the patient has already been processed
-        if os.path.exists(os.path.join(logits_path, f'{pid}.pkl')):
+        if os.path.exists(os.path.join(logits_path, f'{pid}.json')):
             print(f'Patient {pid} already processed, skipping.')
             continue
 
@@ -457,15 +457,17 @@ def run(args: argparse.Namespace):
                 if pred < 0:
                     pred = 0.501 if args.task in ['mortality', 'readmission'] else 0.0
 
+                print(f"Processed result for patient {pid}: {pred}, {label}, {think[:100]}")
+
                 # Save the result
-                pd.to_pickle({
+                json.dump({
                     'system_prompt': system_prompt,
                     'user_prompt': user_prompt,
                     'response': result,
                     'think': think,
                     'pred': pred,
                     'label': label,
-                }, os.path.join(logits_path, f'{pid}.pkl'))
+                }, open(os.path.join(logits_path, f'{pid}.json'), 'w'), indent=4, ensure_ascii=False)
 
                 labels.append(label)
                 preds.append(pred)
@@ -474,37 +476,26 @@ def run(args: argparse.Namespace):
                 print(f'Error processing result for patient {pid}: {e}')
 
                 # Save original result for debugging
-                pd.to_pickle({
+                json.dump({
                     'system_prompt': system_prompt,
                     'user_prompt': user_prompt,
                     'response': result,
-                }, os.path.join(logits_path, f'{pid}.pkl'))
+                    'label': label,
+                }, open(os.path.join(logits_path, f'{pid}.json'), 'w'), indent=4, ensure_ascii=False)
+
+                print(f"Saved original result for patient {pid}")
+
                 continue
 
     if args.output_logits:
         # Save the final results
-        pd.to_pickle({
+        print(f"Saving final results...")
+
+        json.dump({
             'config': vars(args),
             'preds': preds,
             'labels': labels,
-        }, os.path.join(logits_path, f'0_{save_filename}.pkl'))
-
-        # Save performance metrics
-        try:
-            if args.task in ['mortality', 'readmission']:
-                performance_metrics = evaluate_binary_task({
-                    'labels': labels,
-                    'preds': preds,
-                })
-            else:
-                performance_metrics = evaluate_regression_task({
-                    'labels': labels,
-                    'preds': preds,
-                }, los_info)
-
-            performance_metrics.to_csv(os.path.join(perf_path, f'{save_filename}.csv'), index=False)
-        except Exception as e:
-            print(f'Error evaluating performance metrics: {e}')
+        }, open(os.path.join(logits_path, f'0_{save_filename}.json'), 'w'), indent=4, ensure_ascii=False)
 
 
 def parse_args():
@@ -535,11 +526,11 @@ def parse_args():
                        help='Save model predictions')
     parser.add_argument('--output_prompts', action='store_true', default=False,
                        help='Save prompts used')
-    parser.add_argument('--logits_root', type=str, default='logits',
+    parser.add_argument('--logits_root', type=str, default='logs',
                        help='Root directory for saving logits')
     parser.add_argument('--prompts_root', type=str, default='logs',
                        help='Root directory for saving prompts')
-    parser.add_argument('--perf_root', type=str, default='performance',
+    parser.add_argument('--perf_root', type=str, default='logs',
                         help='Root directory for saving performance metrics')
 
     return parser.parse_args()
