@@ -61,7 +61,7 @@ LLM_API_CONFIG = {
     "deepseek-v3-reasoner": {
         "api_key": os.getenv("DEEPSEEK_API_KEY"),
         "base_url": "https://api.deepseek.com/v1",
-        "model_name": "deepseek-v3-reasoner",
+        "model_name": "deepseek-reasoner",
         "comment": "DeepSeek V3 Reasoner",
     },
     "llm-studio": {
