@@ -325,17 +325,6 @@ def run(args: argparse.Namespace):
             'labels': labels,
         }, open(os.path.join(logits_path, f'0_{save_filename}.json'), 'w'), indent=4, ensure_ascii=False)
 
-        # Save performance metrics
-        try:
-            performance_metrics = evaluate_binary_task({
-                'labels': labels,
-                'preds': preds,
-            })
-            performance_metrics.to_csv(os.path.join(perf_path, f'{save_filename}.csv'), index=False)
-        except Exception as e:
-            print(f'Error evaluating performance: {e}')
-
-
 def parse_args():
     """
     Parse command line arguments.

@@ -367,8 +367,10 @@ def run(args: argparse.Namespace):
 
     # Initialize LLM
     llm_config = LLM_API_CONFIG["laozhang"]
-    if args.model.lower() == "deepseek-v3":
-        llm_config["model_name"] = "deepseek-v3-0324"
+    if args.model.lower() == "deepseek-v3-chat":
+        llm_config = LLM_API_CONFIG["deepseek-v3-chat"]
+    elif args.model.lower() == "deepseek-v3-reasoner":
+        llm_config = LLM_API_CONFIG["deepseek-v3-reasoner"]
     elif args.model.lower() == "deepseek-r1":
         llm_config["model_name"] = "deepseek-r1-250528"
     elif args.model.lower() == "o3-mini-high":
@@ -378,6 +380,7 @@ def run(args: argparse.Namespace):
         llm_config["model_name"] = "chatgpt-4o-latest"
     elif args.model.lower() == "gpt-5-chat-latest":
         llm_config["model_name"] = "gpt-5-chat-latest"
+        llm_config["reasoning_effort"] = "high"
     else:
         raise ValueError(f"Unknown model: {args.model}")
     llm = OpenAI(api_key=llm_config["api_key"], base_url=llm_config["base_url"])
