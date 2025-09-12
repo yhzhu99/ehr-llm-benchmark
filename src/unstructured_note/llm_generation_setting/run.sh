@@ -3,12 +3,13 @@
 # Basic configurations
 OUTPUT_LOGITS=true
 OUTPUT_PROMPTS=true
-LOG_DIR="logs/running_logs"
+LOG_DIR="logs/running_logs/unstructured_note"
 
 # Parameter options
 MODEL_OPTIONS=(
-    "DeepSeek-V3"
-    "DeepSeek-R1"
+    "deepseek-v3-chat"
+    "deepseek-v3-reasoner"
+    "deepseek-r1"
 
     "o3-mini-high"
     "chatgpt-4o-latest"
@@ -63,7 +64,7 @@ done
 
 # Get the total number of commands
 TOTAL_RUNS=${#COMMANDS[@]}
-MAX_JOBS=4 # Set the maximum number of concurrent jobs
+MAX_JOBS=6 # Set the maximum number of concurrent jobs
 
 echo "Starting evaluation with ${TOTAL_RUNS} different configurations..."
 

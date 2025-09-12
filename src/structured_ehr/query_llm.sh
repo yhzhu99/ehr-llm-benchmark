@@ -3,12 +3,13 @@
 # Basic configurations
 OUTPUT_LOGITS=true
 OUTPUT_PROMPTS=true
-LOG_DIR="logs/running_logs"
+LOG_DIR="logs/running_logs/structured_ehr"
 
 # Parameter options
 MODEL_OPTIONS=(
-    "DeepSeek-V3"
-    "DeepSeek-R1"
+    "deepseek-v3-chat"
+    "deepseek-v3-reasoner"
+    "deepseek-r1"
 
     "chatgpt-4o-latest"
     "o3-mini-high"
@@ -26,7 +27,7 @@ DATASET_TASK_OPTIONS=(
     "mimic-iv:mortality"
     "mimic-iv:readmission"
 )
-UNIT_RANGE_OPTIONS=(true)
+UNIT_RANGE_ICL_OPTIONS=(0 1 2)
 
 # --- Main script starts here ---
 
@@ -44,15 +45,18 @@ for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
     # Dataset and task
     IFS=":" read -r DATASET TASK <<< "$DATASET_TASK"
     for MODEL in "${MODEL_OPTIONS[@]}"; do
-        for USE_UNIT_RANGE in "${UNIT_RANGE_OPTIONS[@]}"; do
+        for USE_UNIT_RANGE_ICL in "${UNIT_RANGE_ICL_OPTIONS[@]}"; do
             # Construct command
             CMD="python -m src.structured_ehr.query_llm -d ${DATASET} -t ${TASK} -m ${MODEL}"
 
             # Add parameters based on USE_UNIT_RANGE
-            UNIT_SUFFIX="-no-unit" # For log file naming
-            if [ "$USE_UNIT_RANGE" = true ]; then
+            UNIT_RANGE_ICL_SUFFIX="-no-unit-range-icl"
+            if [ "$USE_UNIT_RANGE_ICL" = 1 ]; then
               CMD="${CMD} -u -r"
-              UNIT_SUFFIX="-unit" # For log file naming
+              UNIT_RANGE_ICL_SUFFIX="-unit-range"
+            elif [ "$USE_UNIT_RANGE_ICL" = 2 ]; then
+              CMD="${CMD} -u -r -n 1"
+              UNIT_RANGE_ICL_SUFFIX="-unit-range-1shot"
             fi
 
             # Add output options
@@ -68,7 +72,7 @@ for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
             COMMANDS+=("$CMD")
 
             # Generate a corresponding log file path
-            LOG_FILE="${LOG_DIR}/${DATASET}-${TASK}-${MODEL}${UNIT_SUFFIX}.log"
+            LOG_FILE="${LOG_DIR}/${DATASET}-${TASK}-${MODEL}${UNIT_RANGE_ICL_SUFFIX}.log"
             LOG_FILES+=("$LOG_FILE")
         done
     done
@@ -76,7 +80,7 @@ done
 
 # Get the total number of commands
 TOTAL_RUNS=${#COMMANDS[@]}
-MAX_JOBS=4 # Set the maximum number of concurrent jobs
+MAX_JOBS=6 # Set the maximum number of concurrent jobs
 
 echo "Starting evaluation with ${TOTAL_RUNS} different configurations..."
 
