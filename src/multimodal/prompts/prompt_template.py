@@ -91,9 +91,9 @@ Clinical Note:
 {NOTE}"""
 
 UNIT = {
-    'mimic-iv': 'src/multimodal/prompts/mimic-iv/unit.json',
+    'mimic-iv': 'src/structured_ehr/prompts/mimic-iv/unit.json',
 }
 
 REFERENCE_RANGE = {
-    'mimic-iv': 'src/multimodal/prompts/mimic-iv/range.json',
+    'mimic-iv': 'src/structured_ehr/prompts/mimic-iv/range.json',
 }
