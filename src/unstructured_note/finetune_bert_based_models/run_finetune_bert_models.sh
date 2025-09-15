@@ -1,18 +1,75 @@
 #!/bin/bash
 
-# Script to fine-tune BERT-based models for all tasks
+# Basic configurations
+LOG_DIR="logs/running_logs/finetune_bert"
 
 # Define BERT models and tasks
 BERT_MODELS=("BERT" "ClinicalBERT" "BioBERT" "GatorTron" "Clinical-Longformer")
 DATASET_TASK_OPTIONS=("mimic-iv:mortality" "mimic-iv:readmission" "mimic-iii:mortality")
 
-# Fine-tune BERT models
+# Create log directory if it doesn't exist
+mkdir -p "$LOG_DIR"
+echo "Log files will be saved in ${LOG_DIR}/"
+
+# Arrays to store commands and their corresponding log files
+COMMANDS=()
+LOG_FILES=()
+
+# Generate all commands and store them in the arrays
+echo "Generating all commands for BERT fine-tuning..."
 for MODEL in "${BERT_MODELS[@]}"; do
     for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
         IFS=":" read -r DATASET TASK <<< "$DATASET_TASK"
-        echo "Fine-tuning $MODEL for $TASK task on $DATASET dataset"
-        python src/unstructured_note/finetune_bert_based_models/finetune_models.py --model "$MODEL" --task "$TASK" --dataset "$DATASET" --batch_size 16 --learning_rate 1e-5 --epochs 10 --patience 3
+
+        # Construct command
+        CMD="python src/unstructured_note/finetune_bert_based_models/finetune_models.py --model ${MODEL} --task ${TASK} --dataset ${DATASET} --batch_size 16 --learning_rate 1e-5 --epochs 10 --patience 3"
+
+        # Add the fully constructed command to the array
+        COMMANDS+=("$CMD")
+
+        # Generate a corresponding log file path
+        LOG_FILE="${LOG_DIR}/bert_finetune-${MODEL}-${DATASET}-${TASK}.log"
+        LOG_FILES+=("$LOG_FILE")
     done
 done
 
-echo "All fine-tuning completed successfully!"
+# Get the total number of commands
+TOTAL_RUNS=${#COMMANDS[@]}
+MAX_JOBS=5 # Set the maximum number of concurrent jobs (you can adjust this)
+
+echo "Starting BERT fine-tuning with ${TOTAL_RUNS} different configurations..."
+
+# Execute all commands with a limit on concurrent jobs
+for i in "${!COMMANDS[@]}"; do
+    CMD="${COMMANDS[$i]}"
+    LOG_FILE="${LOG_FILES[$i]}"
+    CURRENT_RUN=$((i + 1))
+
+    # Wait if the number of running jobs reaches the maximum
+    while [[ $(jobs -p | wc -l) -ge $MAX_JOBS ]]; do
+        wait -n
+    done
+
+    # Print the counter and the command being run
+    echo "[$CURRENT_RUN/$TOTAL_RUNS] Running in background. Log -> ${LOG_FILE}"
+    echo "  => ${CMD}"
+
+    # Execute command in the background, redirecting all output to the log file
+    (
+        eval "$CMD" > "$LOG_FILE" 2>&1
+
+        if [ $? -eq 0 ]; then
+          echo "[$CURRENT_RUN/$TOTAL_RUNS] SUCCESS: Job finished. Log: ${LOG_FILE}"
+        else
+          echo "[$CURRENT_RUN/$TOTAL_RUNS] FAILED: Job finished with an error. Log: ${LOG_FILE}"
+        fi
+        echo "----------------------------------------"
+    ) &
+
+done
+
+# Wait for all remaining background jobs to complete
+echo "All BERT fine-tuning commands have been dispatched. Waiting for remaining background jobs to finish..."
+wait
+
+echo "All BERT fine-tuning completed successfully!"
