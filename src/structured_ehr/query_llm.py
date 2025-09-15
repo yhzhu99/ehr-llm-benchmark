@@ -381,6 +381,9 @@ def run(args: argparse.Namespace):
     elif args.model.lower() == "gpt-5-chat-latest":
         llm_config["model_name"] = "gpt-5-chat-latest"
         llm_config["reasoning_effort"] = "high"
+    elif args.model in MODELS_CONFIG.keys():
+        llm_config = LLM_API_CONFIG["llm-studio"]
+        llm_config["model_name"] = MODELS_CONFIG[args.model]["lmstudio_id"]
     else:
         raise ValueError(f"Unknown model: {args.model}")
     llm = OpenAI(api_key=llm_config["api_key"], base_url=llm_config["base_url"])
