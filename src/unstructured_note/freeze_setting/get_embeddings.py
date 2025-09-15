@@ -1,6 +1,6 @@
 """
 src/unstructured_note/freeze_setting/get_embeddings.py
-This script is used to get embeddings from the model for the textual data in the MIMIC-IV dataset.
+This script is used to get embeddings from the model for the textual data in the MIMIC-III or MIMIC-IV dataset.
 """
 
 from pathlib import Path
@@ -36,6 +36,7 @@ EMBEDDING_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["mod
 
 parser = argparse.ArgumentParser(description='Generate embeddings from models')
 parser.add_argument('--model', type=str, required=True, choices=BERT_MODELS + LLM_MODELS + EMBEDDING_MODELS)
+parser.add_argument('--dataset', type=str, required=True, choices=["mimic-iv", "mimic-iii"])
 parser.add_argument('--batch_size', type=int, default=1)
 parser.add_argument('--max_length', type=int, default=512)
 args = parser.parse_args()
@@ -81,7 +82,7 @@ else:
 data_splits = {}
 for split in ['train', 'val', 'test']:
     split_name = f'{split}_data.pkl'
-    file_path = f"my_datasets/mimic-iv/processed/split/{split_name}"
+    file_path = f"my_datasets/{args.dataset}/processed/split/{split_name}"
     data_splits[split] = pd.read_pickle(file_path)
     print(f"Loaded {len(data_splits[split])} records from {file_path}")
 
@@ -138,7 +139,7 @@ def extract_embeddings(data_split, split_name):
     return embeddings
 
 # Create output directory
-output_dir = Path(f"logs/mimic-iv-note/{args.model}")
+output_dir = Path(f"logs/unstructured_note/{args.dataset}-note/{args.model}")
 output_dir.mkdir(parents=True, exist_ok=True)
 
 # Extract and save embeddings for each split
