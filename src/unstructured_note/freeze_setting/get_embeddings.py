@@ -9,11 +9,9 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"  # Add this line at the top
 
 import argparse
-import random
 
 from tqdm import tqdm
 import pandas as pd
-import numpy as np
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel, set_seed
 
@@ -21,7 +19,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel, set_see
 from sentence_transformers import SentenceTransformer
 from FlagEmbedding import BGEM3FlagModel
 
-from unstructured_note.utils.config import MODELS_CONFIG
+from src.unstructured_note.utils.config import MODELS_CONFIG
 
 # Set seed for reproducibility
 set_seed(42)
@@ -32,10 +30,9 @@ mps_available = hasattr(torch.backends, "mps") and torch.backends.mps.is_availab
 # Create model type lists
 BERT_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "BERT"]
 LLM_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "GPT"]
-EMBEDDING_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "embedding"]
 
 parser = argparse.ArgumentParser(description='Generate embeddings from models')
-parser.add_argument('--model', type=str, required=True, choices=BERT_MODELS + LLM_MODELS + EMBEDDING_MODELS)
+parser.add_argument('--model', type=str, required=True, choices=BERT_MODELS + LLM_MODELS)
 parser.add_argument('--dataset', type=str, required=True, choices=["mimic-iv", "mimic-iii"])
 parser.add_argument('--batch_size', type=int, default=1)
 parser.add_argument('--max_length', type=int, default=512)
@@ -67,14 +64,6 @@ if model_type == "GPT":
 elif model_type == "BERT":
     model = AutoModel.from_pretrained(model_path, trust_remote_code=True).to(device)
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-elif model_type == "embedding":
-    if args.model == "BGE-M3":
-        model = BGEM3FlagModel(model_path, use_fp16=True)
-        tokenizer = None
-    else:
-        # SentenceTransformer models
-        model = SentenceTransformer(model_path)
-        tokenizer = None
 else:
     raise ValueError(f"Model type {model_type} not supported.")
 
@@ -96,36 +85,26 @@ def extract_embeddings(data_split, split_name):
         label_mortality = item['y_mortality']
         label_readmission = item['y_readmission']
 
-        if model_type == "embedding":
-            # Process with embedding models
-            if args.model == "BGE-M3":
-                # BGE-M3 model
-                outputs = model.encode(text, max_length=args.max_length)['dense_vecs']
-                embedding = torch.tensor(outputs).detach().cpu()
-            else:
-                # SentenceTransformer models
-                embedding = torch.tensor(model.encode(text, max_length=args.max_length)).detach().cpu()
-        else:
-            # Tokenize for BERT or LLM models
-            inputs = tokenizer(
-                text,
-                return_tensors="pt",
-                padding="max_length",
-                max_length=args.max_length,
-                truncation=True
-            ).to(device)
+        # Tokenize for BERT or LLM models
+        inputs = tokenizer(
+            text,
+            return_tensors="pt",
+            padding="max_length",
+            max_length=args.max_length,
+            truncation=True
+        ).to(device)
 
-            # Get embedding
-            with torch.no_grad():
-                if model_type == "GPT":
-                    outputs = model(**inputs, output_hidden_states=True)
-                    # For GPT models, use last hidden state of the last token
-                    last_hidden_state = outputs.hidden_states[-1]
-                    embedding = last_hidden_state[0, -1, :].detach().cpu()
-                else:  # BERT models
-                    outputs = model(**inputs)
-                    # For BERT models, use the [CLS] token embedding
-                    embedding = outputs.last_hidden_state[0, 0, :].detach().cpu()
+        # Get embedding
+        with torch.no_grad():
+            if model_type == "GPT":
+                outputs = model(**inputs, output_hidden_states=True)
+                # For GPT models, use last hidden state of the last token
+                last_hidden_state = outputs.hidden_states[-1]
+                embedding = last_hidden_state[0, -1, :].detach().cpu()
+            else:  # BERT models
+                outputs = model(**inputs)
+                # For BERT models, use the [CLS] token embedding
+                embedding = outputs.last_hidden_state[0, 0, :].detach().cpu()
 
         # Store embedding with label
         embedding_dict = {
@@ -145,10 +124,12 @@ output_dir.mkdir(parents=True, exist_ok=True)
 # Extract and save embeddings for each split
 for split, split_data in data_splits.items():
     split_name = split
-    embeddings = extract_embeddings(split_data, split_name)
-
-    # Save embeddings
     output_path = output_dir / f"{split_name}_embeddings.pkl"
+    if os.path.exists(output_path):
+        print(f"Embeddings already exist at {output_path}")
+        continue
+
+    embeddings = extract_embeddings(split_data, split_name)
     pd.to_pickle(embeddings, output_path)
     print(f"Saved {len(embeddings)} embeddings to {output_path}")
 
