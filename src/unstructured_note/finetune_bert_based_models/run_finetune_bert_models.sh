@@ -22,7 +22,7 @@ for MODEL in "${BERT_MODELS[@]}"; do
         IFS=":" read -r DATASET TASK <<< "$DATASET_TASK"
 
         # Construct command
-        CMD="python src/unstructured_note/finetune_bert_based_models/finetune_models.py --model ${MODEL} --task ${TASK} --dataset ${DATASET} --batch_size 16 --learning_rate 1e-5 --epochs 10 --patience 3"
+        CMD="python -m src.unstructured_note.finetune_bert_based_models.finetune_models --model ${MODEL} --task ${TASK} --dataset ${DATASET} --batch_size 16 --learning_rate 1e-5 --epochs 10 --patience 3"
 
         # Add the fully constructed command to the array
         COMMANDS+=("$CMD")
