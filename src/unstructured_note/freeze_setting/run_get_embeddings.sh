@@ -6,7 +6,7 @@ LOG_DIR="logs/running_logs/generate_embeddings"
 # Define arrays of models and tasks
 BERT_MODELS=("BERT" "ClinicalBERT" "BioBERT" "GatorTron" "Clinical-Longformer")
 LLM_MODELS=("BioGPT" "meditron" "OpenBioLLM" "BioMistral" "GPT-2" "Qwen2.5-7B" "gemma-3-4b-pt" "HuatuoGPT-o1-7B" "DeepSeek-R1-Distill-Qwen-7B")
-EMBEDDING_MODELS=("BGE-M3" "all-MiniLM-L6-v2" "BioBERT-embed" "BGE-Med")
+ALL_MODELS=("${BERT_MODELS[@]}" "${LLM_MODELS[@]}")
 DATASET_OPTIONS=("mimic-iv" "mimic-iii")
 
 # Create log directory if it doesn't exist
@@ -19,35 +19,11 @@ LOG_FILES=()
 
 # Generate embeddings for BERT models
 echo "Generating commands for BERT model embeddings..."
-for MODEL in "${BERT_MODELS[@]}"; do
+for MODEL in "${ALL_MODELS[@]}"; do
     for DATASET in "${DATASET_OPTIONS[@]}"; do
-        CMD="python src/unstructured_note/freeze_setting/get_embeddings.py --model ${MODEL} --dataset ${DATASET}"
+        CMD="python -m src.unstructured_note.freeze_setting.get_embeddings --model ${MODEL} --dataset ${DATASET}"
         COMMANDS+=("$CMD")
         # Replace '/' in model names for valid file names
-        MODEL_SAFE_NAME=$(echo "$MODEL" | sed 's/\//-/g')
-        LOG_FILE="${LOG_DIR}/embed-${MODEL_SAFE_NAME}-${DATASET}.log"
-        LOG_FILES+=("$LOG_FILE")
-    done
-done
-
-# Generate embeddings for LLM models
-echo "Generating commands for LLM model embeddings..."
-for MODEL in "${LLM_MODELS[@]}"; do
-    for DATASET in "${DATASET_OPTIONS[@]}"; do
-        CMD="python src/unstructured_note/freeze_setting/get_embeddings.py --model ${MODEL} --dataset ${DATASET}"
-        COMMANDS+=("$CMD")
-        MODEL_SAFE_NAME=$(echo "$MODEL" | sed 's/\//-/g')
-        LOG_FILE="${LOG_DIR}/embed-${MODEL_SAFE_NAME}-${DATASET}.log"
-        LOG_FILES+=("$LOG_FILE")
-    done
-done
-
-# Generate embeddings for Embedding models
-echo "Generating commands for dedicated embedding models..."
-for MODEL in "${EMBEDDING_MODELS[@]}"; do
-    for DATASET in "${DATASET_OPTIONS[@]}"; do
-        CMD="python src/unstructured_note/freeze_setting/get_embeddings.py --model ${MODEL} --dataset ${DATASET}"
-        COMMANDS+=("$CMD")
         MODEL_SAFE_NAME=$(echo "$MODEL" | sed 's/\//-/g')
         LOG_FILE="${LOG_DIR}/embed-${MODEL_SAFE_NAME}-${DATASET}.log"
         LOG_FILES+=("$LOG_FILE")
