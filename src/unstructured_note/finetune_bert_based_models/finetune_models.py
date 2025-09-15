@@ -1,6 +1,6 @@
 """
 src/unstructured_note/finetune_bert_based_models/finetune_models.py
-Fine-tune BERT-based models for MIMIC-IV prediction tasks
+Fine-tune BERT-based models for MIMIC-III or MIMIC-IV prediction tasks
 """
 
 import os
@@ -28,8 +28,9 @@ set_seed(42)
 # Get BERT models from config
 BERT_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "BERT"]
 
-parser = argparse.ArgumentParser(description='Fine-tune BERT models for MIMIC-IV')
+parser = argparse.ArgumentParser(description='Fine-tune BERT models for MIMIC-III or MIMIC-IV')
 parser.add_argument('--model', type=str, required=True, choices=BERT_MODELS)
+parser.add_argument('--dataset', type=str, required=True, choices=["mimic-iv", "mimic-iii"])
 parser.add_argument('--task', type=str, required=True, choices=['mortality', 'readmission'])
 parser.add_argument('--batch_size', type=int, default=8)
 parser.add_argument('--learning_rate', type=float, default=2e-5)
@@ -71,9 +72,10 @@ class MimicDataset(Dataset):
 
 # Lightning data module
 class MimicDataModule(L.LightningDataModule):
-    def __init__(self, model_name, task, batch_size=8, max_length=512):
+    def __init__(self, model_name, dataset, task, batch_size=8, max_length=512):
         super().__init__()
         self.model_name = model_name
+        self.dataset = dataset
         self.task = task
         self.batch_size = batch_size
         self.max_length = max_length
@@ -95,7 +97,7 @@ class MimicDataModule(L.LightningDataModule):
 
     def train_dataloader(self):
         train_dataset = MimicDataset(
-            data_path="my_datasets/mimic-iv/processed/split/train_data.pkl",
+            data_path=f"my_datasets/{self.dataset}/processed/split/train_data.pkl",
             tokenizer=self.tokenizer,
             task=self.task,
             max_length=self.max_length
@@ -110,7 +112,7 @@ class MimicDataModule(L.LightningDataModule):
 
     def val_dataloader(self):
         val_dataset = MimicDataset(
-            data_path="my_datasets/mimic-iv/processed/split/val_data.pkl",
+            data_path=f"my_datasets/{self.dataset}/processed/split/val_data.pkl",
             tokenizer=self.tokenizer,
             task=self.task,
             max_length=self.max_length
@@ -125,7 +127,7 @@ class MimicDataModule(L.LightningDataModule):
 
     def test_dataloader(self):
         test_dataset = MimicDataset(
-            data_path="my_datasets/mimic-iv/processed/split/test_data.pkl",
+            data_path=f"my_datasets/{self.dataset}/processed/split/test_data.pkl",
             tokenizer=self.tokenizer,
             task=self.task,
             max_length=self.max_length,
@@ -259,6 +261,7 @@ def run_finetuning():
     # Create data module
     data_module = MimicDataModule(
         model_name=model_name,
+        dataset=args.dataset,
         task=task,
         batch_size=args.batch_size,
         max_length=args.max_length
@@ -271,7 +274,7 @@ def run_finetuning():
     )
 
     # Setup output directory
-    log_dir = f"logs/mimic-iv-note/{model_name}/{task}/finetune_setting"
+    log_dir = f"logs/unstructured_note/{args.dataset}-note/{model_name}/{task}/finetune_setting"
     Path(log_dir).mkdir(parents=True, exist_ok=True)
     logger = CSVLogger(save_dir=log_dir, name="", version=None)
 

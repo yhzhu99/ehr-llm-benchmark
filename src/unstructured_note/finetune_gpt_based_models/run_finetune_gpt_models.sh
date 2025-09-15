@@ -4,15 +4,17 @@
 
 # Define GPT models and tasks
 GPT_MODELS=("BioGPT" "meditron" "OpenBioLLM" "BioMistral" "GPT-2" "Qwen2.5-7B" "gemma-3-4b-pt" "HuatuoGPT-o1-7B" "DeepSeek-R1-Distill-Qwen-7B")
-TASKS=("mortality" "readmission")
+DATASET_TASK_OPTIONS=("mimic-iv:mortality" "mimic-iv:readmission" "mimic-iii:mortality")
 
 # Fine-tune GPT models with LoRA
 for MODEL in "${GPT_MODELS[@]}"; do
-    for TASK in "${TASKS[@]}"; do
-        echo "Fine-tuning $MODEL for $TASK task using LoRA PEFT method"
+    for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
+        IFS=":" read -r DATASET TASK <<< "$DATASET_TASK"
+        echo "Fine-tuning $MODEL for $TASK task on $DATASET dataset using LoRA PEFT method"
         python src/unstructured_note/finetune_gpt_based_models/finetune_models.py \
             --model "$MODEL" \
             --task "$TASK" \
+            --dataset "$DATASET" \
             --batch_size 8 \
             --learning_rate 2e-4 \
             --lora_rank 8 \
