@@ -22,7 +22,7 @@ for MODEL in "${GPT_MODELS[@]}"; do
         IFS=":" read -r DATASET TASK <<< "$DATASET_TASK"
 
         # Construct command
-        CMD="python src/unstructured_note/finetune_gpt_based_models/finetune_models.py \
+        CMD="python -m src.unstructured_note.finetune_gpt_based_models.finetune_models \
             --model ${MODEL} \
             --task ${TASK} \
             --dataset ${DATASET} \

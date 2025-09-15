@@ -21,8 +21,8 @@ from lightning.pytorch.loggers import CSVLogger
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, set_seed
 from peft import LoraConfig, get_peft_model  # Changed from IA3Config to LoraConfig
 
-from unstructured_note.utils.config import MODELS_CONFIG
-from unstructured_note.utils.classification_metrics import get_binary_metrics
+from src.unstructured_note.utils.config import MODELS_CONFIG
+from src.unstructured_note.utils.classification_metrics import get_binary_metrics
 
 # Set seed for reproducibility
 set_seed(42)
@@ -321,6 +321,7 @@ def run_finetuning():
     """Run the full fine-tuning and evaluation pipeline"""
     model_name = args.model
     task = args.task
+    dataset = args.dataset
 
     print(f"Fine-tuning {model_name} for {task} prediction using LoRA")
     print(f"Only a small number of parameters will be trained while the base model remains frozen")
@@ -328,6 +329,7 @@ def run_finetuning():
     # Create data module
     data_module = MimicDataModule(
         model_name=model_name,
+        dataset=dataset,
         task=task,
         batch_size=args.batch_size,
         max_length=args.max_length
@@ -346,9 +348,15 @@ def run_finetuning():
     model.model.print_trainable_parameters()
 
     # Setup output directory
-    log_dir = f"logs/unstructured_note/{args.dataset}-note/{model_name}/{task}/finetune_setting"
+    log_dir = f"logs/unstructured_note/{dataset}-note/{model_name}/{task}/finetune_setting"
     Path(log_dir).mkdir(parents=True, exist_ok=True)
     logger = CSVLogger(save_dir=log_dir, name="", version=None)
+    results_path = os.path.join(log_dir, "test_results.pkl")
+    peft_model_path = os.path.join(log_dir, "peft_model")
+
+    if os.path.exists(results_path) and os.path.exists(peft_model_path):
+        print(f"Results and PEFT model already exist at {results_path} and {peft_model_path}")
+        return
 
     # Create callbacks
     early_stopping = EarlyStopping(
@@ -387,11 +395,9 @@ def run_finetuning():
     trainer.test(best_model, data_module)
 
     # Save results
-    results_path = os.path.join(log_dir, "test_results.pkl")
     pd.to_pickle(best_model.test_results, results_path)
 
     # Save the PEFT model
-    peft_model_path = os.path.join(log_dir, "peft_model")
     best_model.model.save_pretrained(peft_model_path)
     print(f"PEFT model saved to {peft_model_path}")
 
