@@ -30,6 +30,7 @@ EMBEDDING_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["mod
 
 parser = argparse.ArgumentParser(description='Fine-tune embeddings with MLP')
 parser.add_argument('--model', type=str, required=True, choices=BERT_MODELS + LLM_MODELS + EMBEDDING_MODELS)
+parser.add_argument('--dataset', type=str, required=True, choices=["mimic-iv", "mimic-iii"])
 parser.add_argument('--task', type=str, required=True, choices=['mortality', 'readmission'])
 parser.add_argument('--batch_size', type=int, default=64)
 parser.add_argument('--learning_rate', type=float, default=1e-4)
@@ -59,7 +60,7 @@ class EmbeddingDataModule(L.LightningDataModule):
         self.model_name = model_name
         self.task = task
         self.batch_size = batch_size
-        self.base_path = f"logs/mimic-iv-note/{model_name}"
+        self.base_path = f"logs/unstructured_note/{args.dataset}-note/{model_name}"
 
     def setup(self, stage=None):
         self.train_dataset = EmbeddingDataset(f"{self.base_path}/train_embeddings.pkl")
@@ -230,7 +231,7 @@ def run_training():
     )
 
     # Setup output directory
-    log_dir = f"logs/mimic-iv-note/{model_name}/{task}/freeze_setting"
+    log_dir = f"logs/unstructured_note/{args.dataset}-note/{model_name}/{task}/freeze_setting"
     Path(log_dir).mkdir(parents=True, exist_ok=True)
     logger = CSVLogger(save_dir=log_dir, name="", version=None)
 
