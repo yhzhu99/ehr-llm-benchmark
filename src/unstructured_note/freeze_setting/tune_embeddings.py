@@ -17,8 +17,8 @@ from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 from transformers import set_seed
 
-from unstructured_note.utils.config import MODELS_CONFIG
-from unstructured_note.utils.classification_metrics import get_binary_metrics
+from src.unstructured_note.utils.config import MODELS_CONFIG
+from src.unstructured_note.utils.classification_metrics import get_binary_metrics
 
 # Set seed for reproducibility
 set_seed(42)
@@ -49,7 +49,7 @@ class EmbeddingDataset(Dataset):
     def __getitem__(self, idx):
         item = self.data[idx]
         embedding = item['embedding'].float()
-        label = torch.tensor(item[f'y_{args.task}'])[0].float()
+        label = torch.tensor(item[f'y_{args.task}'])[0].float() if isinstance(item[f'y_{args.task}'], list) else torch.tensor(item[f'y_{args.task}']).float()
         return embedding, label.unsqueeze(dim=0)
 
 # Lightning data module
@@ -60,6 +60,9 @@ class EmbeddingDataModule(L.LightningDataModule):
         self.task = task
         self.batch_size = batch_size
         self.base_path = f"logs/unstructured_note/{args.dataset}-note/{model_name}"
+
+        if not os.path.exists(f"{self.base_path}/train_embeddings.pkl"):
+            raise ValueError("Embedding not found.")
 
     def setup(self, stage=None):
         self.train_dataset = EmbeddingDataset(f"{self.base_path}/train_embeddings.pkl")
@@ -201,18 +204,24 @@ def run_training():
     """Run the full training and evaluation pipeline"""
     model_name = args.model
     task = args.task
+    dataset = args.dataset
 
-    print(f"Fine-tuning {model_name} embeddings for {task} prediction")
+    print(f"Fine-tuning {model_name} embeddings on {dataset} dataset for {task} prediction")
 
     # Get embedding dimension for model
     embedding_dim = get_embedding_dim(model_name)
 
     # Create data module
-    data_module = EmbeddingDataModule(
-        model_name=model_name,
-        task=task,
-        batch_size=args.batch_size
-    )
+    try:
+        data_module = EmbeddingDataModule(
+            model_name=model_name,
+            task=task,
+            batch_size=args.batch_size
+        )
+    except ValueError as e:
+        print(f"Error for {model_name}:", e)
+        exit(1)
+
 
     # Create model
     model = EmbeddingClassifier(
