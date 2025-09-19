@@ -83,12 +83,12 @@ In situations where the provided data is clearly insufficient or too ambiguous t
 {EXAMPLE}
 
 Now, please analyze and predict for the following patient:
+Clinical Note:
+{NOTE}
 
 Clinical Features Over Time:
 {DETAIL}
-
-Clinical Note:
-{NOTE}"""
+"""
 
 UNIT = {
     'mimic-iv': 'src/structured_ehr/prompts/mimic-iv/unit.json',
