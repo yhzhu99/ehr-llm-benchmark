@@ -258,7 +258,7 @@ def run_finetuning():
     dataset = args.dataset
 
     # Setup output directory
-    log_dir = f"logs/unstructured_note/{dataset}-note/{model_name}/{task}/finetune_setting"
+    log_dir = f"logs/unstructured_note/{dataset}-note/{task}/{model_name}/finetune_setting"
     Path(log_dir).mkdir(parents=True, exist_ok=True)
     logger = CSVLogger(save_dir=log_dir, name="", version=None)
     results_path = os.path.join(log_dir, "test_results.pkl")

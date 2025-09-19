@@ -118,7 +118,7 @@ def extract_embeddings(data_split, split_name):
     return embeddings
 
 # Create output directory
-output_dir = Path(f"logs/unstructured_note/{args.dataset}-note/{args.model}")
+output_dir = Path(f"logs/unstructured_note/{args.dataset}-note/embeddings/{args.model}")
 output_dir.mkdir(parents=True, exist_ok=True)
 
 # Extract and save embeddings for each split
