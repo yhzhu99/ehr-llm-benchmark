@@ -14,7 +14,7 @@ from openai import OpenAI
 import tiktoken
 from json_repair import repair_json
 
-from src.structured_ehr.utils.llm_configs import LLM_API_CONFIG
+from src.structured_ehr.utils.llm_configs import LLM_API_CONFIG, MODELS_CONFIG
 from src.multimodal.prompts.prompt_template import SYSTEMPROMPT, USERPROMPT, UNIT, REFERENCE_RANGE, TASK_DESCRIPTION, RESPONSE_FORMAT, EXAMPLE
 
 
@@ -298,6 +298,9 @@ def run(args: argparse.Namespace):
     elif args.model.lower() == "gpt-5-chat-latest":
         llm_config["model_name"] = "gpt-5-chat-latest"
         llm_config["reasoning_effort"] = "high"
+    elif args.model in MODELS_CONFIG.keys():
+        llm_config = LLM_API_CONFIG["llm-studio"]
+        llm_config["model_name"] = MODELS_CONFIG[args.model]["lmstudio_id"]
     else:
         raise ValueError(f"Unknown model: {args.model}")
     llm = OpenAI(api_key=llm_config["api_key"], base_url=llm_config["base_url"])
