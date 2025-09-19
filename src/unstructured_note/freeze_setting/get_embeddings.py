@@ -5,7 +5,6 @@ This script is used to get embeddings from the model for the textual data in the
 
 from pathlib import Path
 import os
-os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"  # Add this line at the top
 
 import argparse
@@ -83,7 +82,7 @@ def extract_embeddings(data_split, split_name):
     for item in tqdm(data_split, desc=f"Processing {split_name}"):
         text = item['x_note']
         label_mortality = item['y_mortality']
-        label_readmission = item['y_readmission']
+        label_readmission = item['y_readmission'] if 'y_readmission' in item else -1.0
 
         # Tokenize for BERT or LLM models
         inputs = tokenizer(
