@@ -177,8 +177,8 @@ class DlPipeline(L.LightningModule):
 
     def test_step(self, batch, batch_idx):
         x, y, lens, pid = batch
-        loss, y, y_hat, _ = self._get_loss(x, y, lens)
-        outs = {'pids': pid, 'preds': y_hat, 'labels': y}
+        loss, y, y_hat, embedding = self._get_loss(x, y, lens)
+        outs = {'pids': pid, 'preds': y_hat, 'labels': y, 'embedding': embedding}
         self.test_step_outputs.append(outs)
         return loss
 
@@ -187,8 +187,9 @@ class DlPipeline(L.LightningModule):
         labels = torch.cat([x['labels'] for x in self.test_step_outputs]).detach().cpu().numpy().tolist()
         pids = []
         pids.extend([x['pids'] for x in self.test_step_outputs])
+        embeddings = torch.stack([x['embedding'] for x in self.test_step_outputs]).detach().cpu().numpy().tolist()
         self.test_performance = get_all_metrics(preds, labels, self.task, self.los_info)
-        self.test_outputs = {'pids': pids, 'preds': preds, 'labels': labels, 'config': self.hparams}
+        self.test_outputs = {'pids': pids, 'preds': preds, 'labels': labels, 'config': self.hparams, 'embedding': embeddings}
         self.test_step_outputs.clear()
         return self.test_performance
 
@@ -212,7 +213,7 @@ class MlPipeline(L.LightningModule):
 
         self.test_performance = {}
         self.test_outputs = {}
-        checkpoint_folder = f'logs/{config["dataset"]}/{config["task"]}/dl_models/{config["model"]}/checkpoints/'
+        checkpoint_folder = f'logs/{config["dataset"]}-ehr/{config["task"]}/dl_models/{config["model"]}/checkpoints/'
         os.makedirs(checkpoint_folder, exist_ok=True)
         self.checkpoint_path = os.path.join(checkpoint_folder, 'best.ckpt')
 
@@ -261,7 +262,7 @@ def run_dl_experiment(config):
     config["los_info"] = los_info
 
     # logger
-    logger = CSVLogger(save_dir="logs", name=f'{config["dataset"]}/{config["task"]}/dl_models', version=f"{config['model']}")
+    logger = CSVLogger(save_dir="logs", name=f'{config["dataset"]}-ehr/{config["task"]}/dl_models', version=f"{config['model']}")
 
     # main metric
     main_metric = "auroc" if config["task"] in ["mortality", "readmission"] else "mae"
@@ -308,7 +309,7 @@ def run_ml_experiment(config):
     config["los_info"] = los_info
 
     # logger
-    logger = CSVLogger(save_dir="logs", name=f'{config["dataset"]}/{config["task"]}/dl_models', version=f"{config['model']}")
+    logger = CSVLogger(save_dir="logs", name=f'{config["dataset"]}-ehr/{config["task"]}/dl_models', version=f"{config['model']}")
 
     # main metric
     main_metric = "auroc" if config["task"] in ["mortality", "readmission"] else "mae"
@@ -401,14 +402,14 @@ if __name__ == "__main__":
 
             # Run the experiment
             try:
-                run_experiment = run_ml_experiment if model in ["CatBoost",     "DT", "RF", "XGBoost"] else run_dl_experiment
+                run_experiment = run_ml_experiment if model in ["CatBoost", "DT", "RF", "XGBoost"] else run_dl_experiment
                 config, perf, outs = run_experiment(config)
-            except Exception:
-                print(f"Error occurred while running the experiment for model {model} with shot {shot}.")
+            except Exception as e:
+                print(f"Error occurred while running the experiment for model {model} with shot {shot}: {e}.")
                 continue
 
             # Save the performance and outputs
-            save_dir = os.path.join(args.output_root, f"{args.dataset}/{args.task}/dl_models/{model}")
+            save_dir = os.path.join(args.output_root, f"{args.dataset}-ehr/{args.task}/dl_models/{model}")
             os.makedirs(save_dir, exist_ok=True)
 
             # Run bootstrap
