@@ -95,7 +95,7 @@ class MimicDataset(Dataset):
 
         # Remove batch dimension from tokenizer output
         inputs = {k: v.squeeze(0) for k, v in inputs.items()}
-        label = item[f'y_{self.task}'][0]
+        label = item[f'y_{self.task}'][0] if isinstance(item[f'y_{self.task}'], list) else item[f'y_{self.task}']
         inputs['labels'] = torch.tensor(label, dtype=torch.long)
 
         return inputs
