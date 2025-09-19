@@ -12,6 +12,7 @@ dependencies = [
     "annotated-types==0.7.0",
     "anyio==4.9.0",
     "attrs==25.3.0",
+    "catboost>=1.2.8",
     "certifi==2025.1.31",
     "charset-normalizer==3.4.1",
     "datasets>=2.14.4",
@@ -87,6 +88,7 @@ dependencies = [
     "typing-extensions==4.12.2",
     "tzdata==2025.2",
     "urllib3==2.3.0",
+    "xgboost>=3.0.5",
     "yarl==1.18.3",
     "zstandard==0.23.0",
 ]
