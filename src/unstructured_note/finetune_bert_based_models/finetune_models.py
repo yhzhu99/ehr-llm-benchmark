@@ -28,16 +28,18 @@ set_seed(42)
 # Get BERT models from config
 BERT_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "BERT"]
 
-parser = argparse.ArgumentParser(description='Fine-tune BERT models for MIMIC-III or MIMIC-IV')
-parser.add_argument('--model', type=str, required=True, choices=BERT_MODELS)
-parser.add_argument('--dataset', type=str, required=True, choices=["mimic-iv", "mimic-iii"])
-parser.add_argument('--task', type=str, required=True, choices=['mortality', 'readmission'])
-parser.add_argument('--batch_size', type=int, default=8)
-parser.add_argument('--learning_rate', type=float, default=2e-5)
-parser.add_argument('--epochs', type=int, default=30)
-parser.add_argument('--patience', type=int, default=5)
-parser.add_argument('--max_length', type=int, default=512)
-args = parser.parse_args()
+def parse_args():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(description='Fine-tune BERT models for MIMIC-III or MIMIC-IV')
+    parser.add_argument('--model', type=str, required=True, choices=BERT_MODELS)
+    parser.add_argument('--dataset', type=str, required=True, choices=["mimic-iv", "mimic-iii"])
+    parser.add_argument('--task', type=str, required=True, choices=['mortality', 'readmission'])
+    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--learning_rate', type=float, default=2e-5)
+    parser.add_argument('--epochs', type=int, default=30)
+    parser.add_argument('--patience', type=int, default=5)
+    parser.add_argument('--max_length', type=int, default=512)
+    return parser.parse_args()
 
 # Dataset class
 class MimicDataset(Dataset):
@@ -207,9 +209,10 @@ class BertFineTuner(L.LightningModule):
         self.validation_outputs.clear()
 
     def test_step(self, batch, batch_idx):
-        outputs = self.model(**batch)
+        outputs = self.model(**batch, output_hidden_states=True)
         loss = outputs.loss
         logits = outputs.logits
+        embedding = outputs.hidden_states[-1]
 
         # Get predictions
         preds = torch.softmax(logits, dim=1)[:, 1]  # Probability of positive class
@@ -218,6 +221,7 @@ class BertFineTuner(L.LightningModule):
         self.test_outputs.append({
             'preds': preds.detach(),
             'labels': labels.detach(),
+            'embedding': embedding[:, 0, :].detach().cpu(),
             'loss': loss.detach()
         })
 
@@ -226,6 +230,7 @@ class BertFineTuner(L.LightningModule):
     def on_test_epoch_end(self):
         preds = torch.cat([x['preds'] for x in self.test_outputs]).cpu()
         labels = torch.cat([x['labels'] for x in self.test_outputs]).cpu()
+        embedding = torch.cat([x['embedding'] for x in self.test_outputs]).cpu()
         loss = torch.stack([x['loss'] for x in self.test_outputs]).mean().cpu()
 
         # Calculate metrics
@@ -240,6 +245,7 @@ class BertFineTuner(L.LightningModule):
         self.test_results = {
             'y_pred': preds,
             'y_true': labels,
+            'embedding': embedding,
             'test_loss': loss
         }
 
@@ -251,7 +257,7 @@ class BertFineTuner(L.LightningModule):
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
 
-def run_finetuning():
+def run_finetuning(args):
     """Run the full fine-tuning and evaluation pipeline"""
     model_name = args.model
     task = args.task
@@ -328,4 +334,5 @@ def run_finetuning():
     return best_model.test_results
 
 if __name__ == "__main__":
-    run_finetuning()
+    args = parse_args()
+    run_finetuning(args)
