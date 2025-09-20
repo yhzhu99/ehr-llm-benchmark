@@ -30,19 +30,20 @@ set_seed(42)
 # Get GPT models from config
 GPT_MODELS = [model["model_name"] for model in MODELS_CONFIG if model["model_type"] == "GPT"]
 
-parser = argparse.ArgumentParser(description='Fine-tune GPT models for MIMIC-III or MIMIC-IV using PEFT LoRA')
-parser.add_argument('--model', type=str, required=True, choices=GPT_MODELS)
-parser.add_argument('--task', type=str, required=True, choices=['mortality', 'readmission'])
-parser.add_argument('--dataset', type=str, required=True, choices=["mimic-iv", "mimic-iii"])
-parser.add_argument('--batch_size', type=int, default=8)
-parser.add_argument('--learning_rate', type=float, default=2e-4)  # Lower LR for LoRA
-parser.add_argument('--epochs', type=int, default=30)
-parser.add_argument('--patience', type=int, default=5)
-parser.add_argument('--max_length', type=int, default=512)
-parser.add_argument('--lora_rank', type=int, default=8)  # New argument for LoRA rank
-parser.add_argument('--lora_alpha', type=int, default=16)  # New argument for LoRA alpha
-parser.add_argument('--lora_dropout', type=float, default=0.1)  # New argument for LoRA dropout
-args = parser.parse_args()
+def parse_args():
+    parser = argparse.ArgumentParser(description='Fine-tune GPT models for MIMIC-III or MIMIC-IV using PEFT LoRA')
+    parser.add_argument('--model', type=str, required=True, choices=GPT_MODELS)
+    parser.add_argument('--task', type=str, required=True, choices=['mortality', 'readmission'])
+    parser.add_argument('--dataset', type=str, required=True, choices=["mimic-iv", "mimic-iii"])
+    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--learning_rate', type=float, default=2e-4)  # Lower LR for LoRA
+    parser.add_argument('--epochs', type=int, default=30)
+    parser.add_argument('--patience', type=int, default=5)
+    parser.add_argument('--max_length', type=int, default=512)
+    parser.add_argument('--lora_rank', type=int, default=8)  # New argument for LoRA rank
+    parser.add_argument('--lora_alpha', type=int, default=16)  # New argument for LoRA alpha
+    parser.add_argument('--lora_dropout', type=float, default=0.1)  # New argument for LoRA dropout
+    return parser.parse_args()
 
 # Custom sampler to randomly select a subset of samples each epoch
 class RandomSubsetSampler(Sampler):
@@ -317,7 +318,7 @@ class GptLoraFineTuner(L.LightningModule):
         # LoRA typically works well with lower learning rates compared to IA3
         return torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
 
-def run_finetuning():
+def run_finetuning(args):
     """Run the full fine-tuning and evaluation pipeline"""
     model_name = args.model
     task = args.task
@@ -406,4 +407,5 @@ def run_finetuning():
     return best_model.test_results
 
 if __name__ == "__main__":
-    run_finetuning()
+    args = parse_args()
+    run_finetuning(args)
