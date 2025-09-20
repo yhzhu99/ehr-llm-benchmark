@@ -272,9 +272,10 @@ class GptLoraFineTuner(L.LightningModule):
         self.validation_outputs.clear()
 
     def test_step(self, batch, batch_idx):
-        outputs = self.model(**batch)
+        outputs = self.model(**batch, output_hidden_states=True)
         loss = outputs.loss
         logits = outputs.logits
+        embedding = outputs.hidden_states[-1]
 
         # Get predictions
         preds = torch.softmax(logits, dim=1)[:, 1]  # Probability of positive class
@@ -283,6 +284,7 @@ class GptLoraFineTuner(L.LightningModule):
         self.test_outputs.append({
             'preds': preds.detach(),
             'labels': labels.detach(),
+            'embedding': embedding[:, 0, :].detach().cpu(),
             'loss': loss.detach()
         })
 
@@ -291,6 +293,7 @@ class GptLoraFineTuner(L.LightningModule):
     def on_test_epoch_end(self):
         preds = torch.cat([x['preds'] for x in self.test_outputs]).cpu()
         labels = torch.cat([x['labels'] for x in self.test_outputs]).cpu()
+        embedding = torch.cat([x['embedding'] for x in self.test_outputs]).cpu()
         loss = torch.stack([x['loss'] for x in self.test_outputs]).mean().cpu()
 
         # Calculate metrics
@@ -305,6 +308,7 @@ class GptLoraFineTuner(L.LightningModule):
         self.test_results = {
             'y_pred': preds,
             'y_true': labels,
+            'embedding': embedding,
             'test_loss': loss
         }
 
