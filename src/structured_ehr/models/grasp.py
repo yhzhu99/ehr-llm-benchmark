@@ -48,13 +48,13 @@ def compute_codes(dataset, centers):
 def update_centers(dataset, codes, num_centers, device):
     num_points = dataset.size(0)
     dimension = dataset.size(1)
-    centers = torch.zeros(num_centers, dimension, dtype=torch.float).to(device=device)
-    cnt = torch.zeros(num_centers, dtype=torch.float)
+    centers = torch.zeros(num_centers, dimension, dtype=torch.float32).to(device=device)
+    cnt = torch.zeros(num_centers, dtype=torch.float32)
     centers.scatter_add_(0, codes.view(-1, 1).expand(-1, dimension).to(device=device), dataset)
-    cnt.scatter_add_(0, codes, torch.ones(num_points, dtype=torch.float))
+    cnt.scatter_add_(0, codes, torch.ones(num_points, dtype=torch.float32))
     # Avoiding division by zero
     # Not necessary if there are no duplicates among the data points
-    cnt = torch.where(cnt > 0.5, cnt, torch.ones(num_centers, dtype=torch.float))
+    cnt = torch.where(cnt > 0.5, cnt, torch.ones(num_centers, dtype=torch.float32))
     centers /= cnt.view(-1, 1).to(device=device)
     return centers
 
@@ -82,9 +82,9 @@ class GraphConvolution(nn.Module):
         super(GraphConvolution, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = nn.Parameter(torch.Tensor(in_features, out_features).float())
+        self.weight = nn.Parameter(torch.Tensor(in_features, out_features).to(dtype=torch.float32))
         if bias:
-            self.bias = nn.Parameter(torch.Tensor(out_features).float())
+            self.bias = nn.Parameter(torch.Tensor(out_features).to(dtype=torch.float32))
         else:
             self.register_parameter("bias", None)
         self.initialize_parameters()
@@ -96,10 +96,10 @@ class GraphConvolution(nn.Module):
             self.bias.data.uniform_(-std, std)
 
     def forward(self, adj, x, device):
-        y = torch.mm(x.float(), self.weight.float())
-        output = torch.mm(adj.float(), y.float())
+        y = torch.mm(x.to(dtype=torch.float32), self.weight.to(dtype=torch.float32))
+        output = torch.mm(adj.to(dtype=torch.float32), y.to(dtype=torch.float32))
         if self.bias is not None:
-            return output + self.bias.float().to(device=device)
+            return output + self.bias.to(dtype=torch.float32).to(device=device)
         else:
             return output
 
@@ -231,7 +231,7 @@ class GRASPLayer(nn.Module):
         else:
             A_mat = kneighbors_graph(np.array(centers.detach().cpu().numpy()),20,mode="connectivity",include_self=False,).toarray()
 
-        adj_mat = torch.tensor(A_mat).to(device=x.device)
+        adj_mat = torch.tensor(A_mat).to(dtype=torch.float32, device=x.device)
 
         e = self.relu(torch.matmul(hidden_t, centers.transpose(0, 1)))  # b clu_num
 

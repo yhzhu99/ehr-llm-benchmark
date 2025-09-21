@@ -265,7 +265,7 @@ def run_dl_experiment(config):
     config["los_info"] = los_info
 
     # logger
-    logger = CSVLogger(save_dir="logs/structured_ehr", name=f'{config["dataset"]}-ehr/{config["task"]}/dl_models', version=f"{config['model']}")
+    logger = CSVLogger(save_dir="logs/structured_ehr", name=f'{config["dataset"]}-ehr/{config["task"]}/dl_models', version=f"{config['model']}/{config['shot']}")
 
     # main metric
     main_metric = "auroc" if config["task"] in ["mortality", "readmission"] else "mae"
@@ -315,7 +315,7 @@ def run_ml_experiment(config):
     config["los_info"] = los_info
 
     # logger
-    logger = CSVLogger(save_dir="logs/structured_ehr", name=f'{config["dataset"]}-ehr/{config["task"]}/dl_models', version=f"{config['model']}")
+    logger = CSVLogger(save_dir="logs/structured_ehr", name=f'{config["dataset"]}-ehr/{config["task"]}/dl_models', version=f"{config['model']}/{config['shot']}")
 
     # main metric
     main_metric = "auroc" if config["task"] in ["mortality", "readmission"] else "mae"
