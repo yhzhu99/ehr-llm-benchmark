@@ -48,13 +48,16 @@ class EhrDataModule(L.LightningDataModule):
         self.test_dataset = EhrDataset(self.data_path, task, mode='test')
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True , collate_fn=self.pad_collate, num_workers=8)
+        multiprocessing_context='fork' if torch.backends.mps.is_available() else None
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=self.pad_collate, num_workers=8, multiprocessing_context=multiprocessing_context, persistent_workers=True)
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False , collate_fn=self.pad_collate, num_workers=8)
+        multiprocessing_context='fork' if torch.backends.mps.is_available() else None
+        return DataLoader(self.val_dataset, batch_size=self.batch_size, shuffle=False , collate_fn=self.pad_collate, num_workers=8, multiprocessing_context=multiprocessing_context, persistent_workers=True)
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False , collate_fn=self.pad_collate, num_workers=8)
+        multiprocessing_context='fork' if torch.backends.mps.is_available() else None
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, shuffle=False , collate_fn=self.pad_collate, num_workers=8, multiprocessing_context=multiprocessing_context, persistent_workers=True)
 
     def pad_collate(self, batch):
         xx, yy, pid = zip(*batch)
@@ -213,7 +216,7 @@ class MlPipeline(L.LightningModule):
 
         self.test_performance = {}
         self.test_outputs = {}
-        checkpoint_folder = f'logs/{config["dataset"]}-ehr/{config["task"]}/dl_models/{config["model"]}/checkpoints/'
+        checkpoint_folder = f'logs/structured_ehr/{config["dataset"]}-ehr/{config["task"]}/dl_models/{config["model"]}/checkpoints/'
         os.makedirs(checkpoint_folder, exist_ok=True)
         self.checkpoint_path = os.path.join(checkpoint_folder, 'best.ckpt')
 
@@ -262,7 +265,7 @@ def run_dl_experiment(config):
     config["los_info"] = los_info
 
     # logger
-    logger = CSVLogger(save_dir="logs", name=f'{config["dataset"]}-ehr/{config["task"]}/dl_models', version=f"{config['model']}")
+    logger = CSVLogger(save_dir="logs/structured_ehr", name=f'{config["dataset"]}-ehr/{config["task"]}/dl_models', version=f"{config['model']}")
 
     # main metric
     main_metric = "auroc" if config["task"] in ["mortality", "readmission"] else "mae"
@@ -281,6 +284,9 @@ def run_dl_experiment(config):
     if torch.cuda.is_available():
         accelerator = "gpu"
         devices = [1]
+    elif torch.backends.mps.is_available():
+        accelerator = "mps"
+        devices = [0]
     else:
         accelerator = "cpu"
         devices = 1
@@ -309,7 +315,7 @@ def run_ml_experiment(config):
     config["los_info"] = los_info
 
     # logger
-    logger = CSVLogger(save_dir="logs", name=f'{config["dataset"]}-ehr/{config["task"]}/dl_models', version=f"{config['model']}")
+    logger = CSVLogger(save_dir="logs/structured_ehr", name=f'{config["dataset"]}-ehr/{config["task"]}/dl_models', version=f"{config['model']}")
 
     # main metric
     main_metric = "auroc" if config["task"] in ["mortality", "readmission"] else "mae"
@@ -409,7 +415,7 @@ if __name__ == "__main__":
                 continue
 
             # Save the performance and outputs
-            save_dir = os.path.join(args.output_root, f"{args.dataset}-ehr/{args.task}/dl_models/{model}/{shot}")
+            save_dir = os.path.join(args.output_root, f"structured_ehr/{args.dataset}-ehr/{args.task}/dl_models/{model}/{shot}")
             os.makedirs(save_dir, exist_ok=True)
 
             # Run bootstrap
@@ -420,22 +426,6 @@ if __name__ == "__main__":
                 else:
                     perf_boot[key] = f'{value["mean"]:.2f}±{value["std"]:.2f}'
 
-            # Save performance and outputs
-            perf_boot = dict({
-                'model': model,
-                'dataset': args.dataset,
-                'task': args.task,
-                'shot': f'{shot} shot',
-            }, **perf_boot)
-            perf_df = pd.DataFrame(perf_boot, index=[0])
-            perf_df.to_csv(os.path.join(save_dir, "performance.csv"), index=False)
+            # Save outputs
             pd.to_pickle(outs, os.path.join(save_dir, "outputs.pkl"))
-            print(f"Performance and outputs saved to {save_dir}")
-
-            # Append performance to the all performance DataFrame
-            perf_all_df = pd.concat([perf_all_df, perf_df], ignore_index=True)
-
-    # Save all performance
-    perf_all_df.to_csv(os.path.join(args.output_root, f"{args.dataset}/{args.task}/dl_models/all_performance.csv"), index=False)
-    print(f"All performances saved to {os.path.join(args.output_root, f'{args.dataset}/{args.task}/dl_models/all_performance.csv')}")
-    print("All experiments completed.")
+            print(f"Outputs saved to {save_dir}")
