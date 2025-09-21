@@ -160,7 +160,7 @@ def main():
         DataModuleClass = BertMimicDataModule if args.model_type.lower() == 'bert' else GptMimicDataModule
         data_module = DataModuleClass(
             model_name=args.model, dataset=args.dataset, task=args.task,
-            batch_size=args.batch_size, max_length=args.max_length
+            batch_size=1, max_length=args.max_length
         )
         data_module.prepare_data()
         data_module.tokenizer = tokenizer # Ensure consistent tokenizer
