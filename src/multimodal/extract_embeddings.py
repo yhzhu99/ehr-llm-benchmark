@@ -121,7 +121,8 @@ def extract_structured_embeddings(model, dataloader, device):
             from src.structured_ehr.utils.sequence_handler import unpad_batch
             _, y_unpadded = unpad_batch(x.cpu(), y, lens)
 
-            all_embeddings.append(embedding.cpu()[:, -1])
+            embedding = embedding.cpu()[:, -1] if len(embedding.shape) == 3 else embedding.cpu()
+            all_embeddings.append(embedding)
             all_labels.append(torch.tensor(y_unpadded))
             all_pids.extend(pid)
 
@@ -151,7 +152,7 @@ def main():
 
     if args.modality == 'text':
         print("\n--- Running Text Model (BERT/GPT) Embedding Extraction ---")
-        output_dir = Path(f"logs/multimodal/{args.dataset}/embeddings/{args.model}")
+        output_dir = Path(f"logs/multimodal/{args.dataset}/{args.task}/{args.model}/embeddings")
         output_dir.mkdir(parents=True, exist_ok=True)
 
         model, tokenizer = load_text_model_and_tokenizer(args)
