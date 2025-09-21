@@ -409,7 +409,7 @@ if __name__ == "__main__":
                 continue
 
             # Save the performance and outputs
-            save_dir = os.path.join(args.output_root, f"{args.dataset}-ehr/{args.task}/dl_models/{model}")
+            save_dir = os.path.join(args.output_root, f"{args.dataset}-ehr/{args.task}/dl_models/{model}/{shot}")
             os.makedirs(save_dir, exist_ok=True)
 
             # Run bootstrap
