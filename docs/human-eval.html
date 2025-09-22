@@ -62,7 +62,7 @@
   }
   .btn:disabled{opacity:.6; cursor:not-allowed; filter:grayscale(.2)}
   .btn:hover{transform:translateY(-1px)}
-  select, input[type="text"], textarea{
+  select, input[type="text"], input[type="number"], textarea{
     width:100%; background:#fff; border:1px solid var(--border); color:var(--text);
     padding:10px 12px; border-radius:10px; outline:none; font-size:14px;
   }
@@ -77,7 +77,14 @@
     color:#fff; background:linear-gradient(180deg,#3b82f6,#2563eb); border-color:#1e40af
   }
   .home-tab{padding:8px 12px; border-radius:999px; border:1px solid var(--border); background:#fff;}
-  .task-desc{margin-top:8px; color:var(--muted); font-size:13px}
+
+  /* View Mode Tabs */
+  .view-mode-container{display: flex; gap: 10px; align-items: center; flex-wrap:wrap;}
+  .view-mode-tab {padding:8px 12px; border-radius:999px; border:1px solid var(--border); background:#fff; cursor:pointer;}
+  .view-mode-tab.active {background:#dbeafe; color:#1e3a8a; border-color:#93c5fd; font-weight:bold;}
+  .sample-settings {display: flex; gap: 8px; align-items: center;}
+  .sample-settings input[type="number"] {width: 70px; padding: 6px 8px;}
+
 
   main{display:grid; grid-template-columns:340px 1fr; gap:16px; padding:18px; max-width:1280px; margin:0 auto}
   @media (max-width:1000px){ main{grid-template-columns:1fr} .aside{order:2} .content{order:1} }
@@ -85,7 +92,12 @@
     background:linear-gradient(180deg,var(--panel),var(--panel-2));
     border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);
   }
-  .aside{padding:10px}
+  .aside{
+    padding:10px;
+    position: sticky;
+    top: 18px; /* Match parent's padding-top for alignment */
+    align-self: start;
+  }
   .searchbar{display:flex; gap:8px; padding:10px}
   .filters{display:flex; gap:8px; flex-wrap:wrap; padding:0 10px 10px}
   .toggle{
@@ -157,6 +169,8 @@
       <div class="topbar">
         <div class="brand" id="brand">🩺 临床推理问卷</div>
         <div class="grow"></div>
+        <div id="viewModeContainer" class="view-mode-container"></div>
+        <div class="grow"></div>
         <div class="top-actions">
           <span class="hint" id="autoStatus">正在自动扫描 <span class="kbd">cases</span>…</span>
           <a href="/" class="btn linklike" title="回到主页 /">🏠 /</a>
@@ -174,10 +188,6 @@
         </div>
       </div>
       <div class="tabs" id="tabs"></div>
-      <div class="task-desc" id="taskDesc"></div>
-      <div class="hint" id="helpLine">
-        系统将自动从相对路径 <code>cases/</code> 递归扫描四个任务的数据。评分与勾选自动保存在浏览器 LocalStorage；点击“提交 / 导出”生成 JSON。
-      </div>
     </div>
   </header>
 
@@ -247,7 +257,6 @@ const I18N = {
     export:"⬇️ 提交 / 导出",
     import:"↩️ 导入结果",
     rescan:"🔄 重新扫描",
-    help:'系统将自动从相对路径 <code>cases/</code> 递归扫描四个任务的数据。评分与勾选自动保存在浏览器 LocalStorage；点击“提交 / 导出”生成 JSON。',
     searchPH:"🔎 搜索病例 ID、模型名、或路径片段…",
     toggleHide:"只看未完成",
     toggleShuffle:"随机顺序",
@@ -282,7 +291,6 @@ const I18N = {
     t_mort_desc:ds=>`基于 ${ds}，判断患者是否在住院期间死亡。`,
     t_read_title:"30-day readmission prediction",
     t_read_desc:ds=>`基于 ${ds}，判断患者在出院后30天内是否再次入院。`,
-    current:(ds,tt,dd)=>`当前：${ds} · ${tt} — ${dd}`,
     modalTitle:"提交 / 导出",
     modalAnnot:"评估者 ID / 姓名",
     modalNote:"附加备注（可选）",
@@ -297,13 +305,16 @@ const I18N = {
     tabsHome:"🏠 /",
     tabsMort:"mortality",
     tabsRead:"readmission",
+    // 新增
+    tabAll:"全部 Case",
+    tabSampled:"抽样 Case",
+    sampleSizeLabel:"每个任务抽样数：",
   },
   en: {
     brand:"🩺 Clinical Reasoning Survey",
     export:"⬇️ Submit / Export",
     import:"↩️ Import",
     rescan:"🔄 Rescan",
-    help:'Auto-scans <code>cases/</code> (same-origin) for the four tasks. Ratings persist in LocalStorage. Click “Submit / Export” to download JSON.',
     searchPH:"🔎 Search by case ID, model, or path…",
     toggleHide:"Only Unfinished",
     toggleShuffle:"Shuffle",
@@ -338,7 +349,6 @@ const I18N = {
     t_mort_desc:ds=>`Based on ${ds}, determine whether the patient dies during the hospital stay.`,
     t_read_title:"30-day readmission prediction",
     t_read_desc:ds=>`Based on ${ds}, determine whether the patient is readmitted within 30 days after discharge.`,
-    current:(ds,tt,dd)=>`Current: ${ds} · ${tt} — ${dd}`,
     modalTitle:"Submit / Export",
     modalAnnot:"Annotator ID / Name",
     modalNote:"Extra note (optional)",
@@ -353,6 +363,10 @@ const I18N = {
     tabsHome:"🏠 /",
     tabsMort:"mortality",
     tabsRead:"readmission",
+    // 新增
+    tabAll:"All Cases",
+    tabSampled:"Sampled Cases",
+    sampleSizeLabel:"Sample size per task:",
   }
 };
 let LANG = (localStorage.getItem(LANG_KEY) || "zh");
@@ -396,13 +410,14 @@ let state = {
   activeCombo: COMBOS[0].id,
   activeIndex: -1,       // global index in state.cases
   filteredIdxs: [],
-  prefs: { hideDone:false, shuffle:false },
+  prefs: { hideDone:false, shuffle:false, sampleSize: 5 }, // 新增抽样数量
   responses: {},         // path -> response
   scanning:false,
+  viewMode: 'all', // 新增 'all' or 'sampled'
 };
 
+const viewModeContainerEl = $("#viewModeContainer");
 const tabsEl = $("#tabs");
-const taskDescEl = $("#taskDesc");
 const caseListEl = $("#caseList");
 const contentEl = $("#content");
 const searchBoxEl = $("#searchBox");
@@ -480,7 +495,6 @@ function applyI18n(){
   exportBtnEl.textContent = t("export");
   importBtnEl.textContent = t("import");
   rescanBtn.textContent = t("rescan");
-  $("#helpLine").innerHTML = t("help");
   searchBoxEl.placeholder = t("searchPH");
   toggleHideDoneEl.textContent = t("toggleHide");
   toggleShuffleEl.textContent = t("toggleShuffle");
@@ -489,6 +503,7 @@ function applyI18n(){
   $("#progressLabel").textContent = t("progressLabel");
   $("#storageHint").textContent = t("storageHint");
   autoStatusEl.innerHTML = `${t("autoScan")} <span class="kbd">${ROOT_BASE}</span>…`;
+  renderViewControls(); // 渲染视图模式
   renderTabs();
   refreshList(true);
   if (state.activeIndex>=0) renderCase(state.cases[state.activeIndex]); // 即时更新中英文内容
@@ -531,6 +546,7 @@ async function autoScanAll(){
       const it = state.cases[i];
       state.byCombo.get(getComboId(it.datasetGroup, it.task)).push(i);
     }
+    renderViewControls();
     renderTabs();
     refreshList();
     if (state.filteredIdxs.length) openCaseByFilteredIndex(0);
@@ -574,12 +590,58 @@ async function fetchJson(url){
  * =========================== */
 function comboLabel(comboId){
   const [ds, task] = comboId.split("::");
-  // 顶部标签简洁：{dataset} mortality/readmission
   return `${ds} ${SIMPLE_TASK_TAG(task)}`;
 }
+// 新增：渲染主视图切换（全部/抽样）
+function renderViewControls() {
+    viewModeContainerEl.innerHTML = '';
+
+    const allBtn = document.createElement('div');
+    allBtn.className = 'view-mode-tab' + (state.viewMode === 'all' ? ' active' : '');
+    allBtn.textContent = t('tabAll');
+    allBtn.onclick = () => {
+        state.viewMode = 'all';
+        renderViewControls();
+        refreshList(true);
+    };
+    viewModeContainerEl.appendChild(allBtn);
+
+    const sampledBtn = document.createElement('div');
+    sampledBtn.className = 'view-mode-tab' + (state.viewMode === 'sampled' ? ' active' : '');
+    sampledBtn.textContent = t('tabSampled');
+    sampledBtn.onclick = () => {
+        state.viewMode = 'sampled';
+        renderViewControls();
+        refreshList(true);
+    };
+    viewModeContainerEl.appendChild(sampledBtn);
+
+    if (state.viewMode === 'sampled') {
+        const settingsDiv = document.createElement('div');
+        settingsDiv.className = 'sample-settings';
+        const label = document.createElement('span');
+        label.className = 'hint';
+        label.textContent = t('sampleSizeLabel');
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = 1;
+        input.value = state.prefs.sampleSize;
+        input.onchange = (e) => {
+            const val = parseInt(e.target.value, 10);
+            if (val > 0) {
+                state.prefs.sampleSize = val;
+                savePrefs();
+                refreshList(true);
+            }
+        };
+        settingsDiv.appendChild(label);
+        settingsDiv.appendChild(input);
+        viewModeContainerEl.appendChild(settingsDiv);
+    }
+}
+
 function renderTabs(){
   tabsEl.innerHTML = "";
-  // Home 按钮
   const home = document.createElement("a");
   home.className = "home-tab";
   home.textContent = t("tabsHome");
@@ -594,13 +656,6 @@ function renderTabs(){
     b.onclick = ()=>{ state.activeCombo=c.id; renderTabs(); refreshList(true); };
     tabsEl.appendChild(b);
   }
-  const [ds, task] = state.activeCombo.split("::");
-  const meta = TASK_META[task];
-  const dsLabel = DATASET_LABEL[ds]();
-  taskDescEl.textContent = (LANG==="zh"
-    ? I18N.zh.current(dsLabel, meta.title(), meta.desc(dsLabel))
-    : I18N.en.current(dsLabel, meta.title(), meta.desc(dsLabel))
-  );
 }
 
 /* ===========================
@@ -617,7 +672,17 @@ function refreshList(preserve=false){
   const prevScroll = caseListEl.scrollTop;
 
   const comboIdxs = state.byCombo.get(state.activeCombo)||[];
-  let idxs = comboIdxs.slice();
+  let idxs;
+
+  // 核心修改：根据视图模式决定初始列表
+  if (state.viewMode === 'sampled') {
+    const fullList = comboIdxs.slice();
+    const shuffled = shuffle(fullList); // 复用已有的 shuffle 函数
+    const sampleSize = state.prefs.sampleSize || 5;
+    idxs = shuffled.slice(0, sampleSize);
+  } else { // 'all' mode
+    idxs = comboIdxs.slice();
+  }
 
   const q = searchBoxEl.value.trim().toLowerCase();
   if (q){
@@ -644,6 +709,14 @@ function refreshList(preserve=false){
   if (preserve && prevPath){
     const k = state.filteredIdxs.findIndex(i=> state.cases[i].path===prevPath);
     if (k>=0) { state.activeIndex = state.filteredIdxs[k]; highlightActive(prevPath); ensureActiveVisible(); }
+  } else {
+    // 如果列表更新且没有保留项，默认打开第一个
+    if (state.filteredIdxs.length > 0) {
+      openCaseByFilteredIndex(0);
+    } else {
+      contentEl.innerHTML = ''; // 清空内容区
+      state.activeIndex = -1;
+    }
   }
   caseListEl.scrollTop = prevScroll;
 }
@@ -716,7 +789,6 @@ function renderCase(c){
   const answer = js.answer;
   const label  = js.label;
 
-  // 根据语言即时切换 input/think 字段（优先 *_cn）
   const inputText = (LANG==="zh" && js.input_cn) ? js.input_cn : js.input;
   const thinkText = (LANG==="zh" && js.think_cn) ? js.think_cn : js.think;
 
@@ -728,41 +800,18 @@ function renderCase(c){
   };
 
   contentEl.innerHTML = `
-    <div class="casehead">
-      <div>
-        <div class="caseid">${escapeHtml(c.id)}</div>
-        <div class="chips">
-          <div class="chip">${escapeHtml(DATASET_LABEL[c.datasetGroup]())}</div>
-          <div class="chip">${escapeHtml(TASK_META[c.task].title())}</div>
-          <div class="chip">${t("model")}：<b>${escapeHtml(model)}</b></div>
-        </div>
-      </div>
-    </div>
 
-    <details open style="margin-top:12px">
-      <summary>${t("inputTitle")}</summary>
-      <pre>${escapeHtml(inputText ?? "—")}</pre>
-    </details>
-
-    <details open>
-      <summary>${t("thinkTitle")}</summary>
-      <pre>${escapeHtml(thinkText ?? "—")}</pre>
-    </details>
-
+    <details open style="margin-top:12px"> <summary>${t("inputTitle")}</summary> <pre>${escapeHtml(inputText ?? "—")}</pre> </details>
+    <details open> <summary>${t("thinkTitle")}</summary> <pre>${escapeHtml(thinkText ?? "—")}</pre> </details>
     <details open>
       <summary>${t("alTitle")}</summary>
-      <div class="al-wrap" style="margin-top:6px">
+      <div class="al-wrap" style="margin-top:6px; display:flex; flex-wrap:wrap; gap:8px;">
         <span class="pill"><b>${t("answer")}:</b> ${escapeHtml(String(answer))}</span>
         <span class="pill"><b>${t("label")}:</b> ${escapeHtml(String(label))}</span>
         <span class="pill"><b>${t("path")}:</b> <span style="word-break:break-all">${escapeHtml(c.path)}</span></span>
       </div>
     </details>
-
-    <details>
-      <summary>${t("rawTitle")}</summary>
-      <pre>${escapeHtml(JSON.stringify(js, null, 2))}</pre>
-    </details>
-
+    <details> <summary>${t("rawTitle")}</summary> <pre>${escapeHtml(JSON.stringify(js, null, 2))}</pre> </details>
     <div class="panel" style="padding:12px; margin-top:12px">
       <div class="grid3">
         <div class="block" style="border:none; padding:0; background:transparent">
@@ -780,7 +829,6 @@ function renderCase(c){
       </div>
       <div class="hint" style="margin-top:6px">${t("rateHint")}</div>
     </div>
-
     <div class="grid2" style="margin-top:12px">
       <div class="block checklist" style="background:#fff">
         <div style="font-weight:700; margin-bottom:6px">${t("checkTitle")}</div>
@@ -795,7 +843,6 @@ function renderCase(c){
         <textarea id="commentBox" rows="8" placeholder="">${escapeHtml(resp.comment||"")}</textarea>
       </div>
     </div>
-
     <div class="savebar">
       <div class="muted">
         <b>${t("status")}</b>
@@ -809,21 +856,13 @@ function renderCase(c){
     </div>
   `;
 
-  // Wire stars
   contentEl.querySelectorAll(".star").forEach(el=>{
     el.addEventListener("click", ()=>{
-      const field = el.dataset.field;
-      const val = +el.dataset.val;
-      const r = getCurrentResponse(c);
-      r[field] = val;
-      r.updatedAt = fmtDate(new Date());
-      state.responses[key]=r; persistResponses();
-      renderStarGroup(field, val);
-      realtimeStatusUpdate(c);
-      showToast();
+      const field = el.dataset.field; const val = +el.dataset.val; const r = getCurrentResponse(c);
+      r[field] = val; r.updatedAt = fmtDate(new Date()); state.responses[key]=r; persistResponses();
+      renderStarGroup(field, val); realtimeStatusUpdate(c); showToast();
     });
   });
-  // checkboxes
   ["err_factual","err_missing","err_logic","err_irrelevant","err_calibration"].forEach(f=>{
     const box = $("#"+f);
     if (box){ box.checked = !!resp[f]; box.addEventListener("change", ()=>{
@@ -831,22 +870,17 @@ function renderCase(c){
       state.responses[key]=r; persistResponses(); showToast();
     }) }
   });
-  // comment
   $("#commentBox").addEventListener("input", ()=>{
     const r=getCurrentResponse(c); r.comment = $("#commentBox").value; r.updatedAt=fmtDate(new Date());
     state.responses[key]=r; persistResponses();
   });
 
-  // buttons
   $("#btnSave").onclick = ()=>{ saveCurrentCase(c); showToast(); };
   $("#btnSaveNext").onclick = ()=>{ saveCurrentCase(c); jumpNext(1); };
   $("#btnNextUnrated").onclick = ()=> jumpNextUnrated();
 }
 function renderStars(field, current){
-  const stars = [1,2,3,4,5].map(v=>{
-    const cls = (current>=v) ? "star on":"star";
-    return `<span class="${cls}" data-field="${field}" data-val="${v}" title="${v}">★</span>`;
-  }).join("");
+  const stars = [1,2,3,4,5].map(v=>`<span class="${(current>=v) ? "star on":"star"}" data-field="${field}" data-val="${v}" title="${v}">★</span>`).join("");
   return `<div class="stars" id="grp_${field}">${stars}</div>`;
 }
 function renderStarGroup(field,current){
@@ -859,10 +893,8 @@ function renderCheck(id,label){
 function getCurrentResponse(c){
   const key=c.path, existing=state.responses[key]||{};
   return Object.assign({
-    path:c.path, datasetGroup:c.datasetGroup, task:c.task, case_id:c.id,
-    answer:c.json?.answer, label:c.json?.label,
-    score_accuracy:0, score_reasoning:0, score_clarity:0,
-    err_factual:false, err_missing:false, err_logic:false, err_irrelevant:false, err_calibration:false,
+    path:c.path, datasetGroup:c.datasetGroup, task:c.task, case_id:c.id, answer:c.json?.answer, label:c.json?.label,
+    score_accuracy:0, score_reasoning:0, score_clarity:0, err_factual:false, err_missing:false, err_logic:false, err_irrelevant:false, err_calibration:false,
     comment:"", createdAt:fmtDate(new Date()), updatedAt:fmtDate(new Date()),
   }, existing);
 }
@@ -871,12 +903,10 @@ function saveCurrentCase(c){
   state.responses[key]=r; persistResponses(); realtimeStatusUpdate(c);
 }
 function realtimeStatusUpdate(c){
-  const key=c.path, r=state.responses[key];
-  const done = isCompleted(r);
+  const key=c.path, r=state.responses[key]; const done = isCompleted(r);
   const statusEl = $("#statusInline");
   statusEl.innerHTML = done ? `<span style="color: var(--ok)">${t("done")}</span>` : `<span class="danger">${t("todo")}</span>`;
-  updateListItemStatus(key);
-  computeProgress();
+  updateListItemStatus(key); computeProgress();
 }
 function jumpNext(step=1){
   if (!state.filteredIdxs.length) return;
@@ -905,8 +935,7 @@ function exportResultsFlow(){
   $("#exportConfirm").textContent = t("modalExport");
   $("#annotatorInput").placeholder = t("modalAnnot");
   $("#exportNote").placeholder = t("modalNote");
-  mask.style.display="flex";
-  mask.setAttribute("aria-hidden","false");
+  mask.style.display="flex"; mask.setAttribute("aria-hidden","false");
   $("#annotatorInput").focus();
 }
 function closeExportModal(){
@@ -915,51 +944,33 @@ function closeExportModal(){
 }
 function doExport(annotator, extraNote){
   if (!annotator || !annotator.trim()){
-    showToast(t("needAnnot"));
-    $("#annotatorInput").focus();
-    return;
+    showToast(t("needAnnot")); $("#annotatorInput").focus(); return;
   }
   const results = [];
   for(const c of state.cases){
     const key=c.path, r=state.responses[key];
-    if (!r) continue; // 仅导出已保存的
+    if (!r) continue;
     results.push({
-      id:c.id,
-      dataset_group:c.datasetGroup,
-      task:c.task,
-      path:c.path,
-      model:c.json?.model ?? null,
-      answer:c.json?.answer ?? null,
-      label:c.json?.label ?? null,
+      id:c.id, dataset_group:c.datasetGroup, task:c.task, path:c.path, model:c.json?.model ?? null,
+      answer:c.json?.answer ?? null, label:c.json?.label ?? null,
       rating:{
-        clinical_accuracy_safety: r.score_accuracy || 0,
-        reasoning_completeness: r.score_reasoning || 0,
+        clinical_accuracy_safety: r.score_accuracy || 0, reasoning_completeness: r.score_reasoning || 0,
         clarity_usefulness: r.score_clarity || 0
       },
       errors:{
-        factual_inconsistency: !!r.err_factual,
-        missing_key_info: !!r.err_missing,
-        logical_flaw: !!r.err_logic,
-        irrelevant_content: !!r.err_irrelevant,
-        miscalibrated_confidence: !!r.err_calibration
+        factual_inconsistency: !!r.err_factual, missing_key_info: !!r.err_missing, logical_flaw: !!r.err_logic,
+        irrelevant_content: !!r.err_irrelevant, miscalibrated_confidence: !!r.err_calibration
       },
-      comment: r.comment || "",
-      annotator_id: annotator,
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt
+      comment: r.comment || "", annotator_id: annotator, createdAt: r.createdAt, updatedAt: r.updatedAt
     });
   }
   const meta = {
-    tool:"clinical-human-eval-error-analysis",
-    version:"3.0.0",
-    exportedAt: fmtDate(new Date()),
-    annotator_id: annotator,
-    note: extraNote || "",
-    dataset_root: ROOT_BASE,
-    combos: COMBOS.map(c=> c.id),
-    language: LANG
+    tool:"clinical-human-eval-error-analysis", version:"3.1.0", exportedAt: fmtDate(new Date()),
+    annotator_id: annotator, note: extraNote || "", dataset_root: ROOT_BASE, combos: COMBOS.map(c=> c.id), language: LANG
   };
-  downloadJSON({meta, results}, `human_eval_results_${new Date().toISOString().slice(0,10)}.json`);
+  // 核心修改：使用标注者ID命名文件
+  const safeAnnotator = annotator.replace(/[^a-zA-Z0-9_-]/g, '_'); // 移除特殊字符，确保文件名合法
+  downloadJSON({meta, results}, `${safeAnnotator}_eval_results.json`);
   closeExportModal();
 }
 function mergeImportedResults(obj){
@@ -968,19 +979,11 @@ function mergeImportedResults(obj){
   for(const r of arr){
     if (!r?.path) continue;
     state.responses[r.path] = {
-      path:r.path, datasetGroup:r.dataset_group, task:r.task, case_id:r.id,
-      answer:r.answer, label:r.label,
-      score_accuracy: r.rating?.clinical_accuracy_safety || 0,
-      score_reasoning: r.rating?.reasoning_completeness || 0,
-      score_clarity: r.rating?.clarity_usefulness || 0,
-      err_factual: !!r.errors?.factual_inconsistency,
-      err_missing: !!r.errors?.missing_key_info,
-      err_logic: !!r.errors?.logical_flaw,
-      err_irrelevant: !!r.errors?.irrelevant_content,
-      err_calibration: !!r.errors?.miscalibrated_confidence,
-      comment:r.comment || "",
-      createdAt: r.createdAt || fmtDate(new Date()),
-      updatedAt: r.updatedAt || fmtDate(new Date()),
+      path:r.path, datasetGroup:r.dataset_group, task:r.task, case_id:r.id, answer:r.answer, label:r.label,
+      score_accuracy: r.rating?.clinical_accuracy_safety || 0, score_reasoning: r.rating?.reasoning_completeness || 0, score_clarity: r.rating?.clarity_usefulness || 0,
+      err_factual: !!r.errors?.factual_inconsistency, err_missing: !!r.errors?.missing_key_info, err_logic: !!r.errors?.logical_flaw,
+      err_irrelevant: !!r.errors?.irrelevant_content, err_calibration: !!r.errors?.miscalibrated_confidence,
+      comment:r.comment || "", createdAt: r.createdAt || fmtDate(new Date()), updatedAt: r.updatedAt || fmtDate(new Date()),
     };
     merged++;
   }
@@ -998,23 +1001,17 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#langSelect").addEventListener("change", ()=>{
     LANG = $("#langSelect").value || "zh";
     localStorage.setItem(LANG_KEY, LANG);
-    applyI18n(); // 即时全量更新（无需重新点 case/tab）
+    applyI18n();
   });
 
-  loadPrefs();
-  loadResponses();
-  applyI18n();
+  loadPrefs(); loadResponses();
+  applyI18n(); // applyI18n会调用renderViewControls和renderTabs
   autoScanAll();
 
-  rescanBtn.addEventListener("click", ()=>{
-    showToast(t("reScanTip"));
-    autoScanAll();
-  });
-
+  rescanBtn.addEventListener("click", ()=>{ showToast(t("reScanTip")); autoScanAll(); });
   searchBoxEl.addEventListener("input", ()=> refreshList(true));
   toggleHideDoneEl.addEventListener("click", ()=>{ state.prefs.hideDone=!state.prefs.hideDone; savePrefs(); setToggle(toggleHideDoneEl,state.prefs.hideDone); refreshList(true); });
   toggleShuffleEl.addEventListener("click", ()=>{ state.prefs.shuffle=!state.prefs.shuffle; savePrefs(); setToggle(toggleShuffleEl,state.prefs.shuffle); refreshList(true); });
-
   exportBtnEl.addEventListener("click", exportResultsFlow);
   $("#exportCancel").addEventListener("click", closeExportModal);
   $("#exportConfirm").addEventListener("click", ()=>{
@@ -1022,17 +1019,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const note = $("#exportNote").value.trim();
     doExport(annot, note);
   });
-  $("#exportModalMask").addEventListener("click", (e)=>{
-    if (e.target === $("#exportModalMask")) closeExportModal();
-  });
-  document.addEventListener("keydown", (e)=>{
-    if (e.key==="Escape") closeExportModal();
-  });
-
+  $("#exportModalMask").addEventListener("click", (e)=>{ if (e.target === $("#exportModalMask")) closeExportModal(); });
+  document.addEventListener("keydown", (e)=>{ if (e.key==="Escape") closeExportModal(); });
   importBtnEl.addEventListener("click", ()=> importFileEl.click());
   importFileEl.addEventListener("change", async (e)=>{
-    const f = e.target.files?.[0];
-    if (!f) return;
+    const f = e.target.files?.[0]; if (!f) return;
     try{ const txt=await f.text(); const obj=JSON.parse(txt); mergeImportedResults(obj); }
     catch(err){ alert(LANG==="zh"?"导入失败：不是有效的 JSON。":"Import failed: invalid JSON."); }
   });
