@@ -509,54 +509,82 @@ function applyI18n(){
   if (state.activeIndex>=0) renderCase(state.cases[state.activeIndex]); // 即时更新中英文内容
 }
 
-/* ===========================
- * Auto-scan directory (same-origin)
- * =========================== */
 async function autoScanAll(){
   if (state.scanning) return;
   state.scanning = true;
   exportBtnEl.disabled = true;
-  autoStatusEl.textContent = (LANG === "zh" ? "正在扫描…" : "Scanning…");
+  autoStatusEl.textContent = (LANG === "zh" ? "正在加载清单…" : "Loading manifest…");
   contentEl.innerHTML = `<div style="padding:16px"><div class="muted">${t("loading", "…")}</div></div>`;
   state.cases = [];
   state.byCombo = new Map(); for(const c of COMBOS) state.byCombo.set(c.id, []);
-  try{
-    const groups = ["structured_ehr","unstructured_note"];
-    const tasks  = ["mimic-iv-mortality","mimic-iv-readmission"];
-    let totalFound = 0;
-    for(const g of groups){
-      for(const task of tasks){
-        const base = ROOT_BASE + `${g}/${task}/`;
-        const files = await listJsonFiles(base);
-        for(const url of files){
-          const id = decodeURIComponent(url.split("/").filter(Boolean).pop().replace(/\.json$/,""));
-          try{
-            const js = await fetchJson(url);
-            if (!js || typeof js!=="object") continue;
-            const item = { id, datasetGroup:g, task, path: `${base}${id}.json`, url, json: js };
-            state.cases.push(item);
-            totalFound++;
-          }catch(e){ console.warn("Failed to fetch", url, e); }
-        }
+
+  try {
+    // 步骤 1: 获取清单文件
+    const manifestRes = await fetch('file-manifest.json', { cache: "no-cache" });
+    if (!manifestRes.ok) throw new Error("Could not fetch file-manifest.json. Did you generate it?");
+    const manifest = await manifestRes.json();
+
+    // 步骤 2: 创建所有 fetch 任务
+    const allFilePromises = [];
+    for (const comboId in manifest) {
+      if (manifest.hasOwnProperty(comboId)) {
+        manifest[comboId].forEach(filePath => {
+          allFilePromises.push(
+            fetch(filePath, { cache: "no-cache" })
+              .then(res => {
+                if (!res.ok) throw new Error(`Failed to load ${filePath}`);
+                return res.json();
+              })
+              .then(js => {
+                if (!js || typeof js !== "object") return null;
+                const pathParts = filePath.split('/');
+                const id = decodeURIComponent(pathParts.pop().replace(/\.json$/, ""));
+                const task = pathParts.pop();
+                const datasetGroup = pathParts.pop();
+                return { id, datasetGroup, task, path: filePath, json: js };
+              })
+              .catch(e => {
+                console.warn(e);
+                return null; // 如果某个文件加载失败，返回 null
+              })
+          );
+        });
       }
     }
+
+    // 步骤 3: 并行执行所有 fetch
+    const results = await Promise.all(allFilePromises);
+
+    // 步骤 4: 填充 state.cases
+    state.cases = results.filter(Boolean); // 过滤掉加载失败的 null
+    let totalFound = state.cases.length;
+
+    // 步骤 5: 排序和分组
     state.cases.sort(cmpCaseId);
     state.byCombo = new Map(); for(const c of COMBOS) state.byCombo.set(c.id, []);
-    for(let i=0;i<state.cases.length;i++){
+    for(let i = 0; i < state.cases.length; i++){
       const it = state.cases[i];
-      state.byCombo.get(getComboId(it.datasetGroup, it.task)).push(i);
+      const comboId = getComboId(it.datasetGroup, it.task);
+      if(state.byCombo.has(comboId)){
+          state.byCombo.get(comboId).push(i);
+      }
     }
+
+    // 步骤 6: 渲染 UI
     renderViewControls();
     renderTabs();
     refreshList();
     if (state.filteredIdxs.length) openCaseByFilteredIndex(0);
-    exportBtnEl.disabled = state.cases.length===0;
-    autoStatusEl.textContent = (LANG==="zh" ? `已发现 ${totalFound} 个病例` : `Discovered ${totalFound} cases`);
-  }catch(err){
+    exportBtnEl.disabled = state.cases.length === 0;
+    autoStatusEl.textContent = (LANG === "zh" ? `已发现 ${totalFound} 个病例` : `Discovered ${totalFound} cases`);
+  } catch(err) {
     console.error(err);
-    autoStatusEl.textContent = (LANG==="zh" ? "扫描失败（请确认目录可被服务器列出）" : "Scan failed (ensure server lists directories)");
+    const errorMsg = LANG === "zh"
+      ? "扫描失败（请确认根目录下的 `file-manifest.json` 文件存在且可访问）"
+      : "Scan failed (ensure `file-manifest.json` exists and is accessible in the root)";
+    autoStatusEl.textContent = errorMsg;
     contentEl.innerHTML = `<div style="padding:16px"><div class="danger">${escapeHtml(autoStatusEl.textContent)}</div><div class="hint">${t("empty2")}</div></div>`;
-  }finally{
+  } finally {
     state.scanning = false;
   }
 }
