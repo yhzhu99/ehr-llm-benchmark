@@ -673,8 +673,8 @@ function renderTabs(){
   const home = document.createElement("a");
   home.className = "home-tab";
   home.textContent = t("tabsHome");
-  home.href = "/";
-  home.title = "/";
+  home.href = ".";
+  home.title = ".";
   tabsEl.appendChild(home);
 
   for(const c of COMBOS){
