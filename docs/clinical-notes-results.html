@@ -75,6 +75,7 @@
                     <li><a href="index.html">Home</a></li>
                     <li><a href="structured-ehr-results.html">Structured EHR Results</a></li>
                     <li><a href="clinical-notes-results.html">Clinical Notes Results</a></li>
+                    <li><a href="human-eval.html">Human Evaluation</a></li>
                 </ul>
             </div>
         </nav>
@@ -613,7 +614,7 @@
                 const tabNameMatch = onclickAttr.match(/openTab\s*\(\s*event\s*,\s*'([^']+)'\s*\)/);
                 if (tabNameMatch && tabNameMatch[1]) {
                     // Call openTab for the default active tab to initialize it correctly
-                    openTab(null, tabNameMatch[1]); 
+                    openTab(null, tabNameMatch[1]);
                 }
             } else {
                  // Fallback: if no button has .active, try to open the first tab if it exists
@@ -622,7 +623,7 @@
                     const onclickAttr = firstTabButton.getAttribute("onclick");
                     const tabNameMatch = onclickAttr.match(/openTab\s*\(\s*event\s*,\s*'([^']+)'\s*\)/);
                     if (tabNameMatch && tabNameMatch[1]) {
-                        openTab(null, tabNameMatch[1]); 
+                        openTab(null, tabNameMatch[1]);
                     }
                 }
             }
@@ -640,7 +641,7 @@
             if (!table) return [];
             const tbody = table.getElementsByTagName("tbody")[0];
             if (!tbody) return [];
-            
+
             const originalRows = Array.from(tbody.getElementsByTagName("tr"));
             const config = getLogicalTableConfig(tabName);
             if (!config) return [];
@@ -670,7 +671,7 @@
                         logicalCells[0] = currentMethodCatText;
                         actualCellIndex++;
                     } else {
-                        logicalCells[0] = currentMethodCatText; 
+                        logicalCells[0] = currentMethodCatText;
                     }
                 } else {
                     logicalCells[0] = currentMethodCatText;
@@ -686,23 +687,23 @@
                         actualCellIndex++;
                     } else if (actualCells.length > actualCellIndex) {
                         currentMethodNameText = actualCells[actualCellIndex].textContent.trim();
-                        nameSpanLeft = 1; 
+                        nameSpanLeft = 1;
                         logicalCells[1] = currentMethodNameText;
                         actualCellIndex++;
                     } else {
-                        logicalCells[1] = currentMethodNameText; 
+                        logicalCells[1] = currentMethodNameText;
                     }
                 } else {
                     logicalCells[1] = currentMethodNameText;
                 }
                 nameSpanLeft--;
-                
+
                 // Remaining columns (Setting, metrics...)
                 for (let k = 2; k < totalVisualColumns; k++) {
                     if (actualCells.length > actualCellIndex) {
                         logicalCells[k] = actualCells[actualCellIndex++].textContent.trim();
                     } else {
-                        logicalCells[k] = ""; 
+                        logicalCells[k] = "";
                     }
                 }
                 parsedData.push({ originalTr: row, values: logicalCells });
@@ -715,7 +716,7 @@
             if (dropdownsPopulated[tableId]) return;
 
             // Ensure logical data is fresh before populating for the first time
-            updateLogicalTableData(tableId, tabName); 
+            updateLogicalTableData(tableId, tabName);
             const logicalRows = window.logicalTableData[tableId];
             if (!logicalRows || logicalRows.length === 0) return;
 
@@ -736,7 +737,7 @@
 
             function fillSelect(selectElement, valuesSet) {
                 if (!selectElement) return;
-                selectElement.innerHTML = '<option value="All">All</option>'; 
+                selectElement.innerHTML = '<option value="All">All</option>';
                 Array.from(valuesSet).sort().forEach(val => {
                     const option = document.createElement('option');
                     option.value = val;
@@ -760,10 +761,10 @@
 
             // Ensure logical data is available
             if (!window.logicalTableData[tableId]) {
-                updateLogicalTableData(tableId, tabName); 
+                updateLogicalTableData(tableId, tabName);
                 if (!window.logicalTableData[tableId]) return; // Still no data, abort
             }
-            
+
             const catFilterValue = document.getElementById(tableId + "MethodCatFilter") ? document.getElementById(tableId + "MethodCatFilter").value : "All";
             const nameFilterValue = document.getElementById(tableId + "MethodNameFilter") ? document.getElementById(tableId + "MethodNameFilter").value : "All";
             const settingFilterValue = document.getElementById(tableId + "SettingFilter") ? document.getElementById(tableId + "SettingFilter").value : "All";
@@ -790,7 +791,7 @@
             if (!table) return;
             const tbody = table.getElementsByTagName("tbody")[0];
             if (!tbody) return;
-            
+
             const originalRowsForSort = Array.from(tbody.getElementsByTagName("tr"));
             const config = getLogicalTableConfig(tabName);
             if (!config) return;
@@ -815,7 +816,7 @@
                         actualCellIndex++;
                     } else if (actualCells.length > actualCellIndex) {
                         currentMethodCatText = actualCells[actualCellIndex].textContent.trim();
-                        catSpanLeft = 1; 
+                        catSpanLeft = 1;
                         logicalCells[0] = currentMethodCatText;
                         actualCellIndex++;
                     } else { logicalCells[0] = currentMethodCatText; }
@@ -830,24 +831,24 @@
                         actualCellIndex++;
                     } else if (actualCells.length > actualCellIndex) {
                         currentMethodNameText = actualCells[actualCellIndex].textContent.trim();
-                        nameSpanLeft = 1; 
+                        nameSpanLeft = 1;
                         logicalCells[1] = currentMethodNameText;
                         actualCellIndex++;
                     } else { logicalCells[1] = currentMethodNameText; }
                 } else { logicalCells[1] = currentMethodNameText; }
                 nameSpanLeft--;
-                
+
                 for (let k = 2; k < totalVisualColumns; k++) {
                     if (actualCells.length > actualCellIndex) {
                         logicalCells[k] = actualCells[actualCellIndex++].textContent.trim();
                     } else { logicalCells[k] = ""; }
                 }
-                
+
                 let sortValueCellContent = logicalCells[visualColumnIndex] || "";
                 sortValueCellContent = sortValueCellContent.split("±")[0].trim();
-                
+
                 logicalRowDataForSort.push({
-                    values: logicalCells, 
+                    values: logicalCells,
                     sortKey: parseFloat(sortValueCellContent)
                 });
             }
@@ -875,18 +876,18 @@
 
             logicalRowDataForSort.forEach(data => {
                 const newTr = document.createElement('tr');
-                data.values.forEach(cellVal => { 
+                data.values.forEach(cellVal => {
                     const newTd = document.createElement('td');
                     newTd.textContent = cellVal;
                     newTr.appendChild(newTd);
                 });
                 tbody.appendChild(newTr);
             });
-            
+
             updateLogicalTableData(tableId, tabName);
             filterTable(tabName);
         }
 
     </script>
 </body>
-</html> 
+</html>

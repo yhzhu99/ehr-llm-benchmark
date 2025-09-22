@@ -75,6 +75,7 @@
                     <li><a href="index.html">Home</a></li>
                     <li><a href="structured-ehr-results.html">Structured EHR Results</a></li>
                     <li><a href="clinical-notes-results.html">Clinical Notes Results</a></li>
+                    <li><a href="human-eval.html">Human Evaluation</a></li>
                 </ul>
             </div>
         </nav>
@@ -1056,7 +1057,7 @@
             if (!table) return [];
             const tbody = table.getElementsByTagName("tbody")[0];
             if (!tbody) return [];
-            
+
             const originalRows = Array.from(tbody.getElementsByTagName("tr"));
             const config = getLogicalTableConfig(tabName);
             if (!config) return [];
@@ -1086,7 +1087,7 @@
                         logicalCells[0] = currentMethodCatText;
                         actualCellIndex++;
                     } else {
-                        logicalCells[0] = currentMethodCatText; 
+                        logicalCells[0] = currentMethodCatText;
                     }
                 } else { logicalCells[0] = currentMethodCatText; }
                 catSpanLeft--;
@@ -1100,13 +1101,13 @@
                         actualCellIndex++;
                     } else if (actualCells.length > actualCellIndex) {
                         currentMethodNameText = actualCells[actualCellIndex].textContent.trim();
-                        nameSpanLeft = 1; 
+                        nameSpanLeft = 1;
                         logicalCells[1] = currentMethodNameText;
                         actualCellIndex++;
                     } else { logicalCells[1] = currentMethodNameText; }
                 } else { logicalCells[1] = currentMethodNameText; }
                 nameSpanLeft--;
-                
+
                 // Remaining columns (Setting, metrics...)
                 for (let k = 2; k < totalVisualColumns; k++) {
                     if (actualCells.length > actualCellIndex) {
@@ -1170,7 +1171,7 @@
                 updateLogicalTableData(tableId, tabName); // Ensure data is there
                 if(!window.logicalTableData[tableId]) return; // Still no data, abort.
             }
-            
+
             const catFilterValue = document.getElementById(tableId + "MethodCatFilter") ? document.getElementById(tableId + "MethodCatFilter").value : "All";
             const nameFilterValue = document.getElementById(tableId + "MethodNameFilter") ? document.getElementById(tableId + "MethodNameFilter").value : "All";
             const settingFilterValue = document.getElementById(tableId + "SettingFilter") ? document.getElementById(tableId + "SettingFilter").value : "All";
@@ -1197,12 +1198,12 @@
             if (!table) return;
             const tbody = table.getElementsByTagName("tbody")[0];
             if (!tbody) return;
-            
+
             // Use logical data for sorting, which is already parsed correctly
             // Important: updateLogicalTableData needs to be called if the raw tbody was manipulated elsewhere.
             // However, sortTable itself will rebuild tbody, so its internal parsing is what matters for sorting.
             // The key is to call updateLogicalTableData *after* tbody is rebuilt by sortTable.
-            
+
             // Perform parsing for sorting (similar to updateLogicalTableData but focused on sort key extraction)
             const originalRowsForSort = Array.from(tbody.getElementsByTagName("tr")); // Get current state for sort
             const config = getLogicalTableConfig(tabName);
@@ -1228,7 +1229,7 @@
                         actualCellIndex++;
                     } else if (actualCells.length > actualCellIndex) {
                         currentMethodCatText = actualCells[actualCellIndex].textContent.trim();
-                        catSpanLeft = 1; 
+                        catSpanLeft = 1;
                         logicalCells[0] = currentMethodCatText;
                         actualCellIndex++;
                     } else { logicalCells[0] = currentMethodCatText; }
@@ -1243,22 +1244,22 @@
                         actualCellIndex++;
                     } else if (actualCells.length > actualCellIndex) {
                         currentMethodNameText = actualCells[actualCellIndex].textContent.trim();
-                        nameSpanLeft = 1; 
+                        nameSpanLeft = 1;
                         logicalCells[1] = currentMethodNameText;
                         actualCellIndex++;
                     } else { logicalCells[1] = currentMethodNameText; }
                 } else { logicalCells[1] = currentMethodNameText; }
                 nameSpanLeft--;
-                
+
                 for (let k = 2; k < totalVisualColumns; k++) {
                     if (actualCells.length > actualCellIndex) {
                         logicalCells[k] = actualCells[actualCellIndex++].textContent.trim();
                     } else { logicalCells[k] = ""; }
                 }
-                
+
                 let sortValueCellContent = logicalCells[visualColumnIndex] || "";
                 sortValueCellContent = sortValueCellContent.split("±")[0].trim();
-                
+
                 logicalRowDataForSort.push({
                     values: logicalCells, // These are the full logical cells for the row
                     sortKey: parseFloat(sortValueCellContent),
@@ -1297,13 +1298,13 @@
                 });
                 tbody.appendChild(newTr);
             });
-            
+
             // IMPORTANT: After rebuilding tbody, update the global logical data store
             updateLogicalTableData(tableId, tabName);
-            
+
             // Now apply filtering
             filterTable(tabName);
         }
     </script>
 </body>
-</html> 
+</html>

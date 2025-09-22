@@ -1,0 +1,1042 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>临床推理问卷</title>
+<style>
+  :root{
+    --bg:#f7fafc;
+    --panel:#ffffff;
+    --panel-2:#ffffff;
+    --text:#0f172a;
+    --muted:#475569;
+    --accent:#2563eb;
+    --accent-2:#1d4ed8;
+    --ok:#16a34a;
+    --warn:#d97706;
+    --bad:#dc2626;
+    --border:#e2e8f0;
+    --chip:#f1f5f9;
+    --chip-2:#eef2f7;
+    --shadow:0 8px 24px rgba(15,23,42,0.08);
+    --radius:14px;
+    --active:#e8f1ff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; font:14px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial;
+    color:var(--text);
+    background:
+      radial-gradient(800px 400px at 10% -10%, #dbeafe 0, transparent 60%),
+      radial-gradient(800px 400px at 90% -10%, #e0e7ff 0, transparent 60%),
+      var(--bg);
+  }
+  a{color:var(--accent); text-decoration:none}
+  header{
+    position:sticky; top:0; z-index:50; backdrop-filter:saturate(120%) blur(8px);
+    background:linear-gradient(180deg,#ffffffcc,#ffffffbf);
+    border-bottom:1px solid var(--border);
+  }
+  .wrap{max-width:1280px; margin:0 auto; padding:14px 18px}
+  .topbar{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+  .brand{font-weight:800; letter-spacing:.2px; font-size:16px}
+  .grow{flex:1}
+  .btn,button{
+    background:linear-gradient(180deg,#3b82f6,#2563eb);
+    border:1px solid #1e40af; color:#fff; padding:10px 14px; border-radius:12px;
+    cursor:pointer; box-shadow:var(--shadow);
+    transition:.15s transform ease, .15s box-shadow ease, .15s filter ease;
+    user-select:none;
+  }
+  .btn.secondary{
+    background:linear-gradient(180deg,#f8fafc,#eef2f7);
+    border:1px solid var(--border); color:#0f172a;
+  }
+  .btn.ghost{
+    background:transparent; border:1px dashed var(--border); color:var(--muted); box-shadow:none;
+  }
+  .btn.linklike{
+    background:transparent; border:1px solid var(--border); color:#0f172a; box-shadow:none;
+  }
+  .btn:disabled{opacity:.6; cursor:not-allowed; filter:grayscale(.2)}
+  .btn:hover{transform:translateY(-1px)}
+  select, input[type="text"], textarea{
+    width:100%; background:#fff; border:1px solid var(--border); color:var(--text);
+    padding:10px 12px; border-radius:10px; outline:none; font-size:14px;
+  }
+
+  /* Tabs */
+  .tabs{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; align-items:center}
+  .tab{
+    padding:8px 12px; border-radius:999px; background:var(--chip);
+    border:1px solid var(--border); color:#1f2937; cursor:pointer; user-select:none; box-shadow:var(--shadow)
+  }
+  .tab.active{
+    color:#fff; background:linear-gradient(180deg,#3b82f6,#2563eb); border-color:#1e40af
+  }
+  .home-tab{padding:8px 12px; border-radius:999px; border:1px solid var(--border); background:#fff;}
+  .task-desc{margin-top:8px; color:var(--muted); font-size:13px}
+
+  main{display:grid; grid-template-columns:340px 1fr; gap:16px; padding:18px; max-width:1280px; margin:0 auto}
+  @media (max-width:1000px){ main{grid-template-columns:1fr} .aside{order:2} .content{order:1} }
+  .panel{
+    background:linear-gradient(180deg,var(--panel),var(--panel-2));
+    border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);
+  }
+  .aside{padding:10px}
+  .searchbar{display:flex; gap:8px; padding:10px}
+  .filters{display:flex; gap:8px; flex-wrap:wrap; padding:0 10px 10px}
+  .toggle{
+    border:1px solid var(--border); padding:8px 10px; border-radius:10px; background:#fff;
+    color:#0f172a; cursor:pointer; user-select:none
+  }
+  .toggle.active{background:#dbeafe; color:#1e3a8a; border-color:#93c5fd}
+  .list{max-height:calc(100vh - 300px); overflow:auto; padding:6px 6px 10px 6px}
+  .item{
+    border:1px solid var(--border); background:#fff; padding:10px; border-radius:12px; margin:6px; cursor:pointer;
+    display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; transition:.1s border-color ease, .1s background ease, .1s box-shadow ease;
+    position:relative;
+  }
+  .item::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:4px; border-top-left-radius:12px; border-bottom-left-radius:12px; background:transparent;
+  }
+  .item:hover{border-color:#93c5fd; background:#f8fbff}
+  .item.active{border-color:#60a5fa; background:var(--active); box-shadow:0 0 0 2px #bfdbfe inset}
+  .item.active::before{background:#3b82f6}
+  .item .meta{font-size:12px; color:var(--muted)}
+  .badge{padding:3px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border)}
+  .badge.ok{background:#ecfdf5; color:#065f46; border-color:#a7f3d0}
+  .badge.todo{background:#eff6ff; color:#1e3a8a; border-color:#bfdbfe}
+  .content{padding:14px 14px 20px}
+  .casehead{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap}
+  .caseid{font-weight:800; font-size:18px}
+  .chips{display:flex; gap:8px; flex-wrap:wrap}
+  .chip{background:var(--chip); border:1px solid var(--border); color:#0f172a; padding:6px 10px; border-radius:999px; font-size:12px}
+  details{border:1px solid var(--border); border-radius:12px; padding:10px; background:#fff}
+  details + details{margin-top:10px}
+  summary{cursor:pointer; font-weight:700}
+  pre{white-space:pre-wrap; word-break:break-word; background:#f8fafc; padding:10px; border-radius:10px; overflow:auto; border:1px solid var(--border); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+  .stars{display:flex; gap:6px; align-items:center}
+  .star{font-size:22px; cursor:pointer; filter:drop-shadow(0 1px 4px rgba(0,0,0,.12))}
+  .star.on{color:#f59e0b}
+  /* 三项评分同排 */
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+  @media (max-width:920px){ .grid3{grid-template-columns:1fr} }
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  @media (max-width:800px){ .grid2{grid-template-columns:1fr} }
+  .checklist label{display:flex; gap:10px; align-items:flex-start; padding:8px; border:1px solid var(--border); border-radius:10px; background:#f8fafc}
+  .savebar{
+    position:sticky; bottom:0; background:#fffffff2; border-top:1px solid var(--border); padding:10px;
+    display:flex; gap:10px; justify-content:space-between; align-items:center; border-bottom-left-radius:var(--radius); border-bottom-right-radius:var(--radius)
+  }
+  .muted{color:var(--muted)}
+  .progress{width:180px; height:8px; background:#eef2f7; border-radius:999px; border:1px solid var(--border); overflow:hidden}
+  .progress > i{display:block; height:100%; width:0%; background:linear-gradient(90deg,#60a5fa,#34d399)}
+  .toast{
+    position:fixed; right:16px; bottom:16px; background:#ffffff; border:1px solid var(--border); padding:10px 14px;
+    border-radius:12px; box-shadow:var(--shadow); display:none
+  }
+  .pill{padding:2px 8px; background:#e2e8f0; border:1px solid var(--border); border-radius:999px; font-size:12px; color:#0f172a}
+  .danger{color:var(--bad)}
+  .hint{font-size:12px; color:var(--muted)}
+  .top-actions{display:flex; gap:8px; align-items:center}
+  .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:12px; background:#e2e8f0; padding:2px 6px; border-radius:6px; border:1px solid var(--border)}
+  /* Modal */
+  .modal-mask{position:fixed; inset:0; background:#0006; display:none; align-items:center; justify-content:center; z-index:60}
+  .modal{width:min(520px,92vw); background:#fff; border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:16px}
+  .modal h3{margin:0 0 10px 0}
+  .modal .row{display:flex; gap:10px; align-items:center; margin-top:8px}
+  .modal .actions{display:flex; gap:8px; justify-content:flex-end; margin-top:12px}
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="topbar">
+        <div class="brand" id="brand">🩺 临床推理问卷</div>
+        <div class="grow"></div>
+        <div class="top-actions">
+          <span class="hint" id="autoStatus">正在自动扫描 <span class="kbd">cases</span>…</span>
+          <a href="/" class="btn linklike" title="回到主页 /">🏠 /</a>
+          <button id="rescanBtn" class="btn ghost" title="重新扫描数据目录">🔄 重新扫描</button>
+          <div class="lang">
+            <span class="hint">🌐</span>
+            <select id="langSelect" style="width:auto">
+              <option value="zh">中文</option>
+              <option value="en">EN</option>
+            </select>
+          </div>
+          <button id="exportBtn" class="btn secondary" disabled>⬇️ 提交 / 导出</button>
+          <button id="importBtn" class="btn ghost">↩️ 导入结果</button>
+          <input id="importFile" type="file" accept="application/json" style="display:none" />
+        </div>
+      </div>
+      <div class="tabs" id="tabs"></div>
+      <div class="task-desc" id="taskDesc"></div>
+      <div class="hint" id="helpLine">
+        系统将自动从相对路径 <code>cases/</code> 递归扫描四个任务的数据。评分与勾选自动保存在浏览器 LocalStorage；点击“提交 / 导出”生成 JSON。
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <aside class="panel aside">
+      <div class="searchbar">
+        <input id="searchBox" type="text" placeholder="🔎 搜索病例 ID、模型名、或路径片段…" />
+      </div>
+      <div class="filters">
+        <div id="toggleHideDone" class="toggle">只看未完成</div>
+        <div id="toggleShuffle" class="toggle">随机顺序</div>
+      </div>
+      <div class="list" id="caseList"></div>
+    </aside>
+
+    <section class="panel content" id="content">
+      <div style="padding:16px">
+        <div class="muted" id="emptyMsg1">正在扫描 <code>cases/</code>… 若长时间无响应，请确认该目录与本页面同源可访问。</div>
+        <div class="hint" id="emptyMsg2">路径结构：<code>cases/&lt;structured_ehr|unstructured_note&gt;/&lt;mimic-iv-mortality|mimic-iv-readmission&gt;/*.json</code></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="wrap" style="padding-bottom:40px">
+    <div class="panel" style="padding:14px">
+      <div style="display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap">
+        <div style="display:flex; gap:12px; align-items:center">
+          <div class="muted" id="progressLabel">进度</div>
+          <div class="progress"><i id="progressBar"></i></div>
+          <div class="muted"><span id="progressText">0 / 0</span></div>
+        </div>
+        <div class="muted" id="storageHint">数据保存在本机浏览器 LocalStorage。可随时导出为 JSON。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">已保存 ✓</div>
+
+  <!-- 导出时填写评估者信息的弹窗 -->
+  <div class="modal-mask" id="exportModalMask" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+      <h3 id="exportTitle">提交 / 导出</h3>
+      <div class="hint">请填写评估者信息，这将写入导出的 JSON 中。</div>
+      <div class="row">
+        <label style="min-width:110px">评估者 ID / 姓名</label>
+        <input id="annotatorInput" type="text" placeholder="如：Dr. Zhang 或 user_001" />
+      </div>
+      <div class="row">
+        <label style="min-width:110px">附加备注（可选）</label>
+        <input id="exportNote" type="text" placeholder="例如：第1轮人评、口径v2 等" />
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="exportCancel">取消</button>
+        <button class="btn" id="exportConfirm">导出 JSON</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ===========================
+ * Language & i18n
+ * =========================== */
+const LANG_KEY = "humeval_lang_v3";
+const I18N = {
+  zh: {
+    brand:"🩺 临床推理问卷",
+    export:"⬇️ 提交 / 导出",
+    import:"↩️ 导入结果",
+    rescan:"🔄 重新扫描",
+    help:'系统将自动从相对路径 <code>cases/</code> 递归扫描四个任务的数据。评分与勾选自动保存在浏览器 LocalStorage；点击“提交 / 导出”生成 JSON。',
+    searchPH:"🔎 搜索病例 ID、模型名、或路径片段…",
+    toggleHide:"只看未完成",
+    toggleShuffle:"随机顺序",
+    empty1:'正在扫描 <code>cases/</code>… 若长时间无响应，请确认该目录与本页面同源可访问。',
+    empty2:'路径结构：<code>cases/&lt;structured_ehr|unstructured_note&gt;/&lt;mimic-iv-mortality|mimic-iv-readmission&gt;/*.json</code>',
+    progressLabel:"进度",
+    storageHint:"数据保存在本机浏览器 LocalStorage。可随时导出为 JSON。",
+    listNo:"当前筛选条件下没有病例。",
+    done:"完成",
+    todo:"未完成",
+    model:"模型",
+    inputTitle:"🧾 输入（患者病例 input）",
+    thinkTitle:"🧠 模型推理（think）",
+    alTitle:"✅ 模型输出（answer）与标注（label）",
+    rawTitle:"🧩 原始 JSON",
+    rateTitles:["临床准确性与安全性","推理与完整性","清晰度与临床实用性"],
+    rateHint:"评分 1（非常差）— 5（非常优秀）。点击星星设置或修改。",
+    checkTitle:"🔎 关键错误核查清单（可多选）",
+    checks:["事实不一致/幻觉","遗漏关键信息","逻辑或推理缺陷","包含无关信息","置信度不当"],
+    commentTitle:"📝 备注（可选）",
+    status:"状态：",
+    saved:"已保存 ✓",
+    save:"💾 保存",
+    saveNext:"➡️ 保存并下一例",
+    nextUnfinished:"⏭️ 跳至下一个未完成",
+    loading:c=>`正在载入 ${c} 个 JSON …`,
+    loaded:(a,c)=>`已载入 ${a} / ${c} …`,
+    progressText:(d,t)=>`${d} / ${t}`,
+    ds_struct:"structured_ehr",
+    ds_note:"unstructured_note",
+    t_mort_title:"In-hospital mortality prediction",
+    t_mort_desc:ds=>`基于 ${ds}，判断患者是否在住院期间死亡。`,
+    t_read_title:"30-day readmission prediction",
+    t_read_desc:ds=>`基于 ${ds}，判断患者在出院后30天内是否再次入院。`,
+    current:(ds,tt,dd)=>`当前：${ds} · ${tt} — ${dd}`,
+    modalTitle:"提交 / 导出",
+    modalAnnot:"评估者 ID / 姓名",
+    modalNote:"附加备注（可选）",
+    modalCancel:"取消",
+    modalExport:"导出 JSON",
+    needAnnot:"请先填写评估者 ID/姓名再导出。",
+    autoScan:"正在自动扫描",
+    reScanTip:"已开始重新扫描…",
+    answer:"模型输出",
+    label:"标注",
+    path:"路径",
+    tabsHome:"🏠 /",
+    tabsMort:"mortality",
+    tabsRead:"readmission",
+  },
+  en: {
+    brand:"🩺 Clinical Reasoning Survey",
+    export:"⬇️ Submit / Export",
+    import:"↩️ Import",
+    rescan:"🔄 Rescan",
+    help:'Auto-scans <code>cases/</code> (same-origin) for the four tasks. Ratings persist in LocalStorage. Click “Submit / Export” to download JSON.',
+    searchPH:"🔎 Search by case ID, model, or path…",
+    toggleHide:"Only Unfinished",
+    toggleShuffle:"Shuffle",
+    empty1:'Scanning <code>cases/</code>… If it hangs, ensure the directory is accessible from the same origin.',
+    empty2:'Expected layout: <code>cases/&lt;structured_ehr|unstructured_note&gt;/&lt;mimic-iv-mortality|mimic-iv-readmission&gt;/*.json</code>',
+    progressLabel:"Progress",
+    storageHint:"Data stays in your browser (LocalStorage). Export to JSON anytime.",
+    listNo:"No cases match the current filters.",
+    done:"Done",
+    todo:"Unfinished",
+    model:"Model",
+    inputTitle:"🧾 Input (patient case)",
+    thinkTitle:"🧠 Model reasoning (think)",
+    alTitle:"✅ Model output (answer) & ground truth (label)",
+    rawTitle:"🧩 Raw JSON",
+    rateTitles:["Clinical accuracy & safety","Reasoning & completeness","Clarity & clinical usefulness"],
+    rateHint:"Rate 1 (very poor) — 5 (excellent). Click stars to set/update.",
+    checkTitle:"🔎 Error checklist (multi-select)",
+    checks:["Factual inconsistency / hallucination","Missing key information","Logical/reasoning flaw","Irrelevant information","Miscalibrated confidence"],
+    commentTitle:"📝 Notes (optional)",
+    status:"Status:",
+    saved:"Saved ✓",
+    save:"💾 Save",
+    saveNext:"➡️ Save & Next",
+    nextUnfinished:"⏭️ Next unfinished",
+    loading:c=>`Loading ${c} JSON …`,
+    loaded:(a,c)=>`Loaded ${a} / ${c} …`,
+    progressText:(d,t)=>`${d} / ${t}`,
+    ds_struct:"structured_ehr",
+    ds_note:"unstructured_note",
+    t_mort_title:"In-hospital mortality prediction",
+    t_mort_desc:ds=>`Based on ${ds}, determine whether the patient dies during the hospital stay.`,
+    t_read_title:"30-day readmission prediction",
+    t_read_desc:ds=>`Based on ${ds}, determine whether the patient is readmitted within 30 days after discharge.`,
+    current:(ds,tt,dd)=>`Current: ${ds} · ${tt} — ${dd}`,
+    modalTitle:"Submit / Export",
+    modalAnnot:"Annotator ID / Name",
+    modalNote:"Extra note (optional)",
+    modalCancel:"Cancel",
+    modalExport:"Export JSON",
+    needAnnot:"Please enter annotator ID/name before exporting.",
+    autoScan:"Auto-scanning",
+    reScanTip:"Rescanning…",
+    answer:"Answer",
+    label:"Label",
+    path:"Path",
+    tabsHome:"🏠 /",
+    tabsMort:"mortality",
+    tabsRead:"readmission",
+  }
+};
+let LANG = (localStorage.getItem(LANG_KEY) || "zh");
+const $ = sel => document.querySelector(sel);
+
+/* ===========================
+ * Meta & constants
+ * =========================== */
+const ROOT_BASE = "cases/";
+const TASK_META = {
+  "mimic-iv-mortality": {
+    key:"mimic-iv-mortality",
+    title: () => (LANG==="zh" ? I18N.zh.t_mort_title : I18N.en.t_mort_title),
+    desc: (dsLabel) => (LANG==="zh" ? I18N.zh.t_mort_desc(dsLabel) : I18N.en.t_mort_desc(dsLabel))
+  },
+  "mimic-iv-readmission": {
+    key:"mimic-iv-readmission",
+    title: () => (LANG==="zh" ? I18N.zh.t_read_title : I18N.en.t_read_title),
+    desc: (dsLabel) => (LANG==="zh" ? I18N.zh.t_read_desc(dsLabel) : I18N.en.t_read_desc(dsLabel))
+  }
+};
+const DATASET_LABEL = {
+  "structured_ehr": () => (LANG==="zh" ? I18N.zh.ds_struct : I18N.en.ds_struct),
+  "unstructured_note": () => (LANG==="zh" ? I18N.zh.ds_note : I18N.en.ds_note),
+};
+const SIMPLE_TASK_TAG = (task) => task==="mimic-iv-mortality" ? (LANG==="zh"?I18N.zh.tabsMort:I18N.en.tabsMort) : (LANG==="zh"?I18N.zh.tabsRead:I18N.en.tabsRead);
+
+const COMBOS = [
+  {id:"structured_ehr::mimic-iv-mortality"},
+  {id:"structured_ehr::mimic-iv-readmission"},
+  {id:"unstructured_note::mimic-iv-mortality"},
+  {id:"unstructured_note::mimic-iv-readmission"},
+];
+
+const STORAGE_KEY = "humeval_responses_v3";
+const PREF_KEY    = "humeval_prefs_v3";
+
+let state = {
+  cases: [],             // {id, datasetGroup, task, path, url, json}
+  byCombo: new Map(),
+  activeCombo: COMBOS[0].id,
+  activeIndex: -1,       // global index in state.cases
+  filteredIdxs: [],
+  prefs: { hideDone:false, shuffle:false },
+  responses: {},         // path -> response
+  scanning:false,
+};
+
+const tabsEl = $("#tabs");
+const taskDescEl = $("#taskDesc");
+const caseListEl = $("#caseList");
+const contentEl = $("#content");
+const searchBoxEl = $("#searchBox");
+const toggleHideDoneEl = $("#toggleHideDone");
+const toggleShuffleEl = $("#toggleShuffle");
+const progressBarEl = $("#progressBar");
+const progressTextEl = $("#progressText");
+const exportBtnEl = $("#exportBtn");
+const importBtnEl = $("#importBtn");
+const importFileEl = $("#importFile");
+const toastEl = $("#toast");
+const autoStatusEl = $("#autoStatus");
+const rescanBtn = $("#rescanBtn");
+
+/* ===========================
+ * Utils
+ * =========================== */
+function t(key, ...args){
+  const v = I18N[LANG][key];
+  return typeof v === "function" ? v(...args) : v;
+}
+function savePrefs(){ localStorage.setItem(PREF_KEY, JSON.stringify(state.prefs)); }
+function loadPrefs(){
+  try{ const p = JSON.parse(localStorage.getItem(PREF_KEY)||"{}"); state.prefs = Object.assign(state.prefs, p); }catch(e){}
+  setToggle(toggleHideDoneEl, state.prefs.hideDone);
+  setToggle(toggleShuffleEl, state.prefs.shuffle);
+}
+function showToast(msg=t("saved")){ toastEl.textContent = msg; toastEl.style.display="block"; setTimeout(()=>toastEl.style.display="none", 1200); }
+function downloadJSON(obj, filename="human_eval_results.json"){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function fmtDate(d=new Date()){ const s = d.toISOString(); return s.substring(0,19)+"Z"; }
+function cmpCaseId(a,b){
+  const na=a.id.match(/\d+/g)?.map(Number)||[], nb=b.id.match(/\d+/g)?.map(Number)||[]; // best-effort numeric primary
+  const ka=na.length?na[0]:a.id, kb=nb.length?nb[0]:b.id;
+  return (ka>kb)-(ka<kb);
+}
+function computeProgress(){
+  const ids = state.filteredIdxs;
+  let done = 0;
+  for(const idx of ids){
+    const key = state.cases[idx].path;
+    if(state.responses[key] && isCompleted(state.responses[key])) done++;
+  }
+  progressTextEl.textContent = t("progressText", done, ids.length);
+  const pct = ids.length ? Math.round(done*100/ids.length) : 0;
+  progressBarEl.style.width = pct + "%";
+}
+function isCompleted(resp){
+  return [resp?.score_accuracy, resp?.score_reasoning, resp?.score_clarity].every(x=> Number.isInteger(x) && x>=1 && x<=5);
+}
+function setToggle(el,on){ el.classList.toggle("active", !!on); }
+function getComboId(ds,task){ return `${ds}::${task}`; }
+function escapeHtml(s){
+  if(s===null||s===undefined) return "";
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function ensureActiveVisible(){
+  const path = state.cases[state.activeIndex]?.path;
+  if(!path) return;
+  const el = caseListEl.querySelector(`.item[data-key="${CSS.escape(path)}"]`);
+  if(el) el.scrollIntoView({block:"nearest"});
+}
+/* ===========================
+ * Language apply
+ * =========================== */
+function applyI18n(){
+  document.title = "临床推理问卷";
+  $("#brand").textContent = t("brand");
+  exportBtnEl.textContent = t("export");
+  importBtnEl.textContent = t("import");
+  rescanBtn.textContent = t("rescan");
+  $("#helpLine").innerHTML = t("help");
+  searchBoxEl.placeholder = t("searchPH");
+  toggleHideDoneEl.textContent = t("toggleHide");
+  toggleShuffleEl.textContent = t("toggleShuffle");
+  $("#emptyMsg1").innerHTML = t("empty1");
+  $("#emptyMsg2").innerHTML = t("empty2");
+  $("#progressLabel").textContent = t("progressLabel");
+  $("#storageHint").textContent = t("storageHint");
+  autoStatusEl.innerHTML = `${t("autoScan")} <span class="kbd">${ROOT_BASE}</span>…`;
+  renderTabs();
+  refreshList(true);
+  if (state.activeIndex>=0) renderCase(state.cases[state.activeIndex]); // 即时更新中英文内容
+}
+
+/* ===========================
+ * Auto-scan directory (same-origin)
+ * =========================== */
+async function autoScanAll(){
+  if (state.scanning) return;
+  state.scanning = true;
+  exportBtnEl.disabled = true;
+  autoStatusEl.textContent = (LANG === "zh" ? "正在扫描…" : "Scanning…");
+  contentEl.innerHTML = `<div style="padding:16px"><div class="muted">${t("loading", "…")}</div></div>`;
+  state.cases = [];
+  state.byCombo = new Map(); for(const c of COMBOS) state.byCombo.set(c.id, []);
+  try{
+    const groups = ["structured_ehr","unstructured_note"];
+    const tasks  = ["mimic-iv-mortality","mimic-iv-readmission"];
+    let totalFound = 0;
+    for(const g of groups){
+      for(const task of tasks){
+        const base = ROOT_BASE + `${g}/${task}/`;
+        const files = await listJsonFiles(base);
+        for(const url of files){
+          const id = decodeURIComponent(url.split("/").filter(Boolean).pop().replace(/\.json$/,""));
+          try{
+            const js = await fetchJson(url);
+            if (!js || typeof js!=="object") continue;
+            const item = { id, datasetGroup:g, task, path: `${base}${id}.json`, url, json: js };
+            state.cases.push(item);
+            totalFound++;
+          }catch(e){ console.warn("Failed to fetch", url, e); }
+        }
+      }
+    }
+    state.cases.sort(cmpCaseId);
+    state.byCombo = new Map(); for(const c of COMBOS) state.byCombo.set(c.id, []);
+    for(let i=0;i<state.cases.length;i++){
+      const it = state.cases[i];
+      state.byCombo.get(getComboId(it.datasetGroup, it.task)).push(i);
+    }
+    renderTabs();
+    refreshList();
+    if (state.filteredIdxs.length) openCaseByFilteredIndex(0);
+    exportBtnEl.disabled = state.cases.length===0;
+    autoStatusEl.textContent = (LANG==="zh" ? `已发现 ${totalFound} 个病例` : `Discovered ${totalFound} cases`);
+  }catch(err){
+    console.error(err);
+    autoStatusEl.textContent = (LANG==="zh" ? "扫描失败（请确认目录可被服务器列出）" : "Scan failed (ensure server lists directories)");
+    contentEl.innerHTML = `<div style="padding:16px"><div class="danger">${escapeHtml(autoStatusEl.textContent)}</div><div class="hint">${t("empty2")}</div></div>`;
+  }finally{
+    state.scanning = false;
+  }
+}
+
+/* list directory by parsing simple index HTML (Apache/nginx/python -m http.server) */
+async function listJsonFiles(dirUrl){
+  const url = new URL(dirUrl, location.href).toString();
+  const res = await fetch(url, {cache:"no-cache"});
+  if (!res.ok) throw new Error(`Cannot list ${url}: ${res.status}`);
+  const txt = await res.text();
+  const tmp = document.createElement("div");
+  tmp.innerHTML = txt;
+  const links = Array.from(tmp.querySelectorAll("a[href]")).map(a => a.getAttribute("href"));
+  const files = [];
+  for(const href of links){
+    if (!href) continue;
+    const abs = new URL(href, url).toString();
+    const name = abs.split("/").filter(Boolean).pop() || "";
+    if (name.toLowerCase().endsWith(".json")) files.push(abs);
+  }
+  return files;
+}
+async function fetchJson(url){
+  const res = await fetch(url, {cache:"no-cache"});
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
+
+/* ===========================
+ * Tabs & descriptions
+ * =========================== */
+function comboLabel(comboId){
+  const [ds, task] = comboId.split("::");
+  // 顶部标签简洁：{dataset} mortality/readmission
+  return `${ds} ${SIMPLE_TASK_TAG(task)}`;
+}
+function renderTabs(){
+  tabsEl.innerHTML = "";
+  // Home 按钮
+  const home = document.createElement("a");
+  home.className = "home-tab";
+  home.textContent = t("tabsHome");
+  home.href = "/";
+  home.title = "/";
+  tabsEl.appendChild(home);
+
+  for(const c of COMBOS){
+    const b=document.createElement("div");
+    b.className="tab"+(state.activeCombo===c.id?" active":"");
+    b.textContent = comboLabel(c.id);
+    b.onclick = ()=>{ state.activeCombo=c.id; renderTabs(); refreshList(true); };
+    tabsEl.appendChild(b);
+  }
+  const [ds, task] = state.activeCombo.split("::");
+  const meta = TASK_META[task];
+  const dsLabel = DATASET_LABEL[ds]();
+  taskDescEl.textContent = (LANG==="zh"
+    ? I18N.zh.current(dsLabel, meta.title(), meta.desc(dsLabel))
+    : I18N.en.current(dsLabel, meta.title(), meta.desc(dsLabel))
+  );
+}
+
+/* ===========================
+ * Responses persistence
+ * =========================== */
+function loadResponses(){ try{ state.responses = JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}") }catch(e){ state.responses = {} } }
+function persistResponses(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.responses)); }
+
+/* ===========================
+ * Filtering & list
+ * =========================== */
+function refreshList(preserve=false){
+  const prevPath = (state.activeIndex>=0 ? state.cases[state.activeIndex].path : null);
+  const prevScroll = caseListEl.scrollTop;
+
+  const comboIdxs = state.byCombo.get(state.activeCombo)||[];
+  let idxs = comboIdxs.slice();
+
+  const q = searchBoxEl.value.trim().toLowerCase();
+  if (q){
+    idxs = idxs.filter(i=>{
+      const c = state.cases[i];
+      const path = c.path.toLowerCase();
+      const model = (c.json?.model || "").toLowerCase();
+      return c.id.toLowerCase().includes(q) || path.includes(q) || model.includes(q);
+    });
+  }
+  if (state.prefs.hideDone){
+    idxs = idxs.filter(i=>{
+      const k = state.cases[i].path;
+      return !(state.responses[k] && isCompleted(state.responses[k]));
+    });
+  }
+  if (state.prefs.shuffle){ idxs = shuffle(idxs); }
+
+  state.filteredIdxs = idxs;
+  renderList();
+
+  computeProgress();
+
+  if (preserve && prevPath){
+    const k = state.filteredIdxs.findIndex(i=> state.cases[i].path===prevPath);
+    if (k>=0) { state.activeIndex = state.filteredIdxs[k]; highlightActive(prevPath); ensureActiveVisible(); }
+  }
+  caseListEl.scrollTop = prevScroll;
+}
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function renderList(){
+  caseListEl.innerHTML = "";
+  if (!state.filteredIdxs.length){
+    caseListEl.innerHTML = `<div class="muted" style="padding:8px 10px">${t("listNo")}</div>`;
+    return;
+  }
+  for(let k=0;k<state.filteredIdxs.length;k++){
+    const idx = state.filteredIdxs[k];
+    const c = state.cases[idx];
+    const key = c.path;
+    const resp = state.responses[key];
+    const done = resp && isCompleted(resp);
+
+    const div = document.createElement("div");
+    div.className = "item";
+    div.dataset.key = key;
+    div.onclick = ()=> openCaseByFilteredIndex(k);
+
+    const title = document.createElement("div");
+    title.innerHTML = `<div><b>${escapeHtml(c.id)}</b></div>
+      <div class="meta">${escapeHtml(DATASET_LABEL[c.datasetGroup]())} / ${escapeHtml(TASK_META[c.task].title())}</div>`;
+
+    const right = document.createElement("div");
+    const badge1 = document.createElement("div");
+    badge1.className = "badge " + (done ? "ok":"todo");
+    badge1.dataset.role = "status";
+    badge1.textContent = done ? t("done") : t("todo");
+    right.style.display="flex"; right.style.gap="6px";
+    right.appendChild(badge1);
+
+    div.appendChild(title); div.appendChild(right);
+    caseListEl.appendChild(div);
+  }
+  highlightActive(state.cases[state.activeIndex]?.path);
+}
+function highlightActive(path){
+  caseListEl.querySelectorAll(".item").forEach(el=> el.classList.remove("active"));
+  if (!path) return;
+  const el = caseListEl.querySelector(`.item[data-key="${CSS.escape(path)}"]`);
+  if (el) el.classList.add("active");
+}
+function updateListItemStatus(path){
+  const el = caseListEl.querySelector(`.item[data-key="${CSS.escape(path)}"] [data-role="status"]`);
+  if (!el) return;
+  const resp = state.responses[path];
+  const done = resp && isCompleted(resp);
+  el.className = "badge " + (done ? "ok":"todo");
+  el.textContent = done ? t("done") : t("todo");
+}
+
+/* ===========================
+ * Open case & render content
+ * =========================== */
+function openCaseByFilteredIndex(k){
+  if (k<0 || k>=state.filteredIdxs.length) return;
+  state.activeIndex = state.filteredIdxs[k];
+  const c = state.cases[state.activeIndex];
+  renderCase(c);
+  highlightActive(c.path);
+  ensureActiveVisible();
+}
+function renderCase(c){
+  const key = c.path;
+  const js = c.json || {};
+  const model = js.model ?? "—";
+  const answer = js.answer;
+  const label  = js.label;
+
+  // 根据语言即时切换 input/think 字段（优先 *_cn）
+  const inputText = (LANG==="zh" && js.input_cn) ? js.input_cn : js.input;
+  const thinkText = (LANG==="zh" && js.think_cn) ? js.think_cn : js.think;
+
+  const resp = state.responses[key] || {
+    path: c.path, datasetGroup:c.datasetGroup, task:c.task, case_id:c.id,
+    score_accuracy:0, score_reasoning:0, score_clarity:0,
+    err_factual:false, err_missing:false, err_logic:false, err_irrelevant:false, err_calibration:false,
+    comment:"", createdAt:fmtDate(new Date()), updatedAt:fmtDate(new Date())
+  };
+
+  contentEl.innerHTML = `
+    <div class="casehead">
+      <div>
+        <div class="caseid">${escapeHtml(c.id)}</div>
+        <div class="chips">
+          <div class="chip">${escapeHtml(DATASET_LABEL[c.datasetGroup]())}</div>
+          <div class="chip">${escapeHtml(TASK_META[c.task].title())}</div>
+          <div class="chip">${t("model")}：<b>${escapeHtml(model)}</b></div>
+        </div>
+      </div>
+    </div>
+
+    <details open style="margin-top:12px">
+      <summary>${t("inputTitle")}</summary>
+      <pre>${escapeHtml(inputText ?? "—")}</pre>
+    </details>
+
+    <details open>
+      <summary>${t("thinkTitle")}</summary>
+      <pre>${escapeHtml(thinkText ?? "—")}</pre>
+    </details>
+
+    <details open>
+      <summary>${t("alTitle")}</summary>
+      <div class="al-wrap" style="margin-top:6px">
+        <span class="pill"><b>${t("answer")}:</b> ${escapeHtml(String(answer))}</span>
+        <span class="pill"><b>${t("label")}:</b> ${escapeHtml(String(label))}</span>
+        <span class="pill"><b>${t("path")}:</b> <span style="word-break:break-all">${escapeHtml(c.path)}</span></span>
+      </div>
+    </details>
+
+    <details>
+      <summary>${t("rawTitle")}</summary>
+      <pre>${escapeHtml(JSON.stringify(js, null, 2))}</pre>
+    </details>
+
+    <div class="panel" style="padding:12px; margin-top:12px">
+      <div class="grid3">
+        <div class="block" style="border:none; padding:0; background:transparent">
+          <div class="muted" style="margin-bottom:6px">${t("rateTitles")[0]}</div>
+          ${renderStars("score_accuracy", resp.score_accuracy)}
+        </div>
+        <div class="block" style="border:none; padding:0; background:transparent">
+          <div class="muted" style="margin-bottom:6px">${t("rateTitles")[1]}</div>
+          ${renderStars("score_reasoning", resp.score_reasoning)}
+        </div>
+        <div class="block" style="border:none; padding:0; background:transparent">
+          <div class="muted" style="margin-bottom:6px">${t("rateTitles")[2]}</div>
+          ${renderStars("score_clarity", resp.score_clarity)}
+        </div>
+      </div>
+      <div class="hint" style="margin-top:6px">${t("rateHint")}</div>
+    </div>
+
+    <div class="grid2" style="margin-top:12px">
+      <div class="block checklist" style="background:#fff">
+        <div style="font-weight:700; margin-bottom:6px">${t("checkTitle")}</div>
+        ${renderCheck("err_factual", t("checks")[0])}
+        ${renderCheck("err_missing", t("checks")[1])}
+        ${renderCheck("err_logic", t("checks")[2])}
+        ${renderCheck("err_irrelevant", t("checks")[3])}
+        ${renderCheck("err_calibration", t("checks")[4])}
+      </div>
+      <div class="block" style="background:#fff">
+        <div style="font-weight:700; margin-bottom:6px">${t("commentTitle")}</div>
+        <textarea id="commentBox" rows="8" placeholder="">${escapeHtml(resp.comment||"")}</textarea>
+      </div>
+    </div>
+
+    <div class="savebar">
+      <div class="muted">
+        <b>${t("status")}</b>
+        <span id="statusInline">${isCompleted(resp) ? `<span style="color: var(--ok)">${t("done")}</span>` : `<span class="danger">${t("todo")}</span>`}</span>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap">
+        <button class="btn secondary" id="btnSave">${t("save")}</button>
+        <button class="btn" id="btnSaveNext">${t("saveNext")}</button>
+        <button class="btn ghost" id="btnNextUnrated">${t("nextUnfinished")}</button>
+      </div>
+    </div>
+  `;
+
+  // Wire stars
+  contentEl.querySelectorAll(".star").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const field = el.dataset.field;
+      const val = +el.dataset.val;
+      const r = getCurrentResponse(c);
+      r[field] = val;
+      r.updatedAt = fmtDate(new Date());
+      state.responses[key]=r; persistResponses();
+      renderStarGroup(field, val);
+      realtimeStatusUpdate(c);
+      showToast();
+    });
+  });
+  // checkboxes
+  ["err_factual","err_missing","err_logic","err_irrelevant","err_calibration"].forEach(f=>{
+    const box = $("#"+f);
+    if (box){ box.checked = !!resp[f]; box.addEventListener("change", ()=>{
+      const r = getCurrentResponse(c); r[f] = !!box.checked; r.updatedAt=fmtDate(new Date());
+      state.responses[key]=r; persistResponses(); showToast();
+    }) }
+  });
+  // comment
+  $("#commentBox").addEventListener("input", ()=>{
+    const r=getCurrentResponse(c); r.comment = $("#commentBox").value; r.updatedAt=fmtDate(new Date());
+    state.responses[key]=r; persistResponses();
+  });
+
+  // buttons
+  $("#btnSave").onclick = ()=>{ saveCurrentCase(c); showToast(); };
+  $("#btnSaveNext").onclick = ()=>{ saveCurrentCase(c); jumpNext(1); };
+  $("#btnNextUnrated").onclick = ()=> jumpNextUnrated();
+}
+function renderStars(field, current){
+  const stars = [1,2,3,4,5].map(v=>{
+    const cls = (current>=v) ? "star on":"star";
+    return `<span class="${cls}" data-field="${field}" data-val="${v}" title="${v}">★</span>`;
+  }).join("");
+  return `<div class="stars" id="grp_${field}">${stars}</div>`;
+}
+function renderStarGroup(field,current){
+  const grp = $("#grp_"+field); if(!grp) return;
+  grp.querySelectorAll(".star").forEach(el=> el.classList.toggle("on", (+el.dataset.val)<=current));
+}
+function renderCheck(id,label){
+  return `<label><input id="${id}" type="checkbox" /><div><div><b>${escapeHtml(label)}</b></div></div></label>`;
+}
+function getCurrentResponse(c){
+  const key=c.path, existing=state.responses[key]||{};
+  return Object.assign({
+    path:c.path, datasetGroup:c.datasetGroup, task:c.task, case_id:c.id,
+    answer:c.json?.answer, label:c.json?.label,
+    score_accuracy:0, score_reasoning:0, score_clarity:0,
+    err_factual:false, err_missing:false, err_logic:false, err_irrelevant:false, err_calibration:false,
+    comment:"", createdAt:fmtDate(new Date()), updatedAt:fmtDate(new Date()),
+  }, existing);
+}
+function saveCurrentCase(c){
+  const key=c.path; const r=getCurrentResponse(c); r.updatedAt=fmtDate(new Date());
+  state.responses[key]=r; persistResponses(); realtimeStatusUpdate(c);
+}
+function realtimeStatusUpdate(c){
+  const key=c.path, r=state.responses[key];
+  const done = isCompleted(r);
+  const statusEl = $("#statusInline");
+  statusEl.innerHTML = done ? `<span style="color: var(--ok)">${t("done")}</span>` : `<span class="danger">${t("todo")}</span>`;
+  updateListItemStatus(key);
+  computeProgress();
+}
+function jumpNext(step=1){
+  if (!state.filteredIdxs.length) return;
+  const pos = state.filteredIdxs.indexOf(state.activeIndex);
+  const nextk = (pos + step + state.filteredIdxs.length) % state.filteredIdxs.length;
+  openCaseByFilteredIndex(nextk);
+}
+function jumpNextUnrated(){
+  if (!state.filteredIdxs.length) return;
+  const pos = state.filteredIdxs.indexOf(state.activeIndex);
+  for(let off=1; off<=state.filteredIdxs.length; off++){
+    const k=(pos+off)%state.filteredIdxs.length;
+    const idx=state.filteredIdxs[k], key=state.cases[idx].path;
+    if(!(state.responses[key] && isCompleted(state.responses[key]))){ openCaseByFilteredIndex(k); return; }
+  }
+  showToast(LANG==="zh"?"没有未完成的病例":"No unfinished cases");
+}
+
+/* ===========================
+ * Export / Import
+ * =========================== */
+function exportResultsFlow(){
+  const mask = $("#exportModalMask");
+  $("#exportTitle").textContent = t("modalTitle");
+  $("#exportCancel").textContent = t("modalCancel");
+  $("#exportConfirm").textContent = t("modalExport");
+  $("#annotatorInput").placeholder = t("modalAnnot");
+  $("#exportNote").placeholder = t("modalNote");
+  mask.style.display="flex";
+  mask.setAttribute("aria-hidden","false");
+  $("#annotatorInput").focus();
+}
+function closeExportModal(){
+  $("#exportModalMask").style.display="none";
+  $("#exportModalMask").setAttribute("aria-hidden","true");
+}
+function doExport(annotator, extraNote){
+  if (!annotator || !annotator.trim()){
+    showToast(t("needAnnot"));
+    $("#annotatorInput").focus();
+    return;
+  }
+  const results = [];
+  for(const c of state.cases){
+    const key=c.path, r=state.responses[key];
+    if (!r) continue; // 仅导出已保存的
+    results.push({
+      id:c.id,
+      dataset_group:c.datasetGroup,
+      task:c.task,
+      path:c.path,
+      model:c.json?.model ?? null,
+      answer:c.json?.answer ?? null,
+      label:c.json?.label ?? null,
+      rating:{
+        clinical_accuracy_safety: r.score_accuracy || 0,
+        reasoning_completeness: r.score_reasoning || 0,
+        clarity_usefulness: r.score_clarity || 0
+      },
+      errors:{
+        factual_inconsistency: !!r.err_factual,
+        missing_key_info: !!r.err_missing,
+        logical_flaw: !!r.err_logic,
+        irrelevant_content: !!r.err_irrelevant,
+        miscalibrated_confidence: !!r.err_calibration
+      },
+      comment: r.comment || "",
+      annotator_id: annotator,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt
+    });
+  }
+  const meta = {
+    tool:"clinical-human-eval-error-analysis",
+    version:"3.0.0",
+    exportedAt: fmtDate(new Date()),
+    annotator_id: annotator,
+    note: extraNote || "",
+    dataset_root: ROOT_BASE,
+    combos: COMBOS.map(c=> c.id),
+    language: LANG
+  };
+  downloadJSON({meta, results}, `human_eval_results_${new Date().toISOString().slice(0,10)}.json`);
+  closeExportModal();
+}
+function mergeImportedResults(obj){
+  const arr = Array.isArray(obj?.results) ? obj.results : (Array.isArray(obj) ? obj : []);
+  let merged=0;
+  for(const r of arr){
+    if (!r?.path) continue;
+    state.responses[r.path] = {
+      path:r.path, datasetGroup:r.dataset_group, task:r.task, case_id:r.id,
+      answer:r.answer, label:r.label,
+      score_accuracy: r.rating?.clinical_accuracy_safety || 0,
+      score_reasoning: r.rating?.reasoning_completeness || 0,
+      score_clarity: r.rating?.clarity_usefulness || 0,
+      err_factual: !!r.errors?.factual_inconsistency,
+      err_missing: !!r.errors?.missing_key_info,
+      err_logic: !!r.errors?.logical_flaw,
+      err_irrelevant: !!r.errors?.irrelevant_content,
+      err_calibration: !!r.errors?.miscalibrated_confidence,
+      comment:r.comment || "",
+      createdAt: r.createdAt || fmtDate(new Date()),
+      updatedAt: r.updatedAt || fmtDate(new Date()),
+    };
+    merged++;
+  }
+  persistResponses();
+  showToast((LANG==="zh" ? `已合并 ${merged} 条结果` : `Merged ${merged} items`));
+  refreshList(true);
+  if (state.activeIndex>=0) renderCase(state.cases[state.activeIndex]);
+}
+
+/* ===========================
+ * Events
+ * =========================== */
+document.addEventListener("DOMContentLoaded", ()=>{
+  $("#langSelect").value = LANG;
+  $("#langSelect").addEventListener("change", ()=>{
+    LANG = $("#langSelect").value || "zh";
+    localStorage.setItem(LANG_KEY, LANG);
+    applyI18n(); // 即时全量更新（无需重新点 case/tab）
+  });
+
+  loadPrefs();
+  loadResponses();
+  applyI18n();
+  autoScanAll();
+
+  rescanBtn.addEventListener("click", ()=>{
+    showToast(t("reScanTip"));
+    autoScanAll();
+  });
+
+  searchBoxEl.addEventListener("input", ()=> refreshList(true));
+  toggleHideDoneEl.addEventListener("click", ()=>{ state.prefs.hideDone=!state.prefs.hideDone; savePrefs(); setToggle(toggleHideDoneEl,state.prefs.hideDone); refreshList(true); });
+  toggleShuffleEl.addEventListener("click", ()=>{ state.prefs.shuffle=!state.prefs.shuffle; savePrefs(); setToggle(toggleShuffleEl,state.prefs.shuffle); refreshList(true); });
+
+  exportBtnEl.addEventListener("click", exportResultsFlow);
+  $("#exportCancel").addEventListener("click", closeExportModal);
+  $("#exportConfirm").addEventListener("click", ()=>{
+    const annot = $("#annotatorInput").value.trim();
+    const note = $("#exportNote").value.trim();
+    doExport(annot, note);
+  });
+  $("#exportModalMask").addEventListener("click", (e)=>{
+    if (e.target === $("#exportModalMask")) closeExportModal();
+  });
+  document.addEventListener("keydown", (e)=>{
+    if (e.key==="Escape") closeExportModal();
+  });
+
+  importBtnEl.addEventListener("click", ()=> importFileEl.click());
+  importFileEl.addEventListener("change", async (e)=>{
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try{ const txt=await f.text(); const obj=JSON.parse(txt); mergeImportedResults(obj); }
+    catch(err){ alert(LANG==="zh"?"导入失败：不是有效的 JSON。":"Import failed: invalid JSON."); }
+  });
+});
+</script>
+</body>
+</html>
