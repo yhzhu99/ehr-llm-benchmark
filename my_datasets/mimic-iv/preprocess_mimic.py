@@ -24,162 +24,175 @@ categorical_labtest_features = ['Capillary refill rate', 'Glascow coma scale eye
 numerical_labtest_features = ['Diastolic blood pressure', 'Fraction inspired oxygen', 'Glucose', 'Heart Rate', 'Height', 'Mean blood pressure', 'Oxygen saturation', 'Respiratory rate', 'Systolic blood pressure', 'Temperature', 'Weight', 'pH']
 normalize_features = ['Age'] + numerical_labtest_features + ['LOS']
 
+# Stratified split dataset into train, validation and test sets
+# For ml/dl models: include Imputation & Normalization & Outlier Filtering steps
+# For all settings, randomly select 200 patients for test set
+# Then randomly select 10000 in the rest used for training and validation (7/8 training, 1/8 validation)
 
-# =================================================================================================
-# 1. 读取和初始预处理 (在划分数据集之前完成)
-# =================================================================================================
-
-# 读取数据集
-print("Reading parquet file...")
-df = pd.read_parquet(os.path.join(processed_data_dir, 'mimic-iv-timeseries-note.parquet'))
+# Read the dataset
+df = pd.read_parquet(os.path.join(processed_data_dir, 'mimic4_discharge_note_ehr.parquet'))
 df = df[basic_records + target_features + note_features + demographic_features + labtest_features]
 
 # Ensure the data is sorted by RecordID and RecordTime
 df = df.sort_values(by=['RecordID', 'RecordTime']).reset_index(drop=True)
 
-# --- 导出在one-hot编码之前的原始信息 ---
-# 这些信息不应被标准化或one-hot编码，用于LLM等模型
-print("Exporting raw information (missing mask, record time, raw features)...")
-raw_missing_mask_map = {id: mask for id, mask in zip(df['RecordID'].unique(), export_missing_mask(df, demographic_features, labtest_features, id_column='RecordID'))}
-raw_record_time_map = {id: time for id, time in zip(df['RecordID'].unique(), export_record_time(df, id_column='RecordID'))}
-_, raw_x_list, _, raw_pid_list = forward_fill_pipeline(df.copy(), None, demographic_features, labtest_features, target_features, [], id_column='RecordID')
-raw_x_map = {id: x for id, x in zip(raw_pid_list, raw_x_list)}
+# Group the dataframe by `RecordID`
+grouped = df.groupby('RecordID')
 
+# Get the patient IDs and outcomes
+patients = np.array(list(grouped.groups.keys()))
+patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in patients])
 
-# --- 对分类特征进行One-Hot编码 ---
-print("Performing one-hot encoding...")
+# Randomly select 200 patients for the test set
+# train_val_patients, test_patients = train_test_split(patients, test_size=200, random_state=SEED, stratify=patients_outcome)
+
+test_patients = [item for item in os.listdir("/Users/akai/Desktop/data/ehr-llm-benchmark/logs/structured_ehr/mimic-iv-ehr/mortality/deepseek-v3-chat/1shot_unit_range") if item.endswith(".json") and "unit" not in item]
+test_patients = [item.replace(".json", "") for item in test_patients]
+assert len(test_patients) == 200
+train_val_patients = [item for item in patients if item not in test_patients]
+train_val_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in train_val_patients])
+test_df = df[df['RecordID'].isin(test_patients)]
+
+# For llm setting, export data on test set:
+# Export the missing mask
+train_missing_mask = export_missing_mask(df, demographic_features, labtest_features, id_column='RecordID')
+val_missing_mask = export_missing_mask(df, demographic_features, labtest_features, id_column='RecordID')
+test_missing_mask = export_missing_mask(test_df, demographic_features, labtest_features, id_column='RecordID')
+
+# Export the record time
+train_record_time = export_record_time(df, id_column='RecordID')
+val_record_time = export_record_time(df, id_column='RecordID')
+test_record_time = export_record_time(test_df, id_column='RecordID')
+
+# Export the raw data
+_, train_raw_x, _, _ = forward_fill_pipeline(df, None, demographic_features, labtest_features, target_features, [], id_column='RecordID')
+_, val_raw_x, _, _ = forward_fill_pipeline(df, None, demographic_features, labtest_features, target_features, [], id_column='RecordID')
+_, test_raw_x, _, _ = forward_fill_pipeline(test_df, None, demographic_features, labtest_features, target_features, [], id_column='RecordID')
+
+# For ml/dl models, convert categorical features to one-hot encoding
 one_hot = pd.get_dummies(df[categorical_labtest_features], columns=categorical_labtest_features, prefix_sep='->', dtype=float)
 columns = df.columns.to_list()
 column_start_idx = columns.index(categorical_labtest_features[0])
 column_end_idx = columns.index(categorical_labtest_features[-1])
 df = pd.concat([df.loc[:, columns[:column_start_idx]], one_hot, df.loc[:, columns[column_end_idx + 1:]]], axis=1)
 
-# 更新特征列表
+# Update the categorical lab test features
 ehr_categorical_labtest_features = one_hot.columns.to_list()
 ehr_labtest_features = ehr_categorical_labtest_features + numerical_labtest_features
 require_impute_features = ehr_labtest_features
 
-
-# =================================================================================================
-# 2. 数据集划分 (先划出测试集，再从剩余数据中采样训练集和验证集)
-# =================================================================================================
-print("Splitting dataset...")
-# 按 RecordID 分组，并获取患者ID和对应的结局用于分层抽样
+# Group the dataframe by patient ID
 grouped = df.groupby('RecordID')
-patients = np.array(list(grouped.groups.keys()))
-patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in patients])
 
-# 随机分出200个患者作为固定的测试集
-train_val_patients, test_patients, train_val_outcomes, _ = train_test_split(
-    patients, patients_outcome, test_size=200, random_state=SEED, stratify=patients_outcome
-)
+# Randomly select 10000 patients for the train/val set
+train_val_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in train_val_patients])
+train_val_patients = train_test_split(train_val_patients, test_size=10000, random_state=SEED, stratify=train_val_patients_outcome)[1]
 
-# 定义训练集和验证集的大小
-train_sizes = [20, 50, 100, 200, 400, 800, 1600, 3200, 6400]
-val_sizes = train_sizes # 验证集与训练集大小一致
+# Split the train/val set into train and val sets, 7/8 for train and 1/8 for val
+train_val_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in train_val_patients])
+train_patients, val_patients = train_test_split(train_val_patients, test_size=1/8, random_state=SEED, stratify=train_val_patients_outcome)
 
-# 循环创建不同大小的数据集
-for i, (train_size, val_size) in enumerate(zip(train_sizes, val_sizes)):
-    print("-" * 50)
-    print(f"Processing split {i+1}: train_size={train_size}, val_size={val_size}")
+# Print the sizes of the datasets
+print("Train patients size:", len(train_patients))
+print("Validation patients size:", len(val_patients))
+print("Test patients size:", len(test_patients))
 
-    # --- 从剩余患者中不放回地采样训练集和验证集 ---
-    # 确保总样本足够
-    if train_size + val_size > len(train_val_patients):
-        print(f"Warning: Not enough patients for train_size={train_size} and val_size={val_size}. Skipping.")
-        continue
+# Assert there is no data leakage
+assert len(set(train_patients) & set(val_patients)) == 0, "Data leakage between train and val sets"
+assert len(set(train_patients) & set(test_patients)) == 0, "Data leakage between train and test sets"
+assert len(set(val_patients) & set(test_patients)) == 0, "Data leakage between val and test sets"
 
-    # 1. 采样训练集
-    train_patients, remaining_patients, train_outcomes, remaining_outcomes = train_test_split(
-        train_val_patients, train_val_outcomes, train_size=train_size, random_state=SEED + i, stratify=train_val_outcomes
-    )
+# Create train, val dataframes
+train_df = df[df['RecordID'].isin(train_patients)]
+val_df = df[df['RecordID'].isin(val_patients)]
+test_df = df[df['RecordID'].isin(test_patients)]
 
-    # 2. 从剩余部分采样验证集
-    # 如果剩余样本不足以进行分层抽样，则进行随机抽样
-    try:
-        val_patients, _, _, _ = train_test_split(
-            remaining_patients, remaining_outcomes, train_size=val_size, random_state=SEED + i, stratify=remaining_outcomes
-        )
-    except ValueError:
-        print(f"Warning: Could not stratify validation set for size {val_size}. Using random sampling.")
-        val_indices = np.random.choice(len(remaining_patients), size=val_size, replace=False)
-        val_patients = remaining_patients[val_indices]
+# Calculate the mean and std of the train set (include age, lab test features, and LOS) on the data in 5% to 95% quantile range
+train_df, val_df, test_df, default_fill, los_info, train_mean, train_std = normalize_dataframe(train_df, val_df, test_df, normalize_features, id_column="RecordID")
 
-    print(f"Train patients size: {len(train_patients)}")
-    print(f"Validation patients size: {len(val_patients)}")
-    print(f"Test patients size: {len(test_patients)}")
+# Forward Imputation after grouped by RecordID
+# Notice: if a patient has never done certain lab test, the imputed value will be the median value calculated from train set
+train_df, train_x, train_y, train_pid = forward_fill_pipeline(train_df, default_fill, demographic_features, ehr_labtest_features, target_features, require_impute_features, id_column="RecordID")
+val_df, val_x, val_y, val_pid = forward_fill_pipeline(val_df, default_fill, demographic_features, ehr_labtest_features, target_features, require_impute_features, id_column="RecordID")
+test_df, test_x, test_y, test_pid = forward_fill_pipeline(test_df, default_fill, demographic_features, ehr_labtest_features, target_features, require_impute_features, id_column="RecordID")
 
-    # 断言检查数据泄漏
-    assert len(set(train_patients) & set(val_patients)) == 0, "Data leakage between train and val sets"
-    assert len(set(train_patients) & set(test_patients)) == 0, "Data leakage between train and test sets"
-    assert len(set(val_patients) & set(test_patients)) == 0, "Data leakage between val and test sets"
+# Export the note
+train_note = export_note(train_df, id_column='RecordID')
+val_note = export_note(val_df, id_column='RecordID')
+test_note = export_note(test_df, id_column='RecordID')
 
-    # --- 根据划分的ID创建DataFrame ---
-    train_df_raw = df[df['RecordID'].isin(train_patients)].copy()
-    val_df_raw = df[df['RecordID'].isin(val_patients)].copy()
-    test_df_raw = df[df['RecordID'].isin(test_patients)].copy()
+# Create the directory to save the processed data
+save_dir = os.path.join(processed_data_dir, 'split')
+os.makedirs(save_dir, exist_ok=True)
 
-    # =================================================================================================
-    # 3. 标准化与填充 (使用当前训练集的统计数据)
-    # =================================================================================================
-    print("Normalizing and imputing data...")
+# Convert the data to the required format
+train_data = [{
+    'id': id_item,
+    'x_ts': x_item,
+    'x_note': note_item,
+    'x_llm_ts': x_llm_item,
+    'record_time': record_time_item,
+    'missing_mask': missing_mask_item,
+    'y_mortality': [y[0] for y in y_item],
+    'y_los': [y[1] for y in y_item],
+    'y_readmission': [y[2] for y in y_item],
+} for id_item, x_item, x_llm_item, note_item, record_time_item, missing_mask_item, y_item in zip(train_pid, train_x, train_raw_x, train_note, train_record_time, train_missing_mask, train_y)]
+val_data = [{
+    'id': id_item,
+    'x_ts': x_item,
+    'x_note': note_item,
+    'x_llm_ts': x_llm_item,
+    'record_time': record_time_item,
+    'missing_mask': missing_mask_item,
+    'y_mortality': [y[0] for y in y_item],
+    'y_los': [y[1] for y in y_item],
+    'y_readmission': [y[2] for y in y_item],
+} for id_item, x_item, x_llm_item, note_item, record_time_item, missing_mask_item, y_item in zip(val_pid, val_x, val_raw_x, val_note, val_record_time, val_missing_mask, val_y)]
+test_data = [{
+    'id': id_item,
+    'x_ts': x_item,
+    'x_note': note_item,
+    'x_llm_ts': x_llm_item,
+    'record_time': record_time_item,
+    'missing_mask': missing_mask_item,
+    'y_mortality': [y[0] for y in y_item],
+    'y_los': [y[1] for y in y_item],
+    'y_readmission': [y[2] for y in y_item],
+} for id_item, x_item, x_llm_item, note_item, record_time_item, missing_mask_item, y_item in zip(test_pid, test_x, test_raw_x, test_note, test_record_time, test_missing_mask, test_y)]
 
-    # 计算训练集的均值和标准差，并应用到所有数据集
-    train_df, val_df, test_df, default_fill, los_info, _, _ = normalize_dataframe(
-        train_df_raw, val_df_raw, test_df_raw, normalize_features, id_column="RecordID"
-    )
+# Save the data to pickle files
+pd.to_pickle(train_data, os.path.join(save_dir, "train_data.pkl"))
+pd.to_pickle(val_data, os.path.join(save_dir, "val_data.pkl"))
+pd.to_pickle(test_data, os.path.join(save_dir, "test_data.pkl"))
 
-    # 正向填充
-    _, train_x, train_y, train_pid = forward_fill_pipeline(train_df, default_fill, demographic_features, ehr_labtest_features, target_features, require_impute_features, id_column="RecordID")
-    _, val_x, val_y, val_pid = forward_fill_pipeline(val_df, default_fill, demographic_features, ehr_labtest_features, target_features, require_impute_features, id_column="RecordID")
-    _, test_x, test_y, test_pid = forward_fill_pipeline(test_df, default_fill, demographic_features, ehr_labtest_features, target_features, require_impute_features, id_column="RecordID")
+# Print the sizes of the datasets
+print("Train data size:", len(train_data))
+print("Validation data size:", len(val_data))
+print("Test data size:", len(test_data))
 
-    # 提取文本笔记
-    train_note = export_note(train_df, id_column='RecordID')
-    val_note = export_note(val_df, id_column='RecordID')
-    test_note = export_note(test_df, id_column='RecordID')
+# Export LOS statistics (calculated from the train set)
+pd.to_pickle(los_info, os.path.join(save_dir, "los_info.pkl"))
 
-    # =================================================================================================
-    # 4. 数据格式化与保存
-    # =================================================================================================
+# Export the labtest feature names
+pd.to_pickle(labtest_features, os.path.join(save_dir, "labtest_features.pkl"))
 
-    # 创建保存目录
-    save_dir = os.path.join(processed_data_dir, f'{train_size}_shot')
-    os.makedirs(save_dir, exist_ok=True)
-    print(f"Saving processed data to {save_dir}")
+# Extract 10 shots (5 pos nad 5 neg) from train set and valid set
+train_pos_data = [item for item in train_data if item['y_mortality'][0] == 1]
+train_neg_data = [item for item in train_data if item['y_mortality'][0] == 0]
+val_pos_data = [item for item in val_data if item['y_mortality'][0] == 1]
+val_neg_data = [item for item in val_data if item['y_mortality'][0] == 0]
+train_pos_data = random.sample(train_pos_data, min(5, len(train_pos_data)))
+train_neg_data = random.sample(train_neg_data, min(5, len(train_neg_data)))
+val_pos_data = random.sample(val_pos_data, min(5, len(val_pos_data)))
+val_neg_data = random.sample(val_neg_data, min(5, len(val_neg_data)))
+train_shot_data = train_pos_data + train_neg_data
+val_shot_data = val_pos_data + val_neg_data
 
-    # 定义数据转换函数，避免代码重复
-    def format_data(pids, x_ts, y_ts, notes, raw_x_map, time_map, mask_map):
-        data = []
-        for i, pid in enumerate(pids):
-            data.append({
-                'id': pid,
-                'x_ts': x_ts[i],
-                'x_note': notes[i],
-                'x_llm_ts': raw_x_map.get(pid, []), # 从map中获取原始数据
-                'record_time': time_map.get(pid, []),
-                'missing_mask': mask_map.get(pid, []),
-                'y_mortality': [y[0] for y in y_ts[i]],
-                'y_los': [y[1] for y in y_ts[i]],
-                'y_readmission': [y[2] for y in y_ts[i]],
-            })
-        return data
+save_dir = os.path.join(processed_data_dir, '10_shot')
+os.makedirs(save_dir, exist_ok=True)
 
-    # 格式化数据
-    train_data = format_data(train_pid, train_x, train_y, train_note, raw_x_map, raw_record_time_map, raw_missing_mask_map)
-    val_data = format_data(val_pid, val_x, val_y, val_note, raw_x_map, raw_record_time_map, raw_missing_mask_map)
-    test_data = format_data(test_pid, test_x, test_y, test_note, raw_x_map, raw_record_time_map, raw_missing_mask_map)
-
-    # 保存为 pickle 文件
-    pd.to_pickle(train_data, os.path.join(save_dir, "train_data.pkl"))
-    pd.to_pickle(val_data, os.path.join(save_dir, "val_data.pkl"))
-    pd.to_pickle(test_data, os.path.join(save_dir, "test_data.pkl"))
-
-    print(f"Saved data sizes: Train={len(train_data)}, Val={len(val_data)}, Test={len(test_data)}")
-
-    # 保存 LOS 统计信息和特征列表 (对于每个子集都保存一份，或者也可以只保存一份在根目录)
-    pd.to_pickle(los_info, os.path.join(save_dir, "los_info.pkl"))
-    pd.to_pickle(labtest_features, os.path.join(save_dir, "labtest_features.pkl"))
-
-print("-" * 50)
-print("All processing finished.")
+# Save the data to pickle files
+pd.to_pickle(train_shot_data, os.path.join(save_dir, "train_data.pkl"))
+pd.to_pickle(val_shot_data, os.path.join(save_dir, "val_data.pkl"))
+pd.to_pickle(test_data, os.path.join(save_dir, "test_data.pkl"))
+pd.to_pickle(los_info, os.path.join(save_dir, "los_info.pkl"))
