@@ -23,8 +23,8 @@
     "cases/structured_ehr/mimic-iv-mortality/17574719_21452054.json",
     "cases/structured_ehr/mimic-iv-mortality/17661275_21249639.json",
     "cases/structured_ehr/mimic-iv-mortality/18185926_26711582.json",
-    "cases/structured_ehr/mimic-iv-mortality/18761260_28381670.json",
-    "cases/structured_ehr/mimic-iv-mortality/18849711_28170145.json"
+    "cases/structured_ehr/mimic-iv-mortality/18849711_28170145.json",
+    "cases/structured_ehr/mimic-iv-mortality/19009034_29852852.json"
   ],
   "structured_ehr::mimic-iv-readmission": [
     "cases/structured_ehr/mimic-iv-readmission/10462866_26986535.json",

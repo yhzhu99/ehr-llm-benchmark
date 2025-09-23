@@ -9,6 +9,7 @@ my_datasets/mimic-iii/*
 *.DS_Store
 prompt_*.md
 test_*.py
+*.ipynb
 
 ###############
 
