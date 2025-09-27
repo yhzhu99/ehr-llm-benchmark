@@ -44,13 +44,7 @@ patients = np.array(list(grouped.groups.keys()))
 patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in patients])
 
 # Randomly select 200 patients for the test set
-# train_val_patients, test_patients = train_test_split(patients, test_size=200, random_state=SEED, stratify=patients_outcome)
-
-test_patients = [item for item in os.listdir("/Users/akai/Desktop/data/ehr-llm-benchmark/logs/structured_ehr/mimic-iv-ehr/mortality/deepseek-v3-chat/1shot_unit_range") if item.endswith(".json") and "unit" not in item]
-test_patients = [item.replace(".json", "") for item in test_patients]
-assert len(test_patients) == 200
-train_val_patients = [item for item in patients if item not in test_patients]
-train_val_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in train_val_patients])
+train_val_patients, test_patients = train_test_split(patients, test_size=200, random_state=SEED, stratify=patients_outcome)
 test_df = df[df['RecordID'].isin(test_patients)]
 
 # For llm setting, export data on test set:
