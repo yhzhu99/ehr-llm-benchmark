@@ -190,7 +190,7 @@ def main():
         elif args.dataset == 'mimic-iv':
             config.update({'demo_dim': 2, 'lab_dim': 42})
 
-        model_path = f"logs/structured_ehr/{args.dataset}-ehr/{args.task}/dl_models/{args.model}/checkpoints/best.ckpt"
+        model_path = f"logs/structured_ehr/{args.dataset}-ehr/{args.task}/dl_models/{args.model}/full/checkpoints/best.ckpt"
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Structured model checkpoint not found at: {model_path}")
 

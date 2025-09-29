@@ -150,7 +150,6 @@ class FusionModel(L.LightningModule):
             note_seq = note_embedding.unsqueeze(1)
             ehr_attn_output, _ = self.ehr_attention(ehr_seq, ehr_seq, ehr_seq)
             note_attn_output, _ = self.note_attention(note_seq, note_seq, note_seq)
-            print(ehr_attn_output.shape, note_attn_output.shape)
             fused_embedding = torch.cat((ehr_attn_output, note_attn_output), dim=-1).squeeze()
         elif self.fusion_mode == 'cross_attention':
             ehr_seq = ehr_embedding.unsqueeze(1)
