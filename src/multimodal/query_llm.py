@@ -15,7 +15,7 @@ import tiktoken
 from json_repair import repair_json
 
 from src.structured_ehr.utils.llm_configs import LLM_API_CONFIG, MODELS_CONFIG
-from src.multimodal.prompts.prompt_template import SYSTEMPROMPT, USERPROMPT, UNIT, REFERENCE_RANGE, TASK_DESCRIPTION, RESPONSE_FORMAT, EXAMPLE
+from src.multimodal.prompts.prompt_template import SYSTEMPROMPT, USERPROMPT_NOTE_FIRST, USERPROMPT_EHR_FIRST, UNIT, REFERENCE_RANGE, TASK_DESCRIPTION, RESPONSE_FORMAT, EXAMPLE
 
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
@@ -204,6 +204,7 @@ def setup_output_paths(args: argparse.Namespace) -> Tuple[str, str]:
     if args.reference_range:
         save_filename += "_range"
     save_filename += f"_{args.format_type}"
+    save_filename += f"_{'note_first' if args.note_first else 'ehr_first'}"
 
     if args.output_logits:
         logits_path = os.path.join(args.logits_root, "multimodal", args.dataset, args.task, args.model, save_filename)
@@ -369,7 +370,8 @@ def run(args: argparse.Namespace):
         )
 
         # Create the user prompt
-        user_prompt = USERPROMPT.format(
+        user_prompt = USERPROMPT_NOTE_FIRST if args.note_first else USERPROMPT_EHR_FIRST
+        user_prompt = user_prompt.format(
             TASK_DESCRIPTION=task_description,
             EXAMPLE=example,
             SEX=sex,
@@ -475,6 +477,7 @@ def parse_args():
                        help="Include reference range information in the prompt")
     parser.add_argument("--max_length", "-l", type=int, default=512, help="Maximum length of the note")
     parser.add_argument("--format_type", "-f", type=str, default="list", choices=["list", "text"], help="Format type for the multimodal EHR data in the prompt")
+    parser.add_argument("--note_first", action="store_true", default=False, help="Where to put the note in the prompt, before or after the structured EHR data")
 
     # Output configuration
     parser.add_argument("--output_logits", action="store_true", default=False,

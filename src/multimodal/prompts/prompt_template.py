@@ -63,7 +63,7 @@ Response:
     },
 }
 
-USERPROMPT = """\
+USERPROMPT_NOTE_FIRST = """\
 I will provide you with longitudinal medical information and a clinical note for a patient. The structured data covers {LENGTH} visits that occurred at {RECORD_TIME_LIST}.
 Each clinical feature is presented as a list of values, corresponding to these visits. Missing values are represented as `NaN` for numerical values and "unknown" for categorical values. Note that units and reference ranges are provided alongside relevant features.
 
@@ -88,6 +88,33 @@ Clinical Note:
 
 Clinical Features Over Time:
 {DETAIL}
+"""
+
+USERPROMPT_EHR_FIRST = """\
+I will provide you with longitudinal medical information and a clinical note for a patient. The structured data covers {LENGTH} visits that occurred at {RECORD_TIME_LIST}.
+Each clinical feature is presented as a list of values, corresponding to these visits. Missing values are represented as `NaN` for numerical values and "unknown" for categorical values. Note that units and reference ranges are provided alongside relevant features.
+
+Patient Background:
+- Sex: {SEX}
+- Age: {AGE} years
+
+Your Task:
+{TASK_DESCRIPTION}
+
+Instructions & Output Format:
+{RESPONSE_FORMAT}
+
+Handling Uncertainty:
+In situations where the provided data is clearly insufficient or too ambiguous to make a reasonable prediction, respond with the exact phrase: `I do not know`.
+
+{EXAMPLE}
+
+Now, please analyze and predict for the following patient:
+Clinical Features Over Time:
+{DETAIL}
+
+Clinical Note:
+{NOTE}
 """
 
 UNIT = {
