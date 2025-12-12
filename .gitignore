@@ -10,6 +10,7 @@ my_datasets/mimic-iii/*
 prompt_*.md
 test_*.py
 *.ipynb
+evaluation/
 
 ###############
 
