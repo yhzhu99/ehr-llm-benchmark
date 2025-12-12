@@ -1,7 +1,7 @@
 import json
 import os
 import argparse
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Literal
 
 from tqdm import tqdm
 from tenacity import (
@@ -58,6 +58,7 @@ def format_input(
     mask: List[List[int]],
     unit: bool = False,
     reference_range: bool = False,
+    format_type: str = Literal['list', 'text'],
 ) -> str:
     """
     Format patient data for LLM input.
@@ -67,6 +68,7 @@ def format_input(
         dataset: Dataset name ('mimic-iv' or 'tjh')
         features: List of feature names
         mask: Missing value masks
+        format_type: Format type ('list' or 'text')
 
     Returns:
         Formatted string with patient details
@@ -121,16 +123,35 @@ def format_input(
     range_values = dict(json.load(open(REFERENCE_RANGE[args.dataset])))
 
     detail = ''
-    for feature in features:
-        unit_range = ''
-        if unit or reference_range:
-            unit_range = ' ('
+    if format_type == 'list':
+        for feature in features:
+            unit_range = ''
+            if unit or reference_range:
+                unit_range = ' ('
+                if unit:
+                    unit_range += f'Unit: {unit_values[feature]}. '
+                if reference_range:
+                    unit_range += f'Range: {range_values[feature]}.'
+                unit_range = unit_range.rstrip() + ')'
+            detail += f'- {feature}{unit_range}: [{", ".join(feature_values[feature])}]\n'
+    elif format_type == 'text':
+        for feature in features:
             if unit:
-                unit_range += f'{unit_values[feature]} '
+                feature_values_list = list(map(lambda x: x + ' ' + unit_values[feature], feature_values[feature]))
+            else:
+                feature_values_list = feature_values[feature]
+            values_str = ', '.join(feature_values_list[:-1]) + (' and ' if len(feature_values[feature]) > 1 else '') + feature_values_list[-1]
+
+            reference_range_str = ''
             if reference_range:
-                unit_range += range_values[feature]
-            unit_range = unit_range.rstrip() + ')'
-        detail += f'- {feature}{unit_range}: [{", ".join(feature_values[feature])}]\n'
+                reference_range_str = f', with a reference range of {range_values[feature]}'
+
+            # Construct natural language description
+            visit_count = len(feature_values[feature])
+            visit_word = "visits" if visit_count > 1 else "visit"
+
+            detail += f'The feature `{feature}` has {visit_count} {visit_word} of values {values_str}{reference_range_str}. '
+
     return detail.strip()
 
 
@@ -181,6 +202,7 @@ def setup_output_paths(args: argparse.Namespace) -> Tuple[str, str]:
         save_filename += '_unit'
     if args.reference_range:
         save_filename += '_range'
+    save_filename += f'_{args.format_type}'
 
     if args.output_logits:
         logits_path = os.path.join(args.logits_root, "structured_ehr", f"{args.dataset}-ehr", args.task, args.model, save_filename)
@@ -420,6 +442,7 @@ def run(args: argparse.Namespace):
             mask=missing_mask,
             unit=args.unit,
             reference_range=args.reference_range,
+            format_type=args.format_type,
         )
 
         # Create the user prompt
@@ -526,6 +549,8 @@ def parse_args():
                        help='Include unit information in the prompt')
     parser.add_argument('--reference_range', '-r', action='store_true',
                        help='Include reference range information in the prompt')
+    parser.add_argument('--format_type', '-f', type=str, default='list', choices=['list', 'text'],
+                       help='Format type for the structured EHR data in the prompt')
 
     # Output configuration
     parser.add_argument('--output_logits', action='store_true', default=False,
