@@ -145,7 +145,7 @@ def format_input(
             values_str = ", ".join(feature_values_list[:-1]) + (" and " if len(feature_values[feature]) > 1 else "") + feature_values_list[-1]
 
             reference_range_str = ""
-            if reference_range:
+            if reference_range and range_values[feature] != "/":
                 reference_range_str = f", with a reference range of {range_values[feature]}"
 
             # Construct natural language description
