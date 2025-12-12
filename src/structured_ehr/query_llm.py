@@ -131,7 +131,7 @@ def format_input(
                 if unit:
                     unit_range += f'Unit: {unit_values[feature]}. '
                 if reference_range:
-                    unit_range += f'Range: {range_values[feature]}.'
+                    unit_range += f'Reference Range: {range_values[feature]}.'
                 unit_range = unit_range.rstrip() + ')'
             detail += f'- {feature}{unit_range}: [{", ".join(feature_values[feature])}]\n'
     elif format_type == 'text':
