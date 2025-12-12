@@ -137,7 +137,7 @@ def format_input(
             detail += f"- {feature}{unit_range}: [{', '.join(feature_values[feature])}]\n"
     elif format_type == "text":
         for feature in features:
-            if unit:
+            if unit and unit_values[feature] != "/":
                 feature_values_list = list(map(lambda x: x + " " + unit_values[feature], feature_values[feature]))
             else:
                 feature_values_list = feature_values[feature]
