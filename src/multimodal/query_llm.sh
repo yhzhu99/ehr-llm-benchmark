@@ -25,7 +25,14 @@ DATASET_TASK_OPTIONS=(
     "mimic-iv:mortality"
     "mimic-iv:readmission"
 )
-UNIT_RANGE_ICL_OPTIONS=(1)
+EHR_FORMAT_OPTIONS=(
+  "list"
+  "text"
+)
+NOTE_FIRST_OPTIONS=(
+  "true"
+  "false"
+)
 
 # --- Main script starts here ---
 
@@ -40,39 +47,53 @@ LOG_FILES=()
 # Generate all commands and store them in the arrays
 echo "Generating all commands..."
 for DATASET_TASK in "${DATASET_TASK_OPTIONS[@]}"; do
-    # Dataset and task
-    IFS=":" read -r DATASET TASK <<< "$DATASET_TASK"
-    for MODEL in "${MODEL_OPTIONS[@]}"; do
-        for USE_UNIT_RANGE_ICL in "${UNIT_RANGE_ICL_OPTIONS[@]}"; do
-            # Construct command
-            CMD="python -m src.multimodal.query_llm -d ${DATASET} -t ${TASK} -m ${MODEL}"
+  # Dataset and task
+  IFS=":" read -r DATASET TASK <<< "$DATASET_TASK"
+  for EHR_FORMAT in "${EHR_FORMAT_OPTIONS[@]}"; do
+    for NOTE_FIRST in "${NOTE_FIRST_OPTIONS[@]}"; do
+      for MODEL in "${MODEL_OPTIONS[@]}"; do
+        # Construct command
+        CMD="python -m src.multimodal.query_llm -d ${DATASET} -t ${TASK} -m ${MODEL}"
 
-            # Add parameters based on USE_UNIT_RANGE
-            CMD="${CMD} -u -r"
-            UNIT_RANGE_ICL_SUFFIX="-unit-range"
+        # Add parameters based on USE_UNIT_RANGE
+        CMD="${CMD} -u -r"
+        UNIT_RANGE_SUFFIX="-unit-range"
 
-            # Add output options
-            if [ "$OUTPUT_LOGITS" = true ]; then
-              CMD="${CMD} --output_logits"
-            fi
+        # Add EHR format
+        CMD="${CMD} -f ${EHR_FORMAT}"
+        EHR_FORMAT_SUFFIX="-${EHR_FORMAT}"
 
-            if [ "$OUTPUT_PROMPTS" = true ]; then
-              CMD="${CMD} --output_prompts"
-            fi
+        # Add note first
+        if [ "$NOTE_FIRST" = "true" ]; then
+          CMD="${CMD} --note_first"
+          NOTE_FIRST_SUFFIX="-note_first"
+        else
+          NOTE_FIRST_SUFFIX="-ehr_first"
+        fi
 
-            # Add the fully constructed command to the array
-            COMMANDS+=("$CMD")
+        # Add output options
+        if [ "$OUTPUT_LOGITS" = true ]; then
+          CMD="${CMD} --output_logits"
+        fi
 
-            # Generate a corresponding log file path
-            LOG_FILE="${LOG_DIR}/${DATASET}-${TASK}-${MODEL}${UNIT_RANGE_ICL_SUFFIX}.log"
-            LOG_FILES+=("$LOG_FILE")
-        done
+        if [ "$OUTPUT_PROMPTS" = true ]; then
+          CMD="${CMD} --output_prompts"
+        fi
+
+        # Add the fully constructed command to the array
+        COMMANDS+=("$CMD")
+
+        # Generate a corresponding log file path
+        LOG_FILE="${LOG_DIR}/${DATASET}-${TASK}-${MODEL}${UNIT_RANGE_SUFFIX}${EHR_FORMAT_SUFFIX}${NOTE_FIRST_SUFFIX}.log"
+        LOG_FILES+=("$LOG_FILE")
+      done
     done
+  done
 done
 
 # Get the total number of commands
 TOTAL_RUNS=${#COMMANDS[@]}
-MAX_JOBS=6 # Set the maximum number of concurrent jobs
+MAX_JOBS=10 # Set the maximum number of concurrent jobs
 
 echo "Starting evaluation with ${TOTAL_RUNS} different configurations..."
 
