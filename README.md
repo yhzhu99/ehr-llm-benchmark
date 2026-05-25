@@ -1,40 +1,28 @@
 # ClinicRealm: Re-evaluating Large Language Models with Conventional Machine Learning for Non-Generative Clinical Prediction Tasks
 
 [![arXiv](https://img.shields.io/badge/arXiv-2407.18525-b31b1b.svg)](https://arxiv.org/abs/2407.18525)
+[![npj Digital Medicine](https://img.shields.io/badge/npj%20Digital%20Medicine-2026-007C92.svg)](https://www.nature.com/articles/s41746-026-02539-z)
 
-This repository contains the code and resources for our paper "ClinicRealm: Re-evaluating Large Language Models with Conventional Machine Learning for Non-Generative Clinical Prediction Tasks".
+This repository contains the code and resources for our paper "ClinicRealm: Re-evaluating Large Language Models with Conventional Machine Learning for Non-Generative Clinical Prediction Tasks", which has been accepted by **npj Digital Medicine (2026)** and is available at [https://www.nature.com/articles/s41746-026-02539-z](https://www.nature.com/articles/s41746-026-02539-z).
 
-- **Paper:** [https://arxiv.org/abs/2407.18525](https://arxiv.org/abs/2407.18525)
 - **Online Benchmark Results:** [https://yhzhu99.github.io/ehr-llm-benchmark/](https://yhzhu99.github.io/ehr-llm-benchmark/)
 - **MIMIC-IV Preprocessing Code:** [https://github.com/PKU-AICare/mimic_preprocessor](https://github.com/PKU-AICare/mimic_preprocessor)
 - **TJH Preprocessing Code:** [https://github.com/yhzhu99/pyehr](https://github.com/yhzhu99/pyehr)
 
 ## 📖 Overview
 
-Large Language Models (LLMs) are increasingly deployed in medicine. However, their utility in non-generative clinical prediction, often presumed inferior to specialized models, remains under-evaluated. Our ClinicRealm study addresses this by benchmarking 9 GPT-based LLMs, 5 BERT-based models, and 7 traditional methods on unstructured clinical notes and structured Electronic Health Records (EHR).
+Large Language Models (LLMs) are increasingly deployed in medicine. However, their utility in non-generative clinical prediction, often presumed inferior to specialized models, remains under-evaluated. Our ClinicRealm study addresses this by benchmarking 15 GPT-style LLMs, 5 BERT-style models, and 11 conventional machine learning/deep learning methods on unstructured clinical notes and structured Electronic Health Records (EHR).
+
+![ClinicRealm overview: comparative performance and recommendations for model selection in non-generative clinical tasks](docs/assets/clinicrealm-overview.png)
+
+*Main overview figure from the published ClinicRealm paper in npj Digital Medicine.*
 
 Key findings from our study include:
-*   **Unstructured Clinical Notes:** Leading LLMs (e.g., DeepSeek R1/V3, GPT o3-mini-high) in zero-shot settings now decisively outperform finetuned BERT models for clinical note predictions.
-*   **Structured EHR Data:** While specialized models excel with ample data, advanced LLMs (e.g., GPT-4o, DeepSeek R1/V3) show potent zero-shot capabilities, often surpassing conventional models in data-scarce settings.
+*   **Unstructured Clinical Notes:** Leading LLMs (e.g., DeepSeek-R1, DeepSeek-V3.1-Think, GPT-5) in zero-shot settings now decisively outperform finetuned BERT models for clinical note predictions.
+*   **Structured EHR Data:** While specialized models excel with ample data, advanced LLMs (e.g., GPT-4o, GPT-5, DeepSeek-V3.1-Think) show potent zero-shot capabilities, often surpassing conventional models in data-scarce settings.
 *   **Open-Source vs. Proprietary:** Leading open-source LLMs can match or exceed proprietary counterparts in these non-generative clinical prediction tasks.
 
 These results establish modern LLMs as powerful tools for non-generative clinical prediction, particularly with unstructured text and offering data-efficient options for structured data, thus necessitating a re-evaluation of model selection strategies in predictive healthcare.
-
-## 📝 Cite this Work
-
-If you use ClinicRealm in your research, please cite our paper:
-
-```bibtex
-@misc{zhu2025clinicrealm,
-      title={ClinicRealm: Re-evaluating Large Language Models with Conventional Machine Learning for Non-Generative Clinical Prediction Tasks}, 
-      author={Yinghao Zhu and Junyi Gao and Zixiang Wang and Weibin Liao and Xiaochen Zheng and Lifang Liang and Miguel O. Bernabeu and Yasha Wang and Lequan Yu and Chengwei Pan and Ewen M. Harrison and Liantao Ma},
-      year={2025},
-      eprint={2407.18525},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2407.18525}, 
-}
-```
 
 ## 🎯 Prediction Tasks
 
@@ -126,3 +114,21 @@ For preprocessing the MIMIC-IV datasets (both structured EHR and clinical notes)
 ➡️ [**PKU-AICare/mimic_preprocessor**](https://github.com/PKU-AICare/mimic_preprocessor)
 
 Please follow the instructions in the `mimic_preprocessor` repository to prepare the MIMIC-IV data. The TJH dataset preprocessing follows the [COVID-19 EHR benchmark](https://github.com/yhzhu99/pyehr). Preprocessed data should ideally be placed in the `my_datasets/` directory or configured accordingly in the experiment scripts.
+
+## 📝 Cite this Work
+
+If you use ClinicRealm in your research, please cite the npj Digital Medicine article:
+
+```bibtex
+@article{zhu2026clinicrealm,
+  title = {{ClinicRealm}: Re-evaluating large language models with conventional machine learning for non-generative clinical prediction tasks},
+  author = {Zhu, Yinghao and Gao, Junyi and Wang, Zixiang and Liao, Weibin and Zheng, Xiaochen and Liang, Lifang and Bernabeu, Miguel O. and Wang, Yasha and Yu, Lequan and Pan, Chengwei and Harrison, Ewen M. and Ma, Liantao},
+  journal = {npj Digital Medicine},
+  volume = {9},
+  number = {1},
+  pages = {319},
+  year = {2026},
+  doi = {10.1038/s41746-026-02539-z},
+  url = {https://www.nature.com/articles/s41746-026-02539-z},
+}
+```
